@@ -1,4 +1,4 @@
-import { PatientDetailClient } from "./patient-detail-client-optimized"
+import { PatientDetailClient } from "./patient-detail-client"
 
 export default async function PatientDetailPage({
   params,
