@@ -53,6 +53,7 @@ type Schedule = {
 type ExistingAppointment = {
   id: string
   doctor_id: string
+  patient_id?: string
   appointment_date: string
   appointment_time: string
   appointment_type?: string
@@ -538,8 +539,14 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                       draggable
                                       onDragStart={() => handleDragStart(appointment)}
                                       onDragEnd={handleDragEnd}
-                                      className={`group relative w-full rounded-md bg-red-600 text-white px-2 py-1.5 text-xs cursor-grab active:cursor-grabbing transition-all ${
-                                        isDragging ? "opacity-40 scale-95" : "opacity-100 hover:shadow-lg hover:scale-[1.02]"
+                                      onClick={(e) => {
+                                        if (isAdmin && appointment.patient_id) {
+                                          e.stopPropagation()
+                                          router.push(`/admin/patients/${appointment.patient_id}`)
+                                        }
+                                      }}
+                                      className={`group relative w-full rounded-md bg-red-600 text-white px-2 py-1.5 text-xs transition-all ${
+                                        isDragging ? "opacity-40 scale-95 cursor-grabbing" : isAdmin ? "opacity-100 hover:shadow-lg hover:scale-[1.02] cursor-pointer" : "opacity-100 cursor-grab active:cursor-grabbing"
                                       }`}
                                     >
                                       {isMoving && (
@@ -553,8 +560,8 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                           <div className="font-bold text-[11px] opacity-80 mb-0.5">{time}</div>
                                           {isAdmin ? (
                                             <>
-                                              <div className="font-semibold truncate">{appointment.patients?.full_name || "Hasta"}</div>
-                                              {showPhone && <div className="opacity-80 truncate">{phone}</div>}
+                                              <div className="font-semibold truncate hover:underline">{appointment.patients?.full_name || "Hasta"}</div>
+                                              {showPhone && <div className="opacity-80 truncate text-[10px]">{phone}</div>}
                                             </>
                                           ) : (
                                             <div className="font-semibold">Dolu</div>
@@ -571,7 +578,9 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                     return (
                                       <TooltipProvider key={time} delayDuration={200}>
                                         <Tooltip>
-                                          <TooltipTrigger asChild>{card}</TooltipTrigger>
+                                          <TooltipTrigger asChild>
+                                            {card}
+                                          </TooltipTrigger>
                                           <TooltipContent side="right" className="max-w-[220px] text-xs whitespace-pre-wrap z-[100]">
                                             <p className="font-semibold mb-1">Not:</p>
                                             <p>{appointment.notes}</p>

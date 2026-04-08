@@ -57,6 +57,7 @@ export default async function CreateAppointmentPage() {
     .select(`
       id,
       doctor_id,
+      patient_id,
       appointment_date,
       appointment_time,
       appointment_type,
