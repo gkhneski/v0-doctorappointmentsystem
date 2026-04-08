@@ -540,17 +540,9 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                       onDragStart={() => handleDragStart(appointment)}
                                       onDragEnd={handleDragEnd}
                                       onClick={(e) => {
-                                        console.log("[v0] Randevu kartına tıklandı:", {
-                                          isAdmin,
-                                          patient_id: appointment.patient_id,
-                                          full_name: appointment.patients?.full_name
-                                        })
                                         if (isAdmin && appointment.patient_id) {
                                           e.stopPropagation()
-                                          console.log("[v0] Hasta sayfasına yönlendiriliyor:", `/admin/patients/${appointment.patient_id}`)
                                           router.push(`/admin/patients/${appointment.patient_id}`)
-                                        } else {
-                                          console.log("[v0] Yönlendirme yapılmadı - isAdmin:", isAdmin, "patient_id:", appointment.patient_id)
                                         }
                                       }}
                                       className={`group relative w-full rounded-md bg-red-600 text-white px-2 py-1.5 text-xs transition-all ${
