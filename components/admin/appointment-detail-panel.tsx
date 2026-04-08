@@ -100,10 +100,12 @@ export function AppointmentDetailPanel({
   const [newTime, setNewTime] = useState(appointment.appointment_time || "")
   const [isLoading, setIsLoading] = useState(false)
   const [liveData, setLiveData] = useState(appointment)
+  const [paymentAmountInput, setPaymentAmountInput] = useState(appointment.payment_amount?.toString() || "")
 
-  // Randevu secildiginde Supabase'den guncel veriyi cek
+  // Randevu secildiginde Supabase'den guncel veriyi cek ve payment input'u senkronize et
   useEffect(() => {
     setLiveData(appointment)
+    setPaymentAmountInput(appointment.payment_amount?.toString() || "")
 
     const fetchFresh = async () => {
       const { data } = await supabase
@@ -111,7 +113,10 @@ export function AppointmentDetailPanel({
         .select(`*, patients (id, full_name, phone, tc_no, date_of_birth, email), doctors (id, full_name)`)
         .eq("id", appointment.id)
         .single()
-      if (data) setLiveData({ ...appointment, ...data })
+      if (data) {
+        setLiveData({ ...appointment, ...data })
+        setPaymentAmountInput(data.payment_amount?.toString() || "")
+      }
     }
 
     fetchFresh()
@@ -164,8 +169,7 @@ export function AppointmentDetailPanel({
       if (error) throw error
       onUpdatePrintType(appointment.id, printType)
       toast({ title: "Başarılı", description: "Yazdırma tipi güncellendi" })
-    } catch (error) {
-      console.error("[v0] Yazdırma tipi güncellenirken hata:", error)
+    } catch {
       toast({ title: "Hata", description: "Yazdırma tipi güncellenemedi", variant: "destructive" })
     }
   }
@@ -176,19 +180,39 @@ export function AppointmentDetailPanel({
       const { error } = await supabase.from("appointments").update({ payment_status: status }).eq("id", appointment.id)
       if (error) throw error
       onUpdatePaymentStatus(appointment.id, status)
-    } catch (error) {
-      console.error("[v0] Ödeme durumu güncellenirken hata:", error)
+      toast({ title: "Başarılı", description: "Ödeme durumu güncellendi" })
+    } catch {
+      toast({ title: "Hata", description: "Ödeme durumu güncellenemedi", variant: "destructive" })
     }
   }
 
   const setPaymentAmount = async (amount: number) => {
     const supabase = createClient()
+    
+    // Validasyon: Decimal(10,2) için maksimum değer 99,999,999.99
+    if (isNaN(amount) || amount < 0 || amount >= 100000000) {
+      toast({
+        title: "Geçersiz Tutar",
+        description: "Ödeme tutarı 0 ile 99,999,999.99 TL arasında olmalıdır.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     try {
       const { error } = await supabase.from("appointments").update({ payment_amount: amount }).eq("id", appointment.id)
       if (error) throw error
       onUpdatePaymentAmount(appointment.id, amount)
+      toast({
+        title: "Başarılı",
+        description: `Ödeme tutarı ${amount.toFixed(2)} TL olarak güncellendi.`,
+      })
     } catch (error) {
-      console.error("[v0] Ödeme tutarı güncellenirken hata:", error)
+      toast({
+        title: "Hata",
+        description: "Ödeme tutarı güncellenemedi.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -358,6 +382,7 @@ export function AppointmentDetailPanel({
                   onClick={() => {
                     updatePaymentStatus("unpaid")
                     setPaymentAmount(0)
+                    setPaymentAmountInput("0")
                   }}
                 >
                   Kontrol
@@ -372,11 +397,21 @@ export function AppointmentDetailPanel({
                     <Input
                       type="number"
                       placeholder="Miktar girin"
-                      value={appointment.payment_amount || ""}
-                      onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                      value={paymentAmountInput}
+                      onChange={(e) => setPaymentAmountInput(e.target.value)}
+                      onBlur={(e) => {
+                        const value = parseFloat(e.target.value)
+                        if (!isNaN(value) && value >= 0) {
+                          setPaymentAmount(value)
+                        } else {
+                          // Geçersiz değer girildiyse eski değere döndür
+                          setPaymentAmountInput(appointment.payment_amount?.toString() || "0")
+                        }
+                      }}
                       className="h-8 text-xs"
                       min="0"
-                      step="1"
+                      max="99999999.99"
+                      step="0.01"
                     />
                     <span className="text-xs font-medium flex items-center text-gray-600">TL</span>
                   </div>
