@@ -19,21 +19,20 @@ export default async function AdminDashboard() {
 
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError || !user) {
+  if (!user) {
     redirect("/auth/admin/login")
   }
 
-  // Verify admin access
-  const { data: adminUser, error: adminError } = await supabase
+  // Sadece gerekli alanları çek - layout'ta zaten kontrol edildi
+  const { data: adminUser } = await supabase
     .from("admin_users")
-    .select("*")
+    .select("full_name, role")
     .eq("id", user.id)
-    .single()
+    .maybeSingle()
 
-  if (adminError || !adminUser) {
+  if (!adminUser) {
     redirect("/auth/admin/login")
   }
 
@@ -41,18 +40,22 @@ export default async function AdminDashboard() {
   const turkeyTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }))
   const today = turkeyTime.toISOString().split("T")[0]
 
-  // Get statistics and data in parallel - all queries at once
+  // Sadece 2 ay ilerisini çek (performans için)
+  const twoMonthsLater = new Date()
+  twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2)
+  const endDate = twoMonthsLater.toISOString().split("T")[0]
+
+  // Get statistics and data in parallel - TÜM sorgular tek Promise.all'da
   const [
     { count: totalAppointments },
     { count: totalPatients },
-    { count: totalDoctors },
     { data: appointments },
-    { data: patients },
-    { data: doctors },
+    { data: schedules },
+    { data: existingAppointments },
+    { data: calendarDoctors },
   ] = await Promise.all([
     supabase.from("appointments").select("*", { count: "exact", head: true }),
     supabase.from("patients").select("*", { count: "exact", head: true }),
-    supabase.from("doctors").select("*", { count: "exact", head: true }),
     supabase
       .from("appointments")
       .select(
@@ -76,32 +79,9 @@ export default async function AdminDashboard() {
       `,
       )
       .gte("appointment_date", today)
+      .lte("appointment_date", endDate)
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true }),
-    supabase
-      .from("patients")
-      .select("id, full_name, tc_no, phone, date_of_birth, created_at")
-      .order("created_at", { ascending: false })
-      .limit(15),
-    supabase.from("doctors").select("id, name, specialization").limit(1),
-  ])
-
-  // Bu haftanın başı (Pazartesi) ve sonu (Pazar)
-  const weekStart = new Date()
-  const dayOfWeek = weekStart.getDay()
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  weekStart.setDate(weekStart.getDate() + diffToMonday)
-  const weekStartStr = weekStart.toISOString().split("T")[0]
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekEnd.getDate() + 6)
-  const weekEndStr = weekEnd.toISOString().split("T")[0]
-
-  const oneYearLater = new Date()
-  oneYearLater.setFullYear(oneYearLater.getFullYear() + 1)
-  const endDate = oneYearLater.toISOString().split("T")[0]
-
-  // Schedules + existingAppointments for WeeklyCalendar (1 yıllık)
-  const [{ data: schedules }, { data: existingAppointments }, { data: calendarDoctors }] = await Promise.all([
     supabase
       .from("doctor_schedules")
       .select(`*, doctors (id, name, specialization)`)
@@ -114,9 +94,20 @@ export default async function AdminDashboard() {
       .from("appointments")
       .select(`id, doctor_id, patient_id, appointment_date, appointment_time, appointment_type, notes, payment_status, payment_amount, fetal_bebek_sayisi, is_intermediate, reminder_sent_at, link_clicked_at, confirmation_status, confirmed_at, created_at, patients (id, full_name, phone, tc_no)`)
       .gte("appointment_date", today)
+      .lte("appointment_date", endDate)
       .neq("status", "cancelled"),
     supabase.from("doctors").select("id, name, specialization, working_hours").limit(1),
   ])
+
+  // Bu haftanın başı (Pazartesi) ve sonu (Pazar)
+  const weekStart = new Date()
+  const dayOfWeek = weekStart.getDay()
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  weekStart.setDate(weekStart.getDate() + diffToMonday)
+  const weekStartStr = weekStart.toISOString().split("T")[0]
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekEnd.getDate() + 6)
+  const weekEndStr = weekEnd.toISOString().split("T")[0]
 
   const handleSignOut = async () => {
     "use server"

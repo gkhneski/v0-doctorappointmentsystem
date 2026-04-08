@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, lazy, Suspense, memo, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,7 +41,7 @@ type Props = {
   appointments: Appointment[]
 }
 
-export default function AppointmentsList({ appointments: initialAppointments }: Props) {
+function AppointmentsList({ appointments: initialAppointments }: Props) {
   const router = useRouter()
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
@@ -592,3 +592,6 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
     </div>
   )
 }
+
+// Memo ile gereksiz re-render'ları önle
+export default memo(AppointmentsList)

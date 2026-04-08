@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server"
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient()
+  
+  // Tek bir query ile hem user hem admin bilgisi kontrol et
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -13,15 +15,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/auth/admin/login")
   }
 
-  // admin_users tablosunda kayıtlı mı kontrol et ve role al
+  // Sadece role bilgisi çek, auth page.tsx'te kontrol edilecek
   const { data: adminUser } = await supabase
     .from("admin_users")
-    .select("id, role")
+    .select("role")
     .eq("id", user.id)
-    .single()
+    .maybeSingle()
 
   if (!adminUser) {
-    await supabase.auth.signOut()
     redirect("/auth/admin/login")
   }
 
