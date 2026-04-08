@@ -250,7 +250,7 @@ export function AppointmentDetailPanel({
             Düzenle
           </Button>
 
-          {appointment.is_intermediate && (
+          {(appointment.patients?.tc_no?.startsWith("TEMP_") || appointment.is_intermediate) && (
             <Button variant="default" size="sm" className="text-xs h-8 bg-green-600 hover:bg-green-700" onClick={onPatientClick}>
               <ClipboardCheck className="h-3 w-3 mr-1" />
               Bilgileri Tamamla
