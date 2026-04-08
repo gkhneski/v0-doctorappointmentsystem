@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense, memo, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,7 +24,7 @@ import { PatientDialog } from "@/components/admin/appointments/dialogs/patient-d
 import { EditDialog } from "@/components/admin/appointments/dialogs/edit-dialog"
 
 // Components
-const DetailPanel = lazy(() => import("./appointment-detail-panel").then(m => ({ default: m.AppointmentDetailPanel })))
+import { AppointmentDetailPanel } from "./appointment-detail-panel"
 
 const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
   "ilk-muayene": { label: "İlk Muayene", color: "bg-blue-100 text-blue-800" },
@@ -41,7 +41,7 @@ type Props = {
   appointments: Appointment[]
 }
 
-function AppointmentsList({ appointments: initialAppointments }: Props) {
+export default function AppointmentsList({ appointments: initialAppointments }: Props) {
   const router = useRouter()
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
@@ -474,16 +474,19 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
         </div>
 
         {/* Sağ Taraf - Detail Panel */}
-        <div className="lg:col-span-1">
-          {selectedAppointment ? (
-            <Suspense fallback={<div className="rounded-lg border border-gray-200 p-4 flex items-center justify-center h-96"><Spinner className="h-8 w-8" /></div>}>
-              <DetailPanel
+  <div className="lg:col-span-1">
+  {selectedAppointment ? (
+  <AppointmentDetailPanel
                 appointment={selectedAppointment}
                 onSmsClick={(phone) => {
                   setSmsPhone(phone)
                   setSmsDialogOpen(true)
                 }}
-                onPatientClick={() => setPatientDialogOpen(true)}
+                onPatientClick={() => {
+                  if (selectedAppointment?.patient_id) {
+                    window.location.href = `/admin/patients/${selectedAppointment.patient_id}`
+                  }
+                }}
                 onEditClick={() => setEditDialogOpen(true)}
                 onUpdatePrintType={(id, type) => {
                   setAppointments(prev => prev.map(a => a.id === id ? { ...a, print_type: type } : a))
@@ -528,7 +531,6 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
                   }
                 }}
               />
-            </Suspense>
           ) : (
             <div className="rounded-lg border border-dashed border-muted p-4 flex flex-col items-center justify-center h-64 text-muted-foreground">
               <Calendar className="h-8 w-8 mb-2 opacity-50" />
@@ -592,6 +594,3 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
     </div>
   )
 }
-
-// Memo ile gereksiz re-render'ları önle
-export default memo(AppointmentsList)

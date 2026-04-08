@@ -42,6 +42,7 @@ import {
   Save,
   Trash2,
   Edit3,
+  AlertTriangle,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -203,6 +204,12 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
   useEffect(() => {
     if (patient) {
       setFormData(patient)
+      
+      // TEMP_ TC'li hastalar için otomatik edit mode aç
+      if (patient.tc_no?.startsWith("TEMP_")) {
+        setEditMode(true)
+      }
+      
       // Load spouse photo if exists
       if (patient.spouse_photo_url) {
         supabase.storage
@@ -267,10 +274,23 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       setSaving(true)
       console.log("[v0] Saving patient data:", formData)
       
+      // TEMP_ TC'den gerçek TC'ye dönüşüm kontrolü
+      const isTempToReal = patient?.tc_no?.startsWith("TEMP_") && formData.tc_no && !formData.tc_no.startsWith("TEMP_")
+      
       const { data, error } = await supabase.from("patients").update(formData).eq("id", patientId).select()
       
       if (error) {
         console.error("[v0] Database error:", error)
+        // TC duplicate hatası özel mesaj
+        if (error.code === "23505" && error.message.includes("tc_no")) {
+          toast({
+            title: "✗ Hata",
+            description: "Bu TC kimlik numarası zaten sistemde kayıtlı.",
+            variant: "destructive",
+            duration: 5000,
+          })
+          return
+        }
         throw error
       }
       
@@ -278,11 +298,55 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       setPatient(formData)
       setEditMode(false)
       
-      toast({
-        title: "✓ Başarılı",
-        description: "Değişiklikler başarıyla kaydedildi",
-        duration: 4000,
-      })
+      // TEMP_ TC'den gerçek TC'ye geçiş yapıldıysa SMS onay kodu gönder
+      if (isTempToReal && formData.phone && formData.phone !== "0000000000") {
+        toast({
+          title: "✓ Bilgiler Kaydedildi",
+          description: "SMS onay kodu gönderiliyor...",
+          duration: 3000,
+        })
+        
+        try {
+          // Hastanın son randevusunu bul
+          const { data: appointments } = await supabase
+            .from("appointments")
+            .select("id")
+            .eq("patient_id", patientId)
+            .order("appointment_date", { ascending: false })
+            .limit(1)
+          
+          if (appointments && appointments.length > 0) {
+            // SMS onay kodu gönder
+            const smsResponse = await fetch("/api/sms/send-verification", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                phone: formData.phone,
+                appointmentId: appointments[0].id,
+                tc_no: formData.tc_no,
+                date_of_birth: formData.date_of_birth,
+              }),
+            })
+            
+            if (smsResponse.ok) {
+              toast({
+                title: "✓ SMS Gönderildi",
+                description: `${formData.phone} numarasına onay kodu gönderildi. Hastaya kodu sorsun ve onaylayın.`,
+                duration: 8000,
+              })
+            }
+          }
+        } catch (smsError: any) {
+          console.error("[v0] SMS send error:", smsError)
+          // SMS hatası bloke etmesin, hasta bilgileri zaten kaydedildi
+        }
+      } else {
+        toast({
+          title: "✓ Başarılı",
+          description: "Değişiklikler başarıyla kaydedildi",
+          duration: 4000,
+        })
+      }
     } catch (error: any) {
       console.error("[v0] Save error:", error)
       toast({
@@ -503,6 +567,24 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
             </div>
         </div>
       </header>
+
+      {/* TEMP_ TC Uyarı Banner */}
+      {patient.tc_no?.startsWith("TEMP_") && (
+        <div className="mx-6 mt-4 rounded-lg bg-orange-50 border border-orange-200 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 flex-shrink-0">
+              <AlertTriangle className="h-4 w-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-orange-900">Geçici Hasta Kaydı</h3>
+              <p className="text-sm text-orange-700 mt-1">
+                Bu hasta <strong>"Hızlı Ajanda Bloke"</strong> ile oluşturulmuş. Lütfen gerçek <strong>TC Kimlik No</strong>, <strong>Telefon</strong> ve <strong>Doğum Tarihi</strong> bilgilerini girin. 
+                Kaydet'e bastığınızda SMS onay kodu gönderilecek.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="px-6 py-6">
         {/* EDIT/SAVE BUTTONS */}

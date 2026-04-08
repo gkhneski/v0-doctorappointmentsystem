@@ -3,7 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role"
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, appointmentId } = await request.json()
+    const { phone, appointmentId, tc_no, date_of_birth } = await request.json()
 
     // 6 haneli rastgele kod oluştur
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
     const supabase = await createServiceRoleClient()
     const expiresAt = new Date()
     expiresAt.setMinutes(expiresAt.getMinutes() + 5)
+
+    console.log("[v0] Storing verification with TC:", tc_no, "DOB:", date_of_birth)
 
     const { error: insertError } = await supabase.from("sms_verifications").insert({
       phone: phone,

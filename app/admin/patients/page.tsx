@@ -11,29 +11,28 @@ export default async function PatientsPage() {
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser()
 
-  if (!user) {
+  if (userError || !user) {
     redirect("/auth/admin/login")
   }
 
-  // Layout'ta zaten kontrol edildi, sadece gerekli alanlar
-  const [{ data: adminUser }, { data: patients }] = await Promise.all([
-    supabase
-      .from("admin_users")
-      .select("full_name, role")
-      .eq("id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("patients")
-      .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-      .order("created_at", { ascending: false })
-      .limit(200), // İlk 200 hasta
-  ])
+  // Verify admin access
+  const { data: adminUser, error: adminError } = await supabase
+    .from("admin_users")
+    .select("*")
+    .eq("id", user.id)
+    .single()
 
-  if (!adminUser) {
+  if (adminError || !adminUser) {
     redirect("/auth/admin/login")
   }
+
+  const { data: patients } = await supabase
+    .from("patients")
+    .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
+    .order("created_at", { ascending: false })
 
   const handleSignOut = async () => {
     "use server"
