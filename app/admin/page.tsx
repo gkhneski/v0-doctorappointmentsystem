@@ -45,24 +45,23 @@ export default async function AdminDashboard() {
   twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2)
   const endDate = twoMonthsLater.toISOString().split("T")[0]
 
-  // Get statistics and data in parallel - TÜM sorgular tek Promise.all'da
+  // OPTİMİZE EDİLMİŞ: Tüm randevuları tek sorguda çekiyoruz
   const [
     { count: totalAppointments },
     { count: totalPatients },
-    { data: appointments },
-    { data: schedules },
-    { data: existingAppointments },
+    { data: allAppointments },
     { data: calendarDoctors },
-    { data: pastAppointments },
-    { data: cancelledAppointments },
   ] = await Promise.all([
     supabase.from("appointments").select("*", { count: "exact", head: true }),
     supabase.from("patients").select("*", { count: "exact", head: true }),
+    // TÜM randevuları tek sorguda çek (gelecek + geçmiş + iptal)
     supabase
       .from("appointments")
       .select(
         `
         id,
+        doctor_id,
+        patient_id,
         appointment_date,
         appointment_time,
         notes,
@@ -75,74 +74,38 @@ export default async function AdminDashboard() {
         print_type,
         payment_status,
         payment_amount,
+        fetal_bebek_sayisi,
+        is_intermediate,
         created_at,
         doctors:doctor_id (name, specialization),
         patients:patient_id (id, full_name, phone, tc_no, date_of_birth, kvkk_approved, kvkk_approved_at, kvkk_approved_via, medical_alerts)
       `,
       )
-      .gte("appointment_date", today)
-      .lte("appointment_date", endDate)
-      .order("appointment_date", { ascending: true })
-      .order("appointment_time", { ascending: true }),
-    supabase
-      .from("doctor_schedules")
-      .select(`*, doctors (id, name, specialization)`)
-      .eq("is_available", true)
-      .gte("schedule_date", today)
-      .lte("schedule_date", endDate)
-      .order("schedule_date")
-      .order("start_time"),
-    supabase
-      .from("appointments")
-      .select(`id, doctor_id, patient_id, appointment_date, appointment_time, appointment_type, notes, payment_status, payment_amount, fetal_bebek_sayisi, is_intermediate, reminder_sent_at, link_clicked_at, confirmation_status, confirmed_at, created_at, status, patients (id, full_name, phone, tc_no)`)
-      .gte("appointment_date", today)
-      .lte("appointment_date", endDate),
-      // İptal edilenler de dahil - admin tarafında gösterilsin
+      .order("appointment_date", { ascending: false })
+      .order("appointment_time", { ascending: false })
+      .limit(500), // Son 500 randevu yeterli
     supabase.from("doctors").select("id, name, specialization, working_hours").limit(1),
-    // Geçmiş randevular (bugünden önceki, iptal edilmemiş)
-    supabase
-      .from("appointments")
-      .select(
-        `
-        id,
-        appointment_date,
-        appointment_time,
-        notes,
-        status,
-        appointment_type,
-        payment_status,
-        payment_amount,
-        created_at,
-        doctors:doctor_id (name, specialization),
-        patients:patient_id (id, full_name, phone, tc_no)
-      `,
-      )
-      .lt("appointment_date", today)
-      .neq("status", "cancelled")
-      .order("appointment_date", { ascending: false })
-      .order("appointment_time", { ascending: false })
-      .limit(200),
-    // İptal edilen randevular
-    supabase
-      .from("appointments")
-      .select(
-        `
-        id,
-        appointment_date,
-        appointment_time,
-        notes,
-        status,
-        appointment_type,
-        created_at,
-        doctors:doctor_id (name, specialization),
-        patients:patient_id (id, full_name, phone, tc_no)
-      `,
-      )
-      .eq("status", "cancelled")
-      .order("appointment_date", { ascending: false })
-      .order("appointment_time", { ascending: false })
-      .limit(200),
   ])
+
+  // Client-side filtreleme (çok daha hızlı)
+  const appointments = allAppointments?.filter(
+    (a) => a.appointment_date >= today && a.appointment_date <= endDate
+  ).sort((a, b) => {
+    if (a.appointment_date !== b.appointment_date) {
+      return a.appointment_date.localeCompare(b.appointment_date)
+    }
+    return (a.appointment_time || "").localeCompare(b.appointment_time || "")
+  }) || []
+  
+  const existingAppointments = appointments // Calendar için aynı data
+  
+  const pastAppointments = allAppointments?.filter(
+    (a) => a.appointment_date < today && a.status !== "cancelled"
+  ).slice(0, 200) || []
+  
+  const cancelledAppointments = allAppointments?.filter(
+    (a) => a.status === "cancelled"
+  ).slice(0, 200) || []
 
   // Bu haftanın başı (Pazartesi) ve sonu (Pazar)
   const weekStart = new Date()
@@ -481,7 +444,9 @@ export default async function AdminDashboard() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs text-gray-600">{app.patients?.phone}</span>
+                            {app.patients?.phone && (
+                              <span className="text-xs text-gray-600">{app.patients.phone}</span>
+                            )}
                             {app.appointment_type && (
                               <span className="text-xs text-gray-500">
                                 •{" "}
