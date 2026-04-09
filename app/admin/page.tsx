@@ -53,6 +53,8 @@ export default async function AdminDashboard() {
     { data: schedules },
     { data: existingAppointments },
     { data: calendarDoctors },
+    { data: pastAppointments },
+    { data: cancelledAppointments },
   ] = await Promise.all([
     supabase.from("appointments").select("*", { count: "exact", head: true }),
     supabase.from("patients").select("*", { count: "exact", head: true }),
@@ -97,6 +99,49 @@ export default async function AdminDashboard() {
       .lte("appointment_date", endDate),
       // İptal edilenler de dahil - admin tarafında gösterilsin
     supabase.from("doctors").select("id, name, specialization, working_hours").limit(1),
+    // Geçmiş randevular (bugünden önceki, iptal edilmemiş)
+    supabase
+      .from("appointments")
+      .select(
+        `
+        id,
+        appointment_date,
+        appointment_time,
+        notes,
+        status,
+        appointment_type,
+        payment_status,
+        payment_amount,
+        created_at,
+        doctors:doctor_id (name, specialization),
+        patients:patient_id (id, full_name, phone, tc_no)
+      `,
+      )
+      .lt("appointment_date", today)
+      .neq("status", "cancelled")
+      .order("appointment_date", { ascending: false })
+      .order("appointment_time", { ascending: false })
+      .limit(200),
+    // İptal edilen randevular
+    supabase
+      .from("appointments")
+      .select(
+        `
+        id,
+        appointment_date,
+        appointment_time,
+        notes,
+        status,
+        appointment_type,
+        created_at,
+        doctors:doctor_id (name, specialization),
+        patients:patient_id (id, full_name, phone, tc_no)
+      `,
+      )
+      .eq("status", "cancelled")
+      .order("appointment_date", { ascending: false })
+      .order("appointment_time", { ascending: false })
+      .limit(200),
   ])
 
   // Bu haftanın başı (Pazartesi) ve sonu (Pazar)
@@ -281,6 +326,14 @@ export default async function AdminDashboard() {
               <TabsTrigger value="appointments" className="text-sm">
                 Liste
               </TabsTrigger>
+              <TabsTrigger value="past" className="text-sm gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                Geçmiş
+              </TabsTrigger>
+              <TabsTrigger value="cancelled" className="text-sm gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                İptal Edilenler
+              </TabsTrigger>
             </TabsList>
             <Button asChild variant="outline" size="sm">
               <Link href="/admin/schedules">Programları Yönet</Link>
@@ -317,6 +370,142 @@ export default async function AdminDashboard() {
                 <Suspense fallback={<div className="flex items-center justify-center py-12"><Spinner className="h-8 w-8" /></div>}>
                   <AppointmentsList appointments={appointments || []} />
                 </Suspense>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="past" className="space-y-4">
+            <Card className="border-gray-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-gray-100 bg-gray-50/50">
+                <CardTitle className="text-lg font-semibold text-gray-900">Geçmiş Randevular</CardTitle>
+                <CardDescription className="text-gray-600">Tamamlanmış randevular (Son 200 kayıt)</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                {!pastAppointments || pastAppointments.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Clock className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>Henüz geçmiş randevu bulunmuyor</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {Object.entries(
+                      pastAppointments.reduce<Record<string, typeof pastAppointments>>((acc, app) => {
+                        const date = app.appointment_date
+                        if (!acc[date]) acc[date] = []
+                        acc[date].push(app)
+                        return acc
+                      }, {})
+                    )
+                      .sort(([a], [b]) => b.localeCompare(a))
+                      .map(([date, apps]) => (
+                        <div key={date} className="space-y-2">
+                          <h3 className="text-sm font-semibold text-gray-700 border-b pb-2">
+                            {new Date(date + "T00:00:00").toLocaleDateString("tr-TR", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </h3>
+                          <div className="space-y-2">
+                            {apps
+                              .sort((a, b) => (b.appointment_time || "").localeCompare(a.appointment_time || ""))
+                              .map((app) => (
+                                <div
+                                  key={app.id}
+                                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
+                                >
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-gray-900">
+                                        {app.patients?.full_name || "Hasta"}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        {app.patients?.phone}
+                                      </span>
+                                    </div>
+                                    {app.appointment_type && (
+                                      <span className="text-xs text-gray-600">
+                                        {
+                                          TYPE_CONFIG[app.appointment_type as keyof typeof TYPE_CONFIG]?.label ||
+                                          app.appointment_type
+                                        }
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-sm font-mono text-gray-700">{app.appointment_time}</span>
+                                    {app.payment_status === "paid" && (
+                                      <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                                        ₺{app.payment_amount}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cancelled" className="space-y-4">
+            <Card className="border-gray-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-gray-100 bg-gray-50/50">
+                <CardTitle className="text-lg font-semibold text-gray-900">İptal Edilen Randevular</CardTitle>
+                <CardDescription className="text-gray-600">İptal edilmiş randevular (Son 200 kayıt)</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                {!cancelledAppointments || cancelledAppointments.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>İptal edilen randevu bulunmuyor</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {cancelledAppointments.map((app) => (
+                      <div
+                        key={app.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900">
+                              {app.patients?.full_name || "Hasta"}
+                            </span>
+                            <span className="text-xs bg-red-200 text-red-800 px-2 py-0.5 rounded-full font-medium">
+                              İPTAL
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-600">{app.patients?.phone}</span>
+                            {app.appointment_type && (
+                              <span className="text-xs text-gray-500">
+                                •{" "}
+                                {TYPE_CONFIG[app.appointment_type as keyof typeof TYPE_CONFIG]?.label ||
+                                  app.appointment_type}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-gray-700">
+                              {new Date(app.appointment_date + "T00:00:00").toLocaleDateString("tr-TR", {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </div>
+                            <div className="text-xs text-gray-500 font-mono">{app.appointment_time}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
