@@ -92,10 +92,10 @@ export default async function AdminDashboard() {
       .order("start_time"),
     supabase
       .from("appointments")
-      .select(`id, doctor_id, patient_id, appointment_date, appointment_time, appointment_type, notes, payment_status, payment_amount, fetal_bebek_sayisi, is_intermediate, reminder_sent_at, link_clicked_at, confirmation_status, confirmed_at, created_at, patients (id, full_name, phone, tc_no)`)
+      .select(`id, doctor_id, patient_id, appointment_date, appointment_time, appointment_type, notes, payment_status, payment_amount, fetal_bebek_sayisi, is_intermediate, reminder_sent_at, link_clicked_at, confirmation_status, confirmed_at, created_at, status, patients (id, full_name, phone, tc_no)`)
       .gte("appointment_date", today)
-      .lte("appointment_date", endDate)
-      .neq("status", "cancelled"),
+      .lte("appointment_date", endDate),
+      // İptal edilenler de dahil - admin tarafında gösterilsin
     supabase.from("doctors").select("id, name, specialization, working_hours").limit(1),
   ])
 
@@ -119,7 +119,7 @@ export default async function AdminDashboard() {
   // Declare pendingAppointments variable
   const pendingAppointments = appointments?.filter((a) => a.status === "pending").length || 0
 
-  // Bu haftaki randevular
+  // Bu haftaki randevular (iptal edilenler hariç)
   const weeklyAppointments = appointments?.filter(
     (a) => a.appointment_date >= weekStartStr && a.appointment_date <= weekEndStr && a.status !== "cancelled"
   ) || []

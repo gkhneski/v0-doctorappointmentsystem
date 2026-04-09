@@ -58,6 +58,7 @@ type ExistingAppointment = {
   appointment_time: string
   appointment_type?: string
   notes?: string | null
+  status?: string
   patients?: {
     full_name: string
     phone: string
@@ -533,20 +534,27 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                   const isDragging = draggingAppt?.id === appointment.id
                                   const isMoving = movingId === appointment.id
 
+                                  const isCancelled = appointment.status === "cancelled"
                                   const card = (
                                     <div
                                       key={time}
-                                      draggable
-                                      onDragStart={() => handleDragStart(appointment)}
+                                      draggable={!isCancelled}
+                                      onDragStart={() => !isCancelled && handleDragStart(appointment)}
                                       onDragEnd={handleDragEnd}
                                       onClick={(e) => {
-                                        if (isAdmin && appointment.patient_id) {
+                                        if (isAdmin && appointment.patient_id && !isCancelled) {
                                           e.stopPropagation()
                                           router.push(`/admin/patients/${appointment.patient_id}`)
                                         }
                                       }}
-                                      className={`group relative w-full rounded-md bg-red-600 text-white px-2 py-1.5 text-xs transition-all ${
-                                        isDragging ? "opacity-40 scale-95 cursor-grabbing" : isAdmin ? "opacity-100 hover:shadow-lg hover:scale-[1.02] cursor-pointer" : "opacity-100 cursor-grab active:cursor-grabbing"
+                                      className={`group relative w-full rounded-md px-2 py-1.5 text-xs transition-all ${
+                                        isCancelled 
+                                          ? "bg-gray-400 text-white opacity-60 cursor-not-allowed" 
+                                          : isDragging 
+                                            ? "bg-red-600 text-white opacity-40 scale-95 cursor-grabbing" 
+                                            : isAdmin 
+                                              ? "bg-red-600 text-white opacity-100 hover:shadow-lg hover:scale-[1.02] cursor-pointer" 
+                                              : "bg-red-600 text-white opacity-100 cursor-grab active:cursor-grabbing"
                                       }`}
                                     >
                                       {isMoving && (
@@ -560,7 +568,10 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                           <div className="font-bold text-[11px] opacity-80 mb-0.5">{time}</div>
                                           {isAdmin ? (
                                             <>
-                                              <div className="font-semibold truncate hover:underline">{appointment.patients?.full_name || "Hasta"}</div>
+                                              <div className="font-semibold truncate hover:underline">
+                                                {appointment.patients?.full_name || "Hasta"}
+                                                {isCancelled && <span className="ml-1 text-[9px] bg-white/30 px-1 rounded">İPTAL</span>}
+                                              </div>
                                               {showPhone && <div className="opacity-80 truncate text-[10px]">{phone}</div>}
                                             </>
                                           ) : (

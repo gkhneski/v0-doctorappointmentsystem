@@ -42,7 +42,7 @@ export default async function AppointmentPage() {
       .from("appointments")
       .select("doctor_id, appointment_date, appointment_time")
       .gte("appointment_date", today)
-      .neq("status", "cancelled")
+      // İptal edilen randevular da dahil - hasta tarafında dolu gösterilsin
       .or("is_intermediate.is.null,is_intermediate.eq.false") // Ara slotları hastalara gösterme
 
     if (error) {
@@ -58,7 +58,7 @@ export default async function AppointmentPage() {
       .from("appointments")
       .select("doctor_id, appointment_date, appointment_time")
       .gte("appointment_date", today)
-      .neq("status", "cancelled")
+      // İptal edilen randevular da dahil - hasta tarafında dolu gösterilsin
       .or("is_intermediate.is.null,is_intermediate.eq.false")
 
     if (error) {

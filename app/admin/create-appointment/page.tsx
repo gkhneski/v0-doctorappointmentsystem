@@ -62,13 +62,14 @@ export default async function CreateAppointmentPage() {
       appointment_time,
       appointment_type,
       notes,
+      status,
       patients (
         full_name,
         phone
       )
     `)
     .gte("appointment_date", today)
-    .neq("status", "cancelled")
+    // İptal edilenler de dahil - admin görüntüler
 
   const handleSignOut = async () => {
     "use server"
