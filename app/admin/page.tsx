@@ -51,6 +51,7 @@ export default async function AdminDashboard() {
     { count: totalPatients },
     { data: allAppointments },
     { data: calendarDoctors },
+    { data: schedules },
   ] = await Promise.all([
     supabase.from("appointments").select("*", { count: "exact", head: true }),
     supabase.from("patients").select("*", { count: "exact", head: true }),
@@ -85,6 +86,14 @@ export default async function AdminDashboard() {
       .order("appointment_time", { ascending: false })
       .limit(500), // Son 500 randevu yeterli
     supabase.from("doctors").select("id, name, specialization, working_hours").limit(1),
+    supabase
+      .from("doctor_schedules")
+      .select(`*, doctors (id, name, specialization)`)
+      .eq("is_available", true)
+      .gte("schedule_date", today)
+      .lte("schedule_date", endDate)
+      .order("schedule_date")
+      .order("start_time"),
   ])
 
   // Client-side filtreleme (çok daha hızlı)
