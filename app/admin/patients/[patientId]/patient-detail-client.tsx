@@ -42,6 +42,17 @@ import {
   Save,
   Trash2,
   Edit3,
+  User,
+  Phone,
+  MapPin,
+  Droplets,
+  Briefcase,
+  Hash,
+  Users,
+  CreditCard,
+  Home,
+  CalendarDays,
+  Stethoscope,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -527,17 +538,17 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
 
         {/* DUAL CLINICAL FORM CONTAINER */}
         <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* WOMAN / PATIENT CARD (LEFT - SUBTLE PINK) */}
-          <Card className="bg-gradient-to-b from-rose-50/40 to-white border border-gray-200 shadow-sm">
+          {/* WOMAN / PATIENT CARD (LEFT) */}
+          <Card className="border border-gray-200 shadow-sm bg-white">
             <CardContent className="p-5">
-              <div className="flex items-start justify-between mb-5">
-                <h3 className="text-base font-bold text-gray-700 uppercase tracking-wide">BAYAN HASTA KAYIT</h3>
+              {/* Header: avatar + name + badges */}
+              <div className="flex items-center gap-4 pb-4 border-b border-gray-100 mb-4">
                 <div className="relative flex-shrink-0">
-                  <Avatar className="h-20 w-20 border-2 border-gray-300">
+                  <Avatar className="h-16 w-16 border-2 border-rose-100">
                     {profilePhotoSignedUrl ? (
                       <AvatarImage src={profilePhotoSignedUrl || "/placeholder.svg"} alt={patient.full_name} />
                     ) : (
-                      <AvatarFallback className="bg-rose-100 text-lg font-semibold text-gray-700">
+                      <AvatarFallback className="bg-rose-50 text-base font-bold text-rose-400">
                         {patient.full_name
                           .split(" ")
                           .map((n: string) => n[0])
@@ -549,643 +560,466 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
                   </Avatar>
                   <label
                     htmlFor="photo-upload"
-                    className="absolute bottom-0 right-0 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-gray-600 text-white shadow transition-colors hover:bg-gray-700"
+                    className="absolute bottom-0 right-0 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-700 text-white shadow hover:bg-gray-900 transition-colors"
                   >
-                    {uploadingPhoto ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                    {uploadingPhoto ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Camera className="h-2.5 w-2.5" />}
                   </label>
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                    disabled={uploadingPhoto}
-                  />
+                  <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-gray-900 truncate">{formData.full_name || "-"}</h3>
+                    <span className="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-medium">Bayan Hasta</span>
+                    {formData.blood_group && (
+                      <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">{formData.blood_group}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5 font-mono">{formData.tc_no?.startsWith("TEMP_") ? "Geçici Kayıt" : formData.tc_no || "-"}</p>
+                  {formData.registration_date && (
+                    <p className="text-xs text-gray-400 mt-0.5">Kayıt: {new Date(formData.registration_date).toLocaleDateString("tr-TR")}</p>
+                  )}
                 </div>
               </div>
-              <div className="space-y-2">
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Kayıt Tarihi</label>
-                  {editMode ? (
-                    <Input
-                      type="date"
-                      value={formData.registration_date?.split("T")[0] || ""}
-                      onChange={(e) => setFormData({ ...formData, registration_date: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">
-                      {formData.registration_date
-                        ? new Date(formData.registration_date).toLocaleDateString("tr-TR")
-                        : "-"}
-                    </p>
-                  )}
+
+              {/* Fields grid */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+
+                {/* TC */}
+                <div className="flex items-start gap-2">
+                  <CreditCard className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">TC Kimlik</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.tc_no || ""} onChange={(e) => setFormData({ ...formData, tc_no: e.target.value })} className="h-7 text-xs font-mono mt-0.5" maxLength={11} />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900 font-mono">{formData.tc_no?.startsWith("TEMP_") ? "-" : formData.tc_no || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Doktor</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.doctor || ""}
-                      onChange={(e) => setFormData({ ...formData, doctor: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.doctor || "-"}</p>
-                  )}
+
+                {/* Dosya No */}
+                <div className="flex items-start gap-2">
+                  <Hash className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Dosya No</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.file_number || ""} onChange={(e) => setFormData({ ...formData, file_number: e.target.value })} className="h-7 text-xs font-mono mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900 font-mono">{formData.file_number || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">TC</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.tc_no || ""}
-                      onChange={(e) => setFormData({ ...formData, tc_no: e.target.value })}
-                      className="h-8 text-sm font-mono"
-                      maxLength={11}
-                    />
-                  ) : (
-                    <p className="font-mono text-sm font-medium text-gray-900">{formData.tc_no || "-"}</p>
-                  )}
+
+                {/* Adı */}
+                <div className="flex items-start gap-2">
+                  <User className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Adı</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.full_name?.split(" ")[0] || ""} onChange={(e) => { const lastName = formData.full_name?.split(" ").slice(1).join(" ") || ""; setFormData({ ...formData, full_name: `${e.target.value} ${lastName}`.trim() }) }} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.full_name?.split(" ")[0] || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Dosya No</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.file_number || ""}
-                      onChange={(e) => setFormData({ ...formData, file_number: e.target.value })}
-                      className="h-8 text-sm font-mono"
-                    />
-                  ) : (
-                    <p className="font-mono text-sm font-medium text-gray-900">{formData.file_number || "-"}</p>
-                  )}
+
+                {/* Soyadı */}
+                <div className="flex items-start gap-2">
+                  <User className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Soyadı</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.full_name?.split(" ").slice(1).join(" ") || ""} onChange={(e) => { const firstName = formData.full_name?.split(" ")[0] || ""; setFormData({ ...formData, full_name: `${firstName} ${e.target.value}`.trim() }) }} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.full_name?.split(" ").slice(1).join(" ") || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Adı</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.full_name?.split(" ")[0] || ""}
-                      onChange={(e) => {
-                        const lastName = formData.full_name?.split(" ").slice(1).join(" ") || ""
-                        setFormData({ ...formData, full_name: `${e.target.value} ${lastName}`.trim() })
-                      }}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.full_name?.split(" ")[0] || "-"}</p>
-                  )}
+
+                {/* Ana Adı */}
+                <div className="flex items-start gap-2">
+                  <Users className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Ana Adı</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.mother_name || ""} onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.mother_name || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Soyadı</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.full_name?.split(" ").slice(1).join(" ") || ""}
-                      onChange={(e) => {
-                        const firstName = formData.full_name?.split(" ")[0] || ""
-                        setFormData({ ...formData, full_name: `${firstName} ${e.target.value}`.trim() })
-                      }}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">
-                      {formData.full_name?.split(" ").slice(1).join(" ") || "-"}
-                    </p>
-                  )}
+
+                {/* Baba Adı */}
+                <div className="flex items-start gap-2">
+                  <Users className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Baba Adı</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.father_name || ""} onChange={(e) => setFormData({ ...formData, father_name: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.father_name || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Ana Adı</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.mother_name || ""}
-                      onChange={(e) => setFormData({ ...formData, mother_name: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.mother_name || "-"}</p>
-                  )}
+
+                {/* Doğum Tarihi */}
+                <div className="flex items-start gap-2">
+                  <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Doğum Tarihi</p>
+                    {editMode ? (
+                      <Input type="date" value={formData.date_of_birth?.split("T")[0] || ""} onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.date_of_birth ? new Date(formData.date_of_birth).toLocaleDateString("tr-TR") : "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Baba Adı</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.father_name || ""}
-                      onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.father_name || "-"}</p>
-                  )}
+
+                {/* Doğum Yeri */}
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Doğum Yeri</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.birth_place || ""} onChange={(e) => setFormData({ ...formData, birth_place: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.birth_place || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Doğum Tarihi</label>
-                  {editMode ? (
-                    <Input
-                      type="date"
-                      value={formData.date_of_birth?.split("T")[0] || ""}
-                      onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">
-                      {formData.date_of_birth
-                        ? new Date(formData.date_of_birth).toLocaleDateString("tr-TR")
-                        : "-"}
-                    </p>
-                  )}
+
+                {/* Meslek */}
+                <div className="flex items-start gap-2">
+                  <Briefcase className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Meslek</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.occupation || ""} onChange={(e) => setFormData({ ...formData, occupation: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.occupation || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Doğum Yeri</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.birth_place || ""}
-                      onChange={(e) => setFormData({ ...formData, birth_place: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.birth_place || "-"}</p>
-                  )}
+
+                {/* Kan Grubu */}
+                <div className="flex items-start gap-2">
+                  <Droplets className="h-3.5 w-3.5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Kan Grubu</p>
+                    {editMode ? (
+                      <Select value={formData.blood_group || ""} onValueChange={(value) => setFormData({ ...formData, blood_group: value })}>
+                        <SelectTrigger className="h-7 text-xs w-full mt-0.5"><SelectValue placeholder="Seçiniz" /></SelectTrigger>
+                        <SelectContent>
+                          {["A+","A-","B+","B-","AB+","AB-","0+","0-"].map(g => <SelectItem key={g} value={g}>{g === "A+" ? "A Rh+" : g === "A-" ? "A Rh-" : g === "B+" ? "B Rh+" : g === "B-" ? "B Rh-" : g === "AB+" ? "AB Rh+" : g === "AB-" ? "AB Rh-" : g === "0+" ? "0 Rh+" : "0 Rh-"}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm font-bold text-red-600">{formData.blood_group || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Meslek</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.occupation || ""}
-                      onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.occupation || "-"}</p>
-                  )}
+
+                {/* Telefon */}
+                <div className="flex items-start gap-2">
+                  <Phone className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Telefon</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.phone || ""} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.phone || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Kan Grubu</label>
-                  {editMode ? (
-                    <Select
-                      value={formData.blood_group || ""}
-                      onValueChange={(value) => setFormData({ ...formData, blood_group: value })}
-                    >
-                      <SelectTrigger className="h-8 text-sm w-full">
-                        <SelectValue placeholder="Seçiniz" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A+">A Rh+</SelectItem>
-                        <SelectItem value="A-">A Rh-</SelectItem>
-                        <SelectItem value="B+">B Rh+</SelectItem>
-                        <SelectItem value="B-">B Rh-</SelectItem>
-                        <SelectItem value="AB+">AB Rh+</SelectItem>
-                        <SelectItem value="AB-">AB Rh-</SelectItem>
-                        <SelectItem value="0+">0 Rh+</SelectItem>
-                        <SelectItem value="0-">0 Rh-</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-sm font-semibold text-red-600">{formData.blood_group || "-"}</p>
-                  )}
+
+                {/* Doktor */}
+                <div className="flex items-start gap-2">
+                  <Stethoscope className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Doktor</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.doctor || ""} onChange={(e) => setFormData({ ...formData, doctor: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.doctor || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Referans</label>
-                  {editMode ? (
-                    <>
-                      {showAddReference ? (
-                        <div className="flex gap-1">
-                          <Input
-                            type="text"
-                            value={newReference}
-                            onChange={(e) => setNewReference(e.target.value)}
-                            placeholder="Yeni referans adı"
-                            className="h-8 text-sm"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleAddReference()
-                            }}
-                          />
-                          <Button size="sm" onClick={handleAddReference} className="h-8 px-2 text-xs">
-                            Ekle
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setShowAddReference(false)
-                              setNewReference("")
-                            }}
-                            className="h-8 px-2 text-xs"
-                          >
-                            İptal
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-1">
-                          <Select
-                            value={formData.reference_id || ""}
-                            onValueChange={(value) =>
-                              setFormData({ ...formData, reference_id: value === "new" ? null : value })
-                            }
-                          >
-                            <SelectTrigger className="h-8 text-sm flex-1">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {references.map((ref) => (
-                                <SelectItem key={ref.id} value={ref.id}>
-                                  {ref.reference_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setShowAddReference(true)}
-                            className="h-8 px-2 text-xs whitespace-nowrap"
-                          >
-                            + Yeni
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">
-                      {references?.find((r) => r.id === formData.reference_id)?.reference_name || "-"}
-                    </p>
-                  )}
+
+                {/* Referans - full width */}
+                <div className="col-span-2 flex items-start gap-2">
+                  <Users className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Referans</p>
+                    {editMode ? (
+                      <>
+                        {showAddReference ? (
+                          <div className="flex gap-1 mt-0.5">
+                            <Input type="text" value={newReference} onChange={(e) => setNewReference(e.target.value)} placeholder="Yeni referans adı" className="h-7 text-xs" onKeyDown={(e) => { if (e.key === "Enter") handleAddReference() }} />
+                            <Button size="sm" onClick={handleAddReference} className="h-7 px-2 text-xs">Ekle</Button>
+                            <Button size="sm" variant="outline" onClick={() => { setShowAddReference(false); setNewReference("") }} className="h-7 px-2 text-xs">İptal</Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1 mt-0.5">
+                            <Select value={formData.reference_id || ""} onValueChange={(value) => setFormData({ ...formData, reference_id: value === "new" ? null : value })}>
+                              <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Seçiniz" /></SelectTrigger>
+                              <SelectContent>{references.map((ref) => <SelectItem key={ref.id} value={ref.id}>{ref.reference_name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <Button size="sm" variant="outline" onClick={() => setShowAddReference(true)} className="h-7 px-2 text-xs whitespace-nowrap">+ Yeni</Button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{references?.find((r) => r.id === formData.reference_id)?.reference_name || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Telefon</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.phone || ""}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.phone || "-"}</p>
-                  )}
+
+                {/* Adres - full width */}
+                <div className="col-span-2 flex items-start gap-2">
+                  <Home className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Adres</p>
+                    {editMode ? (
+                      <div className="grid grid-cols-3 gap-1 mt-0.5">
+                        <Input type="text" placeholder="Ülke" value={formData.country || ""} onChange={(e) => setFormData({ ...formData, country: e.target.value })} className="h-7 text-xs" />
+                        <Input type="text" placeholder="Şehir" value={formData.city || ""} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="h-7 text-xs" />
+                        <Input type="text" placeholder="İlçe" value={formData.district || ""} onChange={(e) => setFormData({ ...formData, district: e.target.value })} className="h-7 text-xs" />
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">
+                        {[formData.district, formData.city, formData.country].filter(Boolean).join(", ") || "-"}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Ülke</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.country || ""}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.country || "-"}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Şehir</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.city || ""}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.city || "-"}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">İlçe</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.district || ""}
-                      onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.district || "-"}</p>
-                  )}
-                </div>
+
               </div>
             </CardContent>
           </Card>
 
-          {/* MAN / SPOUSE CARD (RIGHT - SUBTLE BLUE) */}
-          <Card className="bg-gradient-to-b from-sky-50/40 to-white border border-gray-200 shadow-sm">
+          {/* MAN / SPOUSE CARD (RIGHT) */}
+          <Card className="border border-gray-200 shadow-sm bg-white">
             <CardContent className="p-5">
-              <div className="flex items-start justify-between mb-5">
-                <h3 className="text-base font-bold text-gray-700 uppercase tracking-wide">BAY HASTA KAYIT</h3>
+              {/* Header: avatar + name + badges */}
+              <div className="flex items-center gap-4 pb-4 border-b border-gray-100 mb-4">
                 <div className="relative flex-shrink-0">
-                  <Avatar className="h-20 w-20 border-2 border-gray-300">
+                  <Avatar className="h-16 w-16 border-2 border-sky-100">
                     {spousePhotoSignedUrl ? (
                       <AvatarImage src={spousePhotoSignedUrl || "/placeholder.svg"} alt={patient.spouse_name || "Eş"} />
                     ) : (
-                      <AvatarFallback className="bg-sky-100 text-lg font-semibold text-gray-700">
+                      <AvatarFallback className="bg-sky-50 text-base font-bold text-sky-400">
                         {patient.spouse_name
-                          ? patient.spouse_name
-                              .split(" ")
-                              .map((n: string) => n[0])
-                              .join("")
-                              .toUpperCase()
-                              .slice(0, 2)
+                          ? patient.spouse_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
                           : "??"}
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <label
-                    htmlFor="spouse-photo-upload"
-                    className="absolute bottom-0 right-0 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-gray-600 text-white shadow transition-colors hover:bg-gray-700"
-                  >
-                    {uploadingSpousePhoto ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Camera className="h-3 w-3" />
-                    )}
+                  <label htmlFor="spouse-photo-upload" className="absolute bottom-0 right-0 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-700 text-white shadow hover:bg-gray-900 transition-colors">
+                    {uploadingSpousePhoto ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Camera className="h-2.5 w-2.5" />}
                   </label>
-                  <input
-                    id="spouse-photo-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleSpousePhotoUpload}
-                    disabled={uploadingSpousePhoto}
-                  />
+                  <input id="spouse-photo-upload" type="file" accept="image/*" className="hidden" onChange={handleSpousePhotoUpload} disabled={uploadingSpousePhoto} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-gray-900 truncate">{formData.spouse_name || "Eş Kaydı"}</h3>
+                    <span className="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-medium">Bay Hasta</span>
+                    {formData.spouse_blood_group && (
+                      <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">{formData.spouse_blood_group}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5 font-mono">{formData.spouse_tc_no || "-"}</p>
+                  {formData.registration_date && (
+                    <p className="text-xs text-gray-400 mt-0.5">Kayıt: {new Date(formData.registration_date).toLocaleDateString("tr-TR")}</p>
+                  )}
                 </div>
               </div>
-              <div className="space-y-2">
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">
-                    Kayıt Tarihi (Otomatik)
-                  </label>
-                  <p className="text-sm font-medium text-gray-500 italic">
-                    {formData.registration_date
-                      ? new Date(formData.registration_date).toLocaleDateString("tr-TR")
-                  : "-"}
-                </p>
+
+              {/* Fields grid */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+
+                {/* TC */}
+                <div className="flex items-start gap-2">
+                  <CreditCard className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">TC Kimlik</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.spouse_tc_no || ""} onChange={(e) => setFormData({ ...formData, spouse_tc_no: e.target.value })} className="h-7 text-xs font-mono mt-0.5" maxLength={11} />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900 font-mono">{formData.spouse_tc_no || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">TC</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_tc_no || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_tc_no: e.target.value })}
-                      className="h-8 text-sm font-mono"
-                      maxLength={11}
-                    />
-                  ) : (
-                    <p className="font-mono text-sm font-medium text-gray-900">{formData.spouse_tc_no || "-"}</p>
-                  )}
+
+                {/* Adı */}
+                <div className="flex items-start gap-2">
+                  <User className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Adı</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.spouse_name?.split(" ")[0] || ""} onChange={(e) => { const lastName = formData.spouse_name?.split(" ").slice(1).join(" ") || ""; setFormData({ ...formData, spouse_name: `${e.target.value} ${lastName}`.trim() }) }} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.spouse_name?.split(" ")[0] || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Adı</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_name?.split(" ")[0] || ""}
-                      onChange={(e) => {
-                        const lastName = formData.spouse_name?.split(" ").slice(1).join(" ") || ""
-                        setFormData({ ...formData, spouse_name: `${e.target.value} ${lastName}`.trim() })
-                      }}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_name?.split(" ")[0] || "-"}</p>
-                  )}
+
+                {/* Soyadı */}
+                <div className="flex items-start gap-2">
+                  <User className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Soyadı</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.spouse_name?.split(" ").slice(1).join(" ") || ""} onChange={(e) => { const firstName = formData.spouse_name?.split(" ")[0] || ""; setFormData({ ...formData, spouse_name: `${firstName} ${e.target.value}`.trim() }) }} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.spouse_name?.split(" ").slice(1).join(" ") || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Soyadı</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_name?.split(" ").slice(1).join(" ") || ""}
-                      onChange={(e) => {
-                        const firstName = formData.spouse_name?.split(" ")[0] || ""
-                        setFormData({ ...formData, spouse_name: `${firstName} ${e.target.value}`.trim() })
-                      }}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">
-                      {formData.spouse_name?.split(" ").slice(1).join(" ") || "-"}
-                    </p>
-                  )}
+
+                {/* Ana Adı */}
+                <div className="flex items-start gap-2">
+                  <Users className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Ana Adı</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.spouse_mother_name || ""} onChange={(e) => setFormData({ ...formData, spouse_mother_name: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.spouse_mother_name || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Ana Adı</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_mother_name || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_mother_name: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_mother_name || "-"}</p>
-                  )}
+
+                {/* Baba Adı */}
+                <div className="flex items-start gap-2">
+                  <Users className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Baba Adı</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.spouse_father_name || ""} onChange={(e) => setFormData({ ...formData, spouse_father_name: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.spouse_father_name || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Baba Adı</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_father_name || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_father_name: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_father_name || "-"}</p>
-                  )}
+
+                {/* Doğum Tarihi */}
+                <div className="flex items-start gap-2">
+                  <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Doğum Tarihi</p>
+                    {editMode ? (
+                      <Input type="date" value={formData.spouse_date_of_birth?.split("T")[0] || ""} onChange={(e) => setFormData({ ...formData, spouse_date_of_birth: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.spouse_date_of_birth ? new Date(formData.spouse_date_of_birth).toLocaleDateString("tr-TR") : "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Doğum Tarihi</label>
-                  {editMode ? (
-                    <Input
-                      type="date"
-                      value={formData.spouse_date_of_birth?.split("T")[0] || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_date_of_birth: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">
-                      {formData.spouse_date_of_birth
-                        ? new Date(formData.spouse_date_of_birth).toLocaleDateString("tr-TR")
-                        : "-"}
-                    </p>
-                  )}
+
+                {/* Doğum Yeri */}
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Doğum Yeri</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.spouse_birth_place || ""} onChange={(e) => setFormData({ ...formData, spouse_birth_place: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.spouse_birth_place || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Doğum Yeri</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_birth_place || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_birth_place: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_birth_place || "-"}</p>
-                  )}
+
+                {/* Meslek */}
+                <div className="flex items-start gap-2">
+                  <Briefcase className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Meslek</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.spouse_occupation || ""} onChange={(e) => setFormData({ ...formData, spouse_occupation: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.spouse_occupation || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Meslek</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_occupation || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_occupation: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_occupation || "-"}</p>
-                  )}
+
+                {/* Kan Grubu */}
+                <div className="flex items-start gap-2">
+                  <Droplets className="h-3.5 w-3.5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Kan Grubu</p>
+                    {editMode ? (
+                      <Select value={formData.spouse_blood_group || ""} onValueChange={(value) => setFormData({ ...formData, spouse_blood_group: value })}>
+                        <SelectTrigger className="h-7 text-xs w-full mt-0.5"><SelectValue placeholder="Seçiniz" /></SelectTrigger>
+                        <SelectContent>
+                          {["A+","A-","B+","B-","AB+","AB-","0+","0-"].map(g => <SelectItem key={g} value={g}>{g === "A+" ? "A Rh+" : g === "A-" ? "A Rh-" : g === "B+" ? "B Rh+" : g === "B-" ? "B Rh-" : g === "AB+" ? "AB Rh+" : g === "AB-" ? "AB Rh-" : g === "0+" ? "0 Rh+" : "0 Rh-"}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="text-sm font-bold text-red-600">{formData.spouse_blood_group || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Kan Grubu</label>
-                  {editMode ? (
-                    <Select
-                      value={formData.spouse_blood_group || ""}
-                      onValueChange={(value) => setFormData({ ...formData, spouse_blood_group: value })}
-                    >
-                      <SelectTrigger className="h-8 text-sm w-full">
-                        <SelectValue placeholder="Seçiniz" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A+">A Rh+</SelectItem>
-                        <SelectItem value="A-">A Rh-</SelectItem>
-                        <SelectItem value="B+">B Rh+</SelectItem>
-                        <SelectItem value="B-">B Rh-</SelectItem>
-                        <SelectItem value="AB+">AB Rh+</SelectItem>
-                        <SelectItem value="AB-">AB Rh-</SelectItem>
-                        <SelectItem value="0+">0 Rh+</SelectItem>
-                        <SelectItem value="0-">0 Rh-</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-sm font-semibold text-red-600">{formData.spouse_blood_group || "-"}</p>
-                  )}
+
+                {/* Telefon */}
+                <div className="flex items-start gap-2">
+                  <Phone className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Telefon</p>
+                    {editMode ? (
+                      <Input type="text" value={formData.spouse_phone || ""} onChange={(e) => setFormData({ ...formData, spouse_phone: e.target.value })} className="h-7 text-xs mt-0.5" />
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{formData.spouse_phone || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Referans</label>
-                  {editMode ? (
-                    <>
-                      {showAddSpouseReference ? (
-                        <div className="flex gap-1">
-                          <Input
-                            type="text"
-                            value={newSpouseReference}
-                            onChange={(e) => setNewSpouseReference(e.target.value)}
-                            placeholder="Yeni referans adı"
-                            className="h-8 text-sm"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleAddSpouseReference()
-                            }}
-                          />
-                          <Button size="sm" onClick={handleAddSpouseReference} className="h-8 px-2 text-xs">
-                            Ekle
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setShowAddSpouseReference(false)
-                              setNewSpouseReference("")
-                            }}
-                            className="h-8 px-2 text-xs"
-                          >
-                            İptal
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-1">
-                          <Select
-                            value={formData.spouse_reference_id || ""}
-                            onValueChange={(value) =>
-                              setFormData({ ...formData, spouse_reference_id: value === "new" ? null : value })
-                            }
-                          >
-                            <SelectTrigger className="h-8 text-sm flex-1">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {references.map((ref) => (
-                                <SelectItem key={ref.id} value={ref.id}>
-                                  {ref.reference_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setShowAddSpouseReference(true)}
-                            className="h-8 px-2 text-xs whitespace-nowrap"
-                          >
-                            + Yeni
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">
-                      {references?.find((r) => r.id === formData.spouse_reference_id)?.reference_name || "-"}
-                    </p>
-                  )}
+
+                {/* Referans - full width */}
+                <div className="col-span-2 flex items-start gap-2">
+                  <Users className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Referans</p>
+                    {editMode ? (
+                      <>
+                        {showAddSpouseReference ? (
+                          <div className="flex gap-1 mt-0.5">
+                            <Input type="text" value={newSpouseReference} onChange={(e) => setNewSpouseReference(e.target.value)} placeholder="Yeni referans adı" className="h-7 text-xs" onKeyDown={(e) => { if (e.key === "Enter") handleAddSpouseReference() }} />
+                            <Button size="sm" onClick={handleAddSpouseReference} className="h-7 px-2 text-xs">Ekle</Button>
+                            <Button size="sm" variant="outline" onClick={() => { setShowAddSpouseReference(false); setNewSpouseReference("") }} className="h-7 px-2 text-xs">İptal</Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1 mt-0.5">
+                            <Select value={formData.spouse_reference_id || ""} onValueChange={(value) => setFormData({ ...formData, spouse_reference_id: value === "new" ? null : value })}>
+                              <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Seçiniz" /></SelectTrigger>
+                              <SelectContent>{references.map((ref) => <SelectItem key={ref.id} value={ref.id}>{ref.reference_name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <Button size="sm" variant="outline" onClick={() => setShowAddSpouseReference(true)} className="h-7 px-2 text-xs whitespace-nowrap">+ Yeni</Button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">{references?.find((r) => r.id === formData.spouse_reference_id)?.reference_name || "-"}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Telefon</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_phone || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_phone: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_phone || "-"}</p>
-                  )}
+
+                {/* Adres - full width */}
+                <div className="col-span-2 flex items-start gap-2">
+                  <Home className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Adres</p>
+                    {editMode ? (
+                      <div className="grid grid-cols-3 gap-1 mt-0.5">
+                        <Input type="text" placeholder="Ülke" value={formData.spouse_country || ""} onChange={(e) => setFormData({ ...formData, spouse_country: e.target.value })} className="h-7 text-xs" />
+                        <Input type="text" placeholder="Şehir" value={formData.spouse_city || ""} onChange={(e) => setFormData({ ...formData, spouse_city: e.target.value })} className="h-7 text-xs" />
+                        <Input type="text" placeholder="İlçe" value={formData.spouse_district || ""} onChange={(e) => setFormData({ ...formData, spouse_district: e.target.value })} className="h-7 text-xs" />
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900">
+                        {[formData.spouse_district, formData.spouse_city, formData.spouse_country].filter(Boolean).join(", ") || "-"}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Ülke</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_country || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_country: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_country || "-"}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">Şehir</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_city || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_city: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_city || "-"}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-600 uppercase block mb-1">İlçe</label>
-                  {editMode ? (
-                    <Input
-                      type="text"
-                      value={formData.spouse_district || ""}
-                      onChange={(e) => setFormData({ ...formData, spouse_district: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium text-gray-900">{formData.spouse_district || "-"}</p>
-                  )}
-                </div>
+
               </div>
             </CardContent>
           </Card>
