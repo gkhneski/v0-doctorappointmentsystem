@@ -1310,49 +1310,6 @@ export default function AppointmentWizardModal({
           </div>
           )}
 
-            <div className="space-y-2">
-              <Label htmlFor="sms-code" className="text-sm">
-                Doğrulama Kodu <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="sms-code"
-                type="text"
-                placeholder="6 haneli kod"
-                maxLength={6}
-                value={smsCode}
-                onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, ""))}
-                className="min-h-[44px] text-center text-lg sm:text-xl tracking-widest"
-              />
-            </div>
-
-            {verificationError && (
-              <div className="rounded-lg bg-destructive/10 p-3 text-xs sm:text-sm text-destructive">
-                {verificationError}
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full sm:flex-1 bg-transparent min-h-[44px]"
-                onClick={() => goToStep(5)}
-                disabled={isVerifying}
-              >
-                Geri
-              </Button>
-              <Button
-                type="button"
-                className="w-full sm:flex-1 min-h-[44px]"
-                onClick={handleVerifyCode}
-                disabled={smsCode.length !== 6 || isVerifying}
-              >
-                {isVerifying ? "Doğrulanıyor..." : "Doğrula"}
-              </Button>
-            </div>
-          </div>
-          )}
-
           {/* Step 7: Tıbbi Evrak Kontrolü */}
           {currentStep === 7 && (
           <div className="space-y-4 sm:space-y-6">
