@@ -33,8 +33,8 @@ export async function GET(request: Request) {
     const { data: patients, error } = await serviceSupabase
       .from("patients")
       .select("id, full_name, phone, tc_no, date_of_birth")
-      .or(`tc_no.eq.${query},full_name.ilike.%${query}%,phone.eq.${query}`)
-      .eq("is_blacklisted", false)
+      .or(`tc_no.ilike.${query}%,full_name.ilike.%${query}%,phone.ilike.${query}%`)
+      .neq("is_blacklisted", true)
       .order("full_name")
       .limit(10)
 

@@ -372,10 +372,6 @@ export default function AppointmentWizardModal({
 
     // Admin ise KVKK ve bilgi formu adımlarını atla, direkt randevu oluştur
     if (isAdmin) {
-      if (!selectedType) {
-        setError("Lütfen takvimden randevu tipi seçiniz")
-        return
-      }
       await handleAdminDirectSubmit()
       return
     }
@@ -419,6 +415,7 @@ export default function AppointmentWizardModal({
     }
     setIsSubmitting(true)
     setError(null)
+    const effectiveType = selectedType || "ilk-randevu"
     try {
       const response = await fetch("/api/appointments", {
         method: "POST",
@@ -427,9 +424,9 @@ export default function AppointmentWizardModal({
           doctor_id: selectedSlot.doctorId,
           appointment_date: selectedSlot.date,
           appointment_time: selectedSlot.time,
-          appointment_type: selectedType,
-          kontrol_takip_subtype: selectedType === "kontrol-takip" ? kontrollTakipSubType : null,
-          fetal_bebek_sayisi: selectedType === "ayrintili-fetal-ultrason" ? fetalBebekSayisi : null,
+          appointment_type: effectiveType,
+          kontrol_takip_subtype: effectiveType === "kontrol-takip" ? kontrollTakipSubType : null,
+          fetal_bebek_sayisi: effectiveType === "ayrintili-fetal-ultrason" ? fetalBebekSayisi : null,
           patient_tc_no: tcNo,
           patient_name: fullName,
           patient_phone: phone,
@@ -529,19 +526,10 @@ export default function AppointmentWizardModal({
       }
 
       const data = await response.json()
-      
-      console.log("[v0] Appointment created successfully:", data)
-      console.log("[v0] SMS Status:", data.smsStatus)
-      console.log("[v0] Dev Code:", data.devCode)
 
       setAppointmentId(data.appointmentId)
-      
-      // Save dev code if SMS failed or in dev mode
       if (data.devCode) {
         setDevCode(data.devCode)
-        console.log("[v0] SMS not sent, showing dev code to user:", data.devCode)
-      } else {
-        console.log("[v0] SMS sent successfully, no dev code needed")
       }
       
       // Go to SMS verification (Step 6)
@@ -559,8 +547,6 @@ export default function AppointmentWizardModal({
       return
     }
 
-    console.log("[v0] Verifying code:", { appointmentId, smsCode })
-
     setIsVerifying(true)
     setVerificationError(null)
 
@@ -574,15 +560,8 @@ export default function AppointmentWizardModal({
         }),
       })
 
-      console.log("[v0] Verification response status:", response.status)
-      console.log("[v0] Verification response headers:", Object.fromEntries(response.headers.entries()))
-
-      // Check if response is JSON before parsing
       const contentType = response.headers.get("content-type")
       if (!contentType || !contentType.includes("application/json")) {
-        console.error("[v0] Invalid content-type received:", contentType)
-        const textResponse = await response.text()
-        console.error("[v0] Response body (first 500 chars):", textResponse.substring(0, 500))
         throw new Error("Sunucu hatası: Geçersiz yanıt formatı")
       }
 
