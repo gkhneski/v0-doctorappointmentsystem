@@ -84,7 +84,7 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
       const { data: updated } = await supabase
         .from("patients")
         .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-        .order("created_at", { ascending: false })
+        .order("full_name")
       if (updated) setPatients(updated)
     } catch (err: any) {
       toast({ title: "Hata", description: err.message, variant: "destructive" })
@@ -107,8 +107,6 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
     }
 
     try {
-      console.log("[v0] Adding to blacklist:", manualBlacklistDialog)
-      
       const { data, error } = await supabase
         .from("patients")
         .insert({
@@ -122,30 +120,18 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
         })
         .select()
 
-      if (error) {
-        console.error("[v0] Insert error:", error)
-        throw error
-      }
+      if (error) throw error
 
-      console.log("[v0] Insert successful:", data)
-      
       toast({ title: "Başarılı", description: "Black List'e eklendi" })
       setManualBlacklistDialog({ open: false, fullName: "", phone: "", reason: "" })
-      
-      // Refresh patients list
-      const { data: updatedPatients, error: fetchError } = await supabase
+
+      const { data: updatedPatients } = await supabase
         .from("patients")
         .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-        .order("created_at", { ascending: false })
-      
-      if (fetchError) {
-        console.error("[v0] Fetch error:", fetchError)
-      } else if (updatedPatients) {
-        console.log("[v0] Updated patients:", updatedPatients.length)
-        setPatients(updatedPatients)
-      }
+        .order("full_name")
+
+      if (updatedPatients) setPatients(updatedPatients)
     } catch (error: any) {
-      console.error("[v0] Manual blacklist error:", error)
       toast({ title: "Hata", description: error.message || "Bilinmeyen hata", variant: "destructive" })
     }
   }

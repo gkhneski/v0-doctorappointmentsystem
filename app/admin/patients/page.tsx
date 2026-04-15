@@ -27,8 +27,7 @@ export default async function PatientsPage() {
     supabase
       .from("patients")
       .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-      .order("created_at", { ascending: false })
-      .limit(200), // İlk 200 hasta
+      .order("created_at", { ascending: false }),
   ])
 
   if (!adminUser) {
