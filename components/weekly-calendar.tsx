@@ -772,6 +772,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         doctorName={doctor?.name || ""}
         onSuccess={handleWizardSuccess}
         preselectedType={preselectedType}
+        isAdmin={isAdmin}
       />
     </div>
   )
