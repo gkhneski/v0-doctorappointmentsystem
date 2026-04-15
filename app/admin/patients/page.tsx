@@ -18,7 +18,7 @@ export default async function PatientsPage() {
   }
 
   // Layout'ta zaten kontrol edildi, sadece gerekli alanlar
-  const [{ data: adminUser }, { data: patients }] = await Promise.all([
+  const [{ data: adminUser }, { data: patients, error: patientsError, count: patientsCount }] = await Promise.all([
     supabase
       .from("admin_users")
       .select("full_name, role")
@@ -26,8 +26,9 @@ export default async function PatientsPage() {
       .maybeSingle(),
     supabase
       .from("patients")
-      .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-      .order("created_at", { ascending: false }),
+      .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(0, 9999),
   ])
 
   if (!adminUser) {

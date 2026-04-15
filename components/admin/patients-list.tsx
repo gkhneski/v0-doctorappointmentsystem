@@ -85,6 +85,7 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
         .from("patients")
         .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
         .order("full_name")
+        .range(0, 9999)
       if (updated) setPatients(updated)
     } catch (err: any) {
       toast({ title: "Hata", description: err.message, variant: "destructive" })
@@ -129,6 +130,7 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
         .from("patients")
         .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
         .order("full_name")
+        .range(0, 9999)
 
       if (updatedPatients) setPatients(updatedPatients)
     } catch (error: any) {
