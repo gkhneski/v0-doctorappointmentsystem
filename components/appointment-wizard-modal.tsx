@@ -73,6 +73,13 @@ type Props = {
   prefilledName?: string
   fetalBebekSayisi?: string | null
   isAdmin?: boolean
+  prefilledPatient?: {
+    id?: string
+    full_name: string
+    phone: string
+    tc_no: string
+    date_of_birth?: string | null
+  } | null
 }
 
 export default function AppointmentWizardModal({
@@ -85,6 +92,7 @@ export default function AppointmentWizardModal({
   prefilledName,
   fetalBebekSayisi = null,
   isAdmin = false,
+  prefilledPatient = null,
 }: Props) {
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedType, setSelectedType] = useState<string | null>(preselectedType || null)
@@ -229,11 +237,11 @@ export default function AppointmentWizardModal({
       setTimeout(() => {
         setCurrentStep(1)
         setSelectedType(preselectedType || null)
-        setTcNo("")
+        setTcNo(prefilledPatient?.tc_no || "")
         setIsForeignCitizen(false)
-        setFullName(prefilledName || "")
-        setPhone("")
-        setDateOfBirth("")
+        setFullName(prefilledPatient?.full_name || prefilledName || "")
+        setPhone(prefilledPatient?.phone || "")
+        setDateOfBirth(prefilledPatient?.date_of_birth?.split("T")[0] || "")
         setReferralDoctor("")
         setKvkkScrolled(false)
         setKvkkApproved(false)
@@ -267,7 +275,10 @@ export default function AppointmentWizardModal({
         setVerificationError(null)
         setPatientSearchQuery("")
         setPatientSearchResults([])
-        setSelectedExistingPatient(null)
+        setSelectedExistingPatient(prefilledPatient
+          ? { id: prefilledPatient.id || "", full_name: prefilledPatient.full_name, phone: prefilledPatient.phone, tc_no: prefilledPatient.tc_no, date_of_birth: prefilledPatient.date_of_birth || null }
+          : null
+        )
       }, 300)
     }
   }, [isOpen])
@@ -858,7 +869,7 @@ export default function AppointmentWizardModal({
                 Geri
               </Button>
               <Button type="button" className="w-full sm:flex-1 min-h-[44px]" onClick={handleStep2Next} disabled={isSubmitting}>
-                {isAdmin ? (isSubmitting ? "Randevu Oluşturuluyor..." : "Randevu Oluştur") : "İleri"}
+                {isAdmin ? (isSubmitting ? "Randevu Olu��turuluyor..." : "Randevu Oluştur") : "İleri"}
               </Button>
             </div>
           </div>

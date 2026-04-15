@@ -65,6 +65,14 @@ type ExistingAppointment = {
   }
 }
 
+type PrefilledPatient = {
+  id?: string
+  full_name: string
+  phone: string
+  tc_no: string
+  date_of_birth?: string | null
+}
+
 type Props = {
   doctor: Doctor | null
   schedules: Schedule[]
@@ -74,9 +82,10 @@ type Props = {
   preselectedTime?: string | null
   isAdmin?: boolean
   fetalBebekSayisi?: string | null
+  prefilledPatient?: PrefilledPatient | null
 }
 
-export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null }: Props) {
+export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null }: Props) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     // If AI preselected a date, show that week
     if (preselectedDate) {
@@ -773,6 +782,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         onSuccess={handleWizardSuccess}
         preselectedType={preselectedType}
         isAdmin={isAdmin}
+        prefilledPatient={prefilledPatient}
       />
     </div>
   )

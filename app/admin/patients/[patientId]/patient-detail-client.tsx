@@ -4,6 +4,7 @@ import { DialogTitle } from "@/components/ui/dialog"
 import InfertilityEvaluationForm from "@/components/admin/infertility-evaluation-form"
 import { PregnancyTab } from "@/components/admin/pregnancy/pregnancy-tab"
 import { SmsSender } from "@/components/admin/sms-sender"
+import WeeklyCalendar from "@/components/weekly-calendar"
 import { MedicalAlertsFloatingButton } from "@/components/admin/medical-alerts-floating-button"
 import type React from "react"
 import { useState, useEffect, useMemo, useCallback } from "react"
@@ -101,8 +102,43 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Randevu ver modal state
+  const [appointmentModalOpen, setAppointmentModalOpen] = useState(false)
+  const [calendarDoctor, setCalendarDoctor] = useState<any>(null)
+  const [calendarSchedules, setCalendarSchedules] = useState<any[]>([])
+  const [calendarAppointments, setCalendarAppointments] = useState<any[]>([])
+
   // Use singleton client to prevent "Multiple GoTrueClient instances" error
   const supabase = useMemo(() => createClient(), [])
+
+  const openAppointmentModal = async () => {
+    try {
+      const today = new Date().toISOString().split("T")[0]
+      const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      const [{ data: doctorData }, { data: apptData }, { data: schedData }] = await Promise.all([
+        supabase.from("doctors").select("id, name, specialization, working_hours").limit(1),
+        supabase
+          .from("appointments")
+          .select("id, doctor_id, patient_id, appointment_date, appointment_time, appointment_type, status, patients(full_name, phone)")
+          .gte("appointment_date", today)
+          .lte("appointment_date", endDate),
+        supabase
+          .from("doctor_schedules")
+          .select("*, doctors(id, name, specialization)")
+          .eq("is_available", true)
+          .gte("schedule_date", today)
+          .lte("schedule_date", endDate)
+          .order("schedule_date")
+          .order("start_time"),
+      ])
+      setCalendarDoctor(doctorData?.[0] || null)
+      setCalendarAppointments(apptData || [])
+      setCalendarSchedules(schedData || [])
+    } catch (err) {
+      console.error("[v0] openAppointmentModal error:", err)
+    }
+    setAppointmentModalOpen(true)
+  }
 
   const fetchReferences = async () => {
     try {
@@ -506,6 +542,14 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                onClick={openAppointmentModal}
+                size="sm"
+                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <CalendarPlus className="h-4 w-4" />
+                Randevu Ver
+              </Button>
               <SmsSender
                 patientId={patientId}
                 patientName={patient.full_name}
@@ -1356,6 +1400,36 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
           }}
           editMode={editMode}
         />
+
+        {/* Randevu Ver Modal */}
+        <Dialog open={appointmentModalOpen} onOpenChange={setAppointmentModalOpen}>
+          <DialogContent className="max-w-5xl w-full max-h-[90vh] overflow-y-auto p-0">
+            <DialogHeader className="px-6 pt-5 pb-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <DialogTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <CalendarPlus className="h-5 w-5 text-blue-600" />
+                Randevu Ver — {patient?.full_name}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-gray-500">
+                Takvimden boş bir slot seçin, hasta bilgileri otomatik dolu gelecek.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="p-4">
+              <WeeklyCalendar
+                doctor={calendarDoctor}
+                schedules={calendarSchedules}
+                existingAppointments={calendarAppointments}
+                isAdmin={true}
+                prefilledPatient={patient ? {
+                  id: patient.id,
+                  full_name: patient.full_name,
+                  phone: patient.phone || "",
+                  tc_no: patient.tc_no || "",
+                  date_of_birth: patient.date_of_birth || null,
+                } : null}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
