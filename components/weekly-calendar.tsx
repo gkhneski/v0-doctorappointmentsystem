@@ -204,7 +204,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     return { start: dayHours.start, end: dayHours.end }
   }
 
-  const generateTimeSlots = (startTime: string, endTime: string, appointmentType?: string) => {
+  const generateTimeSlots = (startTime: string, endTime: string) => {
     const slots = []
     const start = new Date(`2000-01-01T${startTime}`)
     const end = new Date(`2000-01-01T${endTime}`)
@@ -227,14 +227,11 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
 
     while (start <= end) {
       const timeStr = start.toTimeString().slice(0, 5)
+      const mins = start.getMinutes()
       
-      // Detaylı Fetal Ultrason sadece tam (:00) ve yarım (:30) saatlerde
-      if (appointmentType === "ayrintili-fetal-ultrason") {
-        const mins = start.getMinutes()
-        if (mins === 0 || mins === 30) {
-          slots.push(timeStr)
-        }
-      } else {
+      // Admin: tüm slotları göster (15 dakikalık)
+      // Hasta: sadece :00 ve :30 slotlarını göster
+      if (isAdmin || mins === 0 || mins === 30) {
         slots.push(timeStr)
       }
       
@@ -528,7 +525,6 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                           const timeSlots = generateTimeSlots(
                             schedule.start_time,
                             schedule.end_time,
-                            preselectedType,
                           )
                           return (
                             <div key={schedule.id} className="space-y-1">
@@ -674,7 +670,6 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                 const timeSlots = generateTimeSlots(
                   schedule.start_time,
                   schedule.end_time,
-                  preselectedType,
                 )
                 return (
                   <div key={schedule.id} className="space-y-2">
