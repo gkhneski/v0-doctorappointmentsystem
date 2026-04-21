@@ -1597,10 +1597,14 @@ export default function AppointmentWizardModal({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-    <Button variant="outline" onClick={() => goToStep(7)} className="w-full sm:flex-1 min-h-[44px]">
-    Geri
+              <Button variant="outline" onClick={() => goToStep(6)} className="w-full sm:flex-1 min-h-[44px]">
+                Geri
               </Button>
-              <Button onClick={() => goToStep(8)} className="w-full sm:flex-1 min-h-[44px]">
+              <Button 
+                onClick={() => goToStep(8)} 
+                className="w-full sm:flex-1 min-h-[44px]"
+                disabled={!appointmentId}
+              >
                 İleri
               </Button>
             </div>
@@ -1615,9 +1619,9 @@ export default function AppointmentWizardModal({
             </div>
 
             <div className="px-4">
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">Randevunuz Oluşturuldu!</h3>
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Randevunuz Onaylandi!</h3>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Randevu bilgileriniz telefon numaranıza SMS olarak gönderildi.
+                SMS dogrulama tamamlandi. Randevu bilgileriniz telefon numaraniza gonderildi.
               </p>
             </div>
 
@@ -1649,7 +1653,7 @@ export default function AppointmentWizardModal({
 
             <div className="rounded-lg border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 dark:from-green-950/30 to-green-100 dark:to-green-950/50 p-4">
               <div className="text-center">
-                <p className="text-lg sm:text-xl font-bold text-green-700 dark:text-green-400">✓ Onaylandı</p>
+                <p className="text-lg sm:text-xl font-bold text-green-700 dark:text-green-400">✓ SMS Dogrulama Tamamlandi</p>
               </div>
             </div>
 
