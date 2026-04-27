@@ -204,7 +204,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     return { start: dayHours.start, end: dayHours.end }
   }
 
-  const generateTimeSlots = (startTime: string, endTime: string) => {
+  const generateTimeSlots = (startTime: string, endTime: string, appointmentType?: string) => {
     const slots = []
     const start = new Date(`2000-01-01T${startTime}`)
     const end = new Date(`2000-01-01T${endTime}`)
@@ -225,16 +225,19 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
       end.setSeconds(0)
     }
 
+    // Admin: tüm slotları göster (15 dakikalık)
+    // Hasta + Ayrintili Fetal USG: sadece :00 ve :30
+    // Hasta + diğer tipler: tüm 15 dakikalık slotlar
+    const onlyHalfHour = !isAdmin && appointmentType === "ayrintili-fetal-ultrason"
+
     while (start <= end) {
       const timeStr = start.toTimeString().slice(0, 5)
       const mins = start.getMinutes()
-      
-      // Admin: tüm slotları göster (15 dakikalık)
-      // Hasta: sadece :00 ve :30 slotlarını göster
-      if (isAdmin || mins === 0 || mins === 30) {
+
+      if (isAdmin || !onlyHalfHour || mins === 0 || mins === 30) {
         slots.push(timeStr)
       }
-      
+
       start.setMinutes(start.getMinutes() + 15)
     }
 
@@ -525,6 +528,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                           const timeSlots = generateTimeSlots(
                             schedule.start_time,
                             schedule.end_time,
+                            preselectedType,
                           )
                           return (
                             <div key={schedule.id} className="space-y-1">
@@ -670,6 +674,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                 const timeSlots = generateTimeSlots(
                   schedule.start_time,
                   schedule.end_time,
+                  preselectedType,
                 )
                 return (
                   <div key={schedule.id} className="space-y-2">
