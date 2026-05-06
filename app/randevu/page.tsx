@@ -40,10 +40,9 @@ export default async function AppointmentPage() {
     const serviceSupabase = await createServiceRoleClient()
     const { data, error } = await serviceSupabase
       .from("appointments")
-      .select("doctor_id, appointment_date, appointment_time")
+      .select("id, doctor_id, appointment_date, appointment_time, status")
       .gte("appointment_date", today)
-      // İptal edilen randevular da dahil - hasta tarafında dolu gösterilsin
-      .or("is_intermediate.is.null,is_intermediate.eq.false") // Ara slotları hastalara gösterme
+      .neq("status", "cancelled")
 
     if (error) {
       console.error("[v0] Error fetching appointments with service role:", error)
@@ -53,13 +52,11 @@ export default async function AppointmentPage() {
   } catch (serviceError) {
     console.error("[v0] Service role client failed, trying regular client:", serviceError)
 
-    // Fallback to regular client
     const { data, error } = await supabase
       .from("appointments")
-      .select("doctor_id, appointment_date, appointment_time")
+      .select("id, doctor_id, appointment_date, appointment_time, status")
       .gte("appointment_date", today)
-      // İptal edilen randevular da dahil - hasta tarafında dolu gösterilsin
-      .or("is_intermediate.is.null,is_intermediate.eq.false")
+      .neq("status", "cancelled")
 
     if (error) {
       console.error("[v0] Error fetching appointments with regular client:", error)
@@ -67,10 +64,6 @@ export default async function AppointmentPage() {
       existingAppointments = data || []
     }
   }
-
-  console.log("[v0] Fetched appointments count:", existingAppointments.length)
-  console.log("[v0] Fetched schedules count:", schedules?.length || 0)
-  console.log("[v0] Schedule dates:", schedules?.map(s => s.schedule_date).slice(0, 20))
 
   return (
     <div className="min-h-screen bg-background">
