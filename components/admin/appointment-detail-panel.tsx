@@ -32,6 +32,7 @@ export interface Appointment {
   appointment_time: string | null
   notes: string | null
   appointment_type: string | null
+  fetal_bebek_sayisi?: string | null
   print_type?: string | null
   confirmation_status: string | null
   confirmed_at: string | null
@@ -333,6 +334,18 @@ export function AppointmentDetailPanel({
               <Badge className={APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.color || "bg-gray-100"} variant="outline">
                 {APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.label || "Diğer"}
               </Badge>
+              {appointment.appointment_type === "ayrintili-fetal-ultrason" && appointment.fetal_bebek_sayisi && (
+                <p className="text-sm font-medium mt-1">
+                  Bebek Sayisi:{" "}
+                  <span className="text-orange-600">
+                    {appointment.fetal_bebek_sayisi === "tek"
+                      ? "Tek Bebek"
+                      : appointment.fetal_bebek_sayisi === "ikiz"
+                      ? "Ikiz Bebek"
+                      : "Ucuz Bebek"}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
 

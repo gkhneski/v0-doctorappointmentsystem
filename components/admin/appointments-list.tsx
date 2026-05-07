@@ -448,9 +448,20 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
                         )}
                       </TableCell>
                       <TableCell className="text-sm">
-                        <Badge className={APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.color || "bg-gray-100"}>
-                          {APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.label || "Diğer"}
-                        </Badge>
+                        <div className="flex flex-col gap-0.5">
+                          <Badge className={APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.color || "bg-gray-100"}>
+                            {APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.label || "Diğer"}
+                          </Badge>
+                          {appointment.appointment_type === "ayrintili-fetal-ultrason" && appointment.fetal_bebek_sayisi && (
+                            <span className="text-[11px] font-semibold text-orange-600">
+                              {appointment.fetal_bebek_sayisi === "tek"
+                                ? "Tek Bebek"
+                                : appointment.fetal_bebek_sayisi === "ikiz"
+                                ? "Ikiz Bebek"
+                                : "Ucuz Bebek"}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Button
