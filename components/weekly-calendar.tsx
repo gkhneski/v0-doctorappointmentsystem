@@ -582,6 +582,11 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                                 {isCancelled && <span className="ml-1 text-[9px] bg-white/30 px-1 rounded">İPTAL</span>}
                                               </div>
                                               {showPhone && <div className="opacity-80 truncate text-[10px]">{phone}</div>}
+                                              {appointment.appointment_type === "ayrintili-fetal-ultrason" && appointment.fetal_bebek_sayisi && (
+                                                <div className="text-[9px] opacity-90 font-medium bg-white/20 rounded px-1 mt-0.5 inline-block">
+                                                  {appointment.fetal_bebek_sayisi === "tek" ? "Tek Bebek" : appointment.fetal_bebek_sayisi === "ikiz" ? "Ikiz Bebek" : "Ucuz Bebek"}
+                                                </div>
+                                              )}
                                             </>
                                           ) : (
                                             <div className="font-semibold">Dolu</div>

@@ -1647,8 +1647,27 @@ export default function AppointmentWizardModal({
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                 <span className="text-muted-foreground font-medium">Randevu Tipi:</span>
-                <span className="font-medium text-xs sm:text-sm">{selectedType}</span>
+                <span className="font-medium text-xs sm:text-sm">
+                  {selectedType === "ilk-randevu" ? "Ilk Randevu"
+                    : selectedType === "kontrol-takip" ? "Kontrol / Takip"
+                    : selectedType === "ayrintili-fetal-ultrason" ? "Ayrintili (2. Duzey) Fetal Ultrason"
+                    : selectedType === "genetik-danismanlik" ? "Genetik Danismanlik"
+                    : selectedType === "gebelik-takibi" ? "Gebelik Takibi"
+                    : selectedType === "gebelik-istemi-infertilite" ? "Gebelik Istemi / Infertilite"
+                    : selectedType === "asilama-tup-bebek" ? "Asilama / Tup Bebek"
+                    : selectedType}
+                </span>
               </div>
+              {selectedType === "ayrintili-fetal-ultrason" && fetalBebekSayisi && (
+                <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
+                  <span className="text-muted-foreground font-medium">Bebek Sayisi:</span>
+                  <span className="font-medium">
+                    {fetalBebekSayisi === "tek" ? "Tek Bebek"
+                      : fetalBebekSayisi === "ikiz" ? "Ikiz Bebek"
+                      : "Ucuz Bebek"}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="rounded-lg border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 dark:from-green-950/30 to-green-100 dark:to-green-950/50 p-4">

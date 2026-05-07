@@ -398,10 +398,12 @@ export default async function AdminDashboard() {
                                     </div>
                                     {app.appointment_type && (
                                       <span className="text-xs text-gray-600">
-                                        {
-                                          TYPE_CONFIG[app.appointment_type as keyof typeof TYPE_CONFIG]?.label ||
-                                          app.appointment_type
-                                        }
+                                        {TYPE_CONFIG[app.appointment_type as keyof typeof TYPE_CONFIG]?.label || app.appointment_type}
+                                        {app.appointment_type === "ayrintili-fetal-ultrason" && app.fetal_bebek_sayisi && (
+                                          <span className="ml-1 font-semibold text-orange-700">
+                                            ({app.fetal_bebek_sayisi === "tek" ? "Tek Bebek" : app.fetal_bebek_sayisi === "ikiz" ? "Ikiz Bebek" : "Ucuz Bebek"})
+                                          </span>
+                                        )}
                                       </span>
                                     )}
                                   </div>
@@ -458,9 +460,13 @@ export default async function AdminDashboard() {
                             )}
                             {app.appointment_type && (
                               <span className="text-xs text-gray-500">
-                                •{" "}
-                                {TYPE_CONFIG[app.appointment_type as keyof typeof TYPE_CONFIG]?.label ||
-                                  app.appointment_type}
+                                {"• "}
+                                {TYPE_CONFIG[app.appointment_type as keyof typeof TYPE_CONFIG]?.label || app.appointment_type}
+                                {app.appointment_type === "ayrintili-fetal-ultrason" && app.fetal_bebek_sayisi && (
+                                  <span className="ml-1 font-semibold">
+                                    ({app.fetal_bebek_sayisi === "tek" ? "Tek Bebek" : app.fetal_bebek_sayisi === "ikiz" ? "Ikiz Bebek" : "Ucuz Bebek"})
+                                  </span>
+                                )}
                               </span>
                             )}
                           </div>

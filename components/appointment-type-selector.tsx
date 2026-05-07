@@ -206,7 +206,7 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
         </div>
         {selectedType === "ayrintili-fetal-ultrason" && fetalBebekSayisi && (
           <div className="mb-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-800 font-medium">
-            Bebek sayisi: <strong>{fetalBebekSayisi === "tek" ? "Tek" : fetalBebekSayisi === "ikiz" ? "Ikiz" : "Ucuz"}</strong>
+            Bebek Sayisi: <strong>{fetalBebekSayisi === "tek" ? "Tek Bebek" : fetalBebekSayisi === "ikiz" ? "Ikiz Bebek" : "Ucuz Bebek"}</strong>
           </div>
         )}
         <WeeklyCalendar
@@ -235,7 +235,7 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
             {[
               { id: "tek", label: "Tek Bebek", desc: "Tekil gebelik" },
               { id: "ikiz", label: "Ikiz Bebek", desc: "Ikiz gebelik" },
-              { id: "ucuz", label: "Ucuz Bebek", desc: "Ucuz gebelik" },
+              { id: "ucuz", label: "Ucuz Bebek", desc: "Ucuz gebelik (Triplet)" },
             ].map((opt) => (
               <button
                 key={opt.id}
