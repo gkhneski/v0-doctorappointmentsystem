@@ -184,6 +184,7 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
           doctorName={doctor?.name || ""}
           onSuccess={() => { setAiWizardOpen(false) }}
           preselectedType={selectedType}
+          fetalBebekSayisi={fetalBebekSayisi}
           prefilledName={aiPatientName || undefined}
         />
       </>

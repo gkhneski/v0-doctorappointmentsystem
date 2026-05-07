@@ -97,6 +97,7 @@ export default function AppointmentWizardModal({
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedType, setSelectedType] = useState<string | null>(preselectedType || null)
   const [kontrollTakipSubType, setKontrollTakipSubType] = useState<string | null>(null)
+  const [localFetalBebekSayisi, setLocalFetalBebekSayisi] = useState<string | null>(fetalBebekSayisi)
 
   // Sync selectedType when preselectedType prop changes or modal opens
   useEffect(() => {
@@ -426,7 +427,7 @@ export default function AppointmentWizardModal({
           appointment_time: selectedSlot.time,
           appointment_type: effectiveType,
           kontrol_takip_subtype: effectiveType === "kontrol-takip" ? kontrollTakipSubType : null,
-          fetal_bebek_sayisi: effectiveType === "ayrintili-fetal-ultrason" ? fetalBebekSayisi : null,
+          fetal_bebek_sayisi: effectiveType === "ayrintili-fetal-ultrason" ? localFetalBebekSayisi : null,
           patient_tc_no: tcNo,
           patient_name: fullName,
           patient_phone: phone,
@@ -485,7 +486,7 @@ export default function AppointmentWizardModal({
           appointment_time: selectedSlot.time,
           appointment_type: selectedType,
           kontrol_takip_subtype: selectedType === "kontrol-takip" ? kontrollTakipSubType : null,
-          fetal_bebek_sayisi: selectedType === "ayrintili-fetal-ultrason" ? fetalBebekSayisi : null,
+          fetal_bebek_sayisi: selectedType === "ayrintili-fetal-ultrason" ? localFetalBebekSayisi : null,
           patient_tc_no: tcNo,
           patient_name: fullName,
           patient_phone: phone,
@@ -1658,12 +1659,12 @@ export default function AppointmentWizardModal({
                     : selectedType}
                 </span>
               </div>
-              {selectedType === "ayrintili-fetal-ultrason" && fetalBebekSayisi && (
+              {selectedType === "ayrintili-fetal-ultrason" && localFetalBebekSayisi && (
                 <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                   <span className="text-muted-foreground font-medium">Bebek Sayisi:</span>
                   <span className="font-medium">
-                    {fetalBebekSayisi === "tek" ? "Tek Bebek"
-                      : fetalBebekSayisi === "ikiz" ? "Ikiz Bebek"
+                    {localFetalBebekSayisi === "tek" ? "Tek Bebek"
+                      : localFetalBebekSayisi === "ikiz" ? "Ikiz Bebek"
                       : "Ucuz Bebek"}
                   </span>
                 </div>

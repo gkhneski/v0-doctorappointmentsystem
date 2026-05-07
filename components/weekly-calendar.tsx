@@ -786,6 +786,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         doctorName={doctor?.name || ""}
         onSuccess={handleWizardSuccess}
         preselectedType={preselectedType}
+        fetalBebekSayisi={fetalBebekSayisi}
         isAdmin={isAdmin}
         prefilledPatient={prefilledPatient}
       />
