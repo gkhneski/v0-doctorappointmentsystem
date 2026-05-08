@@ -2,7 +2,8 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
 
 // 15 dakikalık slotları üretir
-function generateSlots(startTime: string, endTime: string): string[] {
+// Ayrıntılı Fetal Ultrason için sadece :00 ve :30 slotları döner
+function generateSlots(startTime: string, endTime: string, appointmentTypeId?: string): string[] {
   const slots: string[] = []
   const [sh, sm] = startTime.split(":").map(Number)
   const [eh, em] = endTime.split(":").map(Number)
@@ -13,10 +14,18 @@ function generateSlots(startTime: string, endTime: string): string[] {
   const rem = totalStart % 15
   if (rem !== 0) totalStart += 15 - rem
 
+  // Ayrıntılı Fetal Ultrason için sadece :00 ve :30 slotları
+  const onlyHalfHour = appointmentTypeId === "ayrintili-fetal-ultrason"
+
   while (totalStart <= totalEnd) {
     const h = Math.floor(totalStart / 60)
     const m = totalStart % 60
-    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`)
+    
+    // Fetal ultrason için sadece tam ve yarım saatler
+    if (!onlyHalfHour || m === 0 || m === 30) {
+      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`)
+    }
+    
     totalStart += 15
   }
   return slots
@@ -92,7 +101,7 @@ export async function POST(req: Request) {
       const dayOfWeek = dateObj.getDay()
       if (dayOfWeek === 0 || dayOfWeek === 6) continue // hafta sonu
 
-      const times = generateSlots(schedule.start_time, schedule.end_time)
+      const times = generateSlots(schedule.start_time, schedule.end_time, appointmentTypeId)
 
       for (const time of times) {
         const key = `${schedule.schedule_date}_${time}`
