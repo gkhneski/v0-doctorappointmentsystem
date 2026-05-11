@@ -115,7 +115,12 @@ export default async function AppointmentDetailPage({
     try {
       const serviceSupabase = createServiceRoleClient()
 
-      await sendAppointmentLinkSMS(patient.phone, patient.full_name)
+      await sendAppointmentLinkSMS(
+        patient.phone, 
+        patient.full_name,
+        appointment.appointment_date,
+        appointment.appointment_time
+      )
 
       redirect(`/admin/appointments/${id}?sent=true`)
     } catch (err) {
