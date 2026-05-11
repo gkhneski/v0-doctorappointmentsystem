@@ -229,10 +229,8 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
         const paymentDisplay = a.payment_status === "paid" && a.payment_amount 
           ? a.payment_amount + " TL" 
           : "Kontrol"
-        // Admin tarafından oluşturulan randevularda (TEMP_ ile başlayan TC) notları göster
-        // Hastanın kendisi aldıysa not kısmı boş kalır (elle yazılacak)
-        const isAdminCreated = a.patients?.tc_no?.startsWith("TEMP_")
-        const notes = isAdminCreated && a.notes ? a.notes : ""
+        // Tüm randevularda notları göster (varsa)
+        const notes = a.notes || ""
         return `<tr>
           <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold; width: 30px;">${no}</td>
           <td style="border: 1px solid #ddd; padding: 8px; width: 70px;">${time}</td>

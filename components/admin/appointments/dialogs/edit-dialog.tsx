@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,6 +36,16 @@ export function EditDialog({
   allAppointments,
 }: EditDialogProps) {
   const { toast } = useToast()
+  const [localNotes, setLocalNotes] = useState(selectedAppointment?.notes || "")
+  const [notesSaved, setNotesSaved] = useState(true)
+
+  // selectedAppointment değiştiğinde localNotes'u güncelle
+  useEffect(() => {
+    if (selectedAppointment) {
+      setLocalNotes(selectedAppointment.notes || "")
+      setNotesSaved(true)
+    }
+  }, [selectedAppointment?.id, selectedAppointment?.notes])
 
   const handleFieldUpdate = async (field: string, value: any) => {
     const supabase = createClient()
@@ -43,7 +54,16 @@ export function EditDialog({
     onAppointmentsChange(
       allAppointments.map(a => a.id === selectedAppointment.id ? { ...a, [field]: value } : a)
     )
+    if (field === "notes") setNotesSaved(true)
     toast({ title: field === "appointment_date" ? "Tarih Güncellendi" : field === "appointment_time" ? "Saat Güncellendi" : field === "appointment_type" ? "Randevu Tipi Güncellendi" : "Notlar Güncellendi" })
+  }
+
+  const handleClose = async () => {
+    // Dialog kapanırken kaydedilmemiş notlar varsa kaydet
+    if (!notesSaved && localNotes !== (selectedAppointment?.notes || "")) {
+      await handleFieldUpdate("notes", localNotes)
+    }
+    onOpenChange(false)
   }
 
   return (
@@ -96,16 +116,26 @@ export function EditDialog({
               <Label>Notlar</Label>
               <textarea
                 className="w-full min-h-[100px] p-3 text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                value={selectedAppointment.notes || ""}
+                value={localNotes}
                 placeholder="Randevu ile ilgili notlar..."
-                onChange={(e) => onAppointmentChange({ ...selectedAppointment, notes: e.target.value })}
-                onBlur={() => handleFieldUpdate("notes", selectedAppointment.notes)}
+                onChange={(e) => {
+                  setLocalNotes(e.target.value)
+                  setNotesSaved(false)
+                }}
+                onBlur={() => {
+                  if (!notesSaved) {
+                    handleFieldUpdate("notes", localNotes)
+                  }
+                }}
               />
+              {!notesSaved && (
+                <p className="text-xs text-amber-600">Kaydedilmemiş değişiklikler var</p>
+              )}
             </div>
           </div>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Kapat</Button>
+          <Button variant="outline" onClick={handleClose}>Kapat</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
