@@ -364,15 +364,27 @@ export function AppointmentDetailPanel({
                 <option value="">— Seç —</option>
                 <option value="IVF kontrol">1. IVF kontrol</option>
                 <option value="IUI kontrol">2. IUI kontrol</option>
-                <option value="det kontrol">3. det kontrol</option>
-                <option value="op sonrasi kontrol">4. op sonrası kontrol</option>
-                <option value="serklaj sonrasi kontrol">5. serklaj sonrası kontrol</option>
-                <option value="G.M">6. G.M</option>
-                <option value="DTY">7. DTY</option>
-                <option value="gebelik istemi">8. gebelik istemi</option>
-                <option value="mens">9. mens</option>
-                <option value="gebe kontrol">10. gebe kontrol</option>
-                <option value="gebe muayene">11. gebe muayene</option>
+                <option value="DET kontrol">3. DET kontrol</option>
+                <option value="Endom kontrol">4. Endom kontrol</option>
+                <option value="Klomen takip">5. Klomen takip</option>
+                <option value="OP sonrasi kontrol">6. OP sonrasi kontrol</option>
+                <option value="Serklaj sonrasi kontrol">7. Serklaj sonrasi kontrol</option>
+                <option value="Sonuc">8. Sonuc</option>
+                <option value="G.M">9. G.M</option>
+                <option value="DTY">10. DTY</option>
+                <option value="Gebelik istemi">11. Gebelik istemi</option>
+                <option value="Mens">12. Mens</option>
+                <option value="Mens IUI">13. Mens IUI</option>
+                <option value="Mens IVF">14. Mens IVF</option>
+                <option value="Mens DET">15. Mens DET</option>
+                <option value="Gebe kontrol">16. Gebe kontrol</option>
+                <option value="Gebe muayene">17. Gebe muayene</option>
+                <option value="Negatif IVF">18. Negatif IVF</option>
+                <option value="Negatif IUI">19. Negatif IUI</option>
+                <option value="D21">20. D21</option>
+                <option value="Kontrol">21. Kontrol</option>
+                <option value="Amniosentez sonrasi k.">22. Amniosentez sonrasi k.</option>
+                <option value="Kurtaj sonrasi k.">23. Kurtaj sonrasi k.</option>
               </select>
             </div>
           </div>
