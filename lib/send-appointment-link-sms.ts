@@ -1,8 +1,19 @@
+// Randevu tipi slug -> okunabilir isim
+const APPOINTMENT_TYPE_NAMES: Record<string, string> = {
+  "asilama-tup-bebek": "Asilama/Tup Bebek",
+  "ayrintili-fetal-ultrason": "Ayrintili Fetal Ultrason",
+  "gebelik-takibi": "Gebelik Takibi",
+  "gebelik-istemi-infertilite": "Gebelik Istemi/Infertilite",
+  "jinekolojik-muayene": "Jinekolojik Muayene",
+  "kontrol-takip": "Kontrol/Takip",
+}
+
 export async function sendAppointmentLinkSMS(
   phone: string, 
   patientName: string,
   appointmentDate?: string,
-  appointmentTime?: string
+  appointmentTime?: string,
+  appointmentType?: string
 ) {
   // Tarih formatla (2026-05-14 -> 14 Mayis Persembe)
   let dateStr = ""
@@ -23,7 +34,15 @@ export async function sendAppointmentLinkSMS(
     ? ` Tarih: ${dateStr}, Saat: ${timeStr}.` 
     : ""
 
-  const message = `Sayin ${patientName}, randevunuz basariyla olusturuldu.${dateTimeInfo} Randevu saatinizden once lutfen klinige geliniz.`
+  // Randevu tipi bilgisi
+  const typeName = appointmentType ? APPOINTMENT_TYPE_NAMES[appointmentType] || appointmentType : ""
+  
+  // Fetal ultrason DEGIL ise uyari ekle
+  const nonFetalWarning = appointmentType && appointmentType !== "ayrintili-fetal-ultrason"
+    ? " NOT: Bu randevu AYRINTILI FETAL ULTRASON degildir."
+    : ""
+
+  const message = `Sayin ${patientName}, randevunuz basariyla olusturuldu.${dateTimeInfo} Randevu Tipi: ${typeName}.${nonFetalWarning} Randevu saatinizden once lutfen klinige geliniz.`
 
   const params = new URLSearchParams({
     usercode: process.env.NETGSM_USER || "",

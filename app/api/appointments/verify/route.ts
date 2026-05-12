@@ -97,12 +97,13 @@ export async function POST(request: Request) {
       if (appointmentData && appointmentData.patients) {
         const patient = appointmentData.patients as any
 
-        // 1. Onay SMS'i gonder (tarih ve saat ile)
+        // 1. Onay SMS'i gonder (tarih, saat ve tip ile)
         await sendAppointmentLinkSMS(
           patient.phone, 
           patient.full_name,
           appointmentData.appointment_date,
-          appointmentData.appointment_time
+          appointmentData.appointment_time,
+          appointmentData.appointment_type
         )
 
         // 2. Evrak listesi SMS'i ayri olarak gonder

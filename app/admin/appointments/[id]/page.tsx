@@ -119,7 +119,8 @@ export default async function AppointmentDetailPage({
         patient.phone, 
         patient.full_name,
         appointment.appointment_date,
-        appointment.appointment_time
+        appointment.appointment_time,
+        appointment.appointment_type
       )
 
       redirect(`/admin/appointments/${id}?sent=true`)

@@ -190,6 +190,7 @@ export default function AppointmentWizardModal({
   // Step 5 KVKK
   const [kvkkScrolled, setKvkkScrolled] = useState(false)
   const [kvkkApproved, setKvkkApproved] = useState(false)
+  const [nonFetalConfirmed, setNonFetalConfirmed] = useState(false)
   const kvkkScrollRef = useRef<HTMLDivElement>(null)
 
   // Step 7 Medical Documents
@@ -1107,6 +1108,27 @@ export default function AppointmentWizardModal({
               </div>
             </div>
 
+            {/* Ayrintili Fetal Ultrason DEGIL ise ek onay */}
+            {selectedType !== "ayrintili-fetal-ultrason" && (
+              <div className="flex items-start space-x-3 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-950/20 p-3 sm:p-4 min-h-[48px]">
+                <Checkbox
+                  id="non-fetal-confirm"
+                  checked={nonFetalConfirmed}
+                  onCheckedChange={(checked) => setNonFetalConfirmed(checked === true)}
+                  disabled={!kvkkScrolled}
+                  className="mt-1 border-red-500 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label
+                    htmlFor="non-fetal-confirm"
+                    className={`text-sm sm:text-base font-bold leading-tight text-red-700 dark:text-red-400 uppercase ${!kvkkScrolled ? "opacity-50" : "cursor-pointer"}`}
+                  >
+                    AYRINTILI 2. DUZEY FETAL ULTRASON RANDEVUSU ALMADIGIMI OKUDUM ANLADIM ONAYLIYORUM *
+                  </Label>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="rounded-lg bg-destructive/10 p-3 text-xs sm:text-sm text-destructive">{error}</div>
             )}
@@ -1127,6 +1149,11 @@ export default function AppointmentWizardModal({
                 onClick={() => {
                   if (!kvkkApproved) {
                     setError("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekmektedir")
+                    return
+                  }
+                  // Fetal ultrason degilse ek onay gerekli
+                  if (selectedType !== "ayrintili-fetal-ultrason" && !nonFetalConfirmed) {
+                    setError("Devam etmek için Ayrıntılı Fetal Ultrason randevusu almadığınızı onaylamanız gerekmektedir")
                     return
                   }
                   setError(null) // Clear any previous errors
