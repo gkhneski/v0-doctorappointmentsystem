@@ -40,10 +40,10 @@ export default async function AdminDashboard() {
   const turkeyTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }))
   const today = turkeyTime.toISOString().split("T")[0]
 
-  // Sadece 2 ay ilerisini çek (performans için)
-  const twoMonthsLater = new Date()
-  twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2)
-  const endDate = twoMonthsLater.toISOString().split("T")[0]
+  // Sadece 6 ay ilerisini çek (performans için)
+  const sixMonthsLater = new Date()
+  sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+  const endDate = sixMonthsLater.toISOString().split("T")[0]
 
   // OPTİMİZE EDİLMİŞ: Tüm randevuları tek sorguda çekiyoruz
   const [
