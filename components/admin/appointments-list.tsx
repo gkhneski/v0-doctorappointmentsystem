@@ -485,7 +485,7 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
         </div>
 
         {/* Sağ Taraf - Detail Panel */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           {selectedAppointment ? (
             <Suspense fallback={<div className="rounded-lg border border-gray-200 p-4 flex items-center justify-center h-96"><Spinner className="h-8 w-8" /></div>}>
               <DetailPanel
