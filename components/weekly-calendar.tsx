@@ -83,9 +83,10 @@ type Props = {
   isAdmin?: boolean
   fetalBebekSayisi?: string | null
   prefilledPatient?: PrefilledPatient | null
+  embedded?: boolean
 }
 
-export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null }: Props) {
+export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false }: Props) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     // If AI preselected a date, show that week
     if (preselectedDate) {
@@ -415,15 +416,17 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
   const selectedDaySchedules = schedules.filter((s) => s.schedule_date === selectedDateStr && s.doctor_id === doctor.id)
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Doktor Bilgileri</CardTitle>
-          <CardDescription>
-            {doctor.name} - {doctor.specialization}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+    <div className={embedded ? "space-y-4" : "space-y-6"}>
+      {!embedded && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Doktor Bilgileri</CardTitle>
+            <CardDescription>
+              {doctor.name} - {doctor.specialization}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -752,7 +755,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         </CardContent>
       </Card>
 
-      {selectedSlot && (
+      {selectedSlot && !embedded && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background p-4 shadow-lg animate-in slide-in-from-bottom-5 duration-300">
           <div className="max-w-md mx-auto space-y-3">
             <div className="flex items-center justify-between text-sm">

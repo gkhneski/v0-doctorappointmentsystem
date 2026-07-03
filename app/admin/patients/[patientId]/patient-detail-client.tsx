@@ -1403,22 +1403,23 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
 
         {/* Randevu Ver Modal */}
         <Dialog open={appointmentModalOpen} onOpenChange={setAppointmentModalOpen}>
-          <DialogContent className="max-w-5xl w-full max-h-[90vh] overflow-y-auto p-0">
-            <DialogHeader className="px-6 pt-5 pb-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+          <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] p-0 flex flex-col overflow-hidden gap-0">
+            <DialogHeader className="px-4 sm:px-6 pt-5 pb-4 border-b border-gray-100 shrink-0 text-left">
               <DialogTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                <CalendarPlus className="h-5 w-5 text-blue-600" />
-                Randevu Ver — {patient?.full_name}
+                <CalendarPlus className="h-5 w-5 text-blue-600 shrink-0" />
+                <span className="truncate">Randevu Ver — {patient?.full_name}</span>
               </DialogTitle>
               <DialogDescription className="text-xs text-gray-500">
                 Takvimden boş bir slot seçin, hasta bilgileri otomatik dolu gelecek.
               </DialogDescription>
             </DialogHeader>
-            <div className="p-4">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
               <WeeklyCalendar
                 doctor={calendarDoctor}
                 schedules={calendarSchedules}
                 existingAppointments={calendarAppointments}
                 isAdmin={true}
+                embedded={true}
                 prefilledPatient={patient ? {
                   id: patient.id,
                   full_name: patient.full_name,
