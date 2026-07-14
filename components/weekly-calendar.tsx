@@ -17,6 +17,31 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 
+// Randevu tipi kısa etiketleri (kartlarda göstermek için)
+const TYPE_SHORT_LABELS: Record<string, string> = {
+  "ilk-muayene": "İlk Muayene",
+  "kontrol-takip": "Kontrol",
+  "gebelik-istemi-infertilite": "Gebelik İstemi",
+  "jinekolojik-muayene": "Jinekolojik",
+  "ayrintili-fetal-ultrason": "Fetal USG",
+  "gebelik-takibi": "Gebe Takip",
+  "asilik-tup-bebek": "Aşılama/Tüp Bebek",
+  "iui-kontrol": "IUI Kontrol",
+  "op-sonrasi-kontrol": "Op Sonrası",
+  "serklaj-sonrasi-kontrol": "Serklaj Sonrası",
+  "gebe-muayene": "Gebe Muayene",
+  "acil-durum": "Acil",
+  "dty": "DTY",
+  "mens": "Mens",
+  "diger": "Diğer",
+}
+
+function getTypeLabel(appointment: { appointment_type?: string; print_type?: string | null }): string | null {
+  if (appointment.print_type && appointment.print_type !== "") return appointment.print_type
+  if (!appointment.appointment_type) return null
+  return TYPE_SHORT_LABELS[appointment.appointment_type] || appointment.appointment_type.replace(/-/g, " ")
+}
+
 type WorkingHours = {
   enabled: boolean
   start: string
@@ -57,7 +82,11 @@ type ExistingAppointment = {
   appointment_date: string
   appointment_time: string
   appointment_type?: string
+  print_type?: string | null
   fetal_bebek_sayisi?: string | null
+  payment_status?: string | null
+  payment_amount?: number | null
+  confirmation_status?: string | null
   notes?: string | null
   status?: string
   patients?: {
@@ -593,11 +622,26 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                                 {isCancelled && <span className="ml-1 text-[9px] bg-white/30 px-1 rounded">İPTAL</span>}
                                               </div>
                                               {showPhone && <div className="opacity-80 truncate text-[10px]">{phone}</div>}
-                                              {appointment.appointment_type === "ayrintili-fetal-ultrason" && appointment.fetal_bebek_sayisi && (
-                                                <div className="text-[9px] opacity-90 font-medium bg-white/20 rounded px-1 mt-0.5 inline-block">
-                                                  {appointment.fetal_bebek_sayisi === "tek" ? "Tek Bebek" : appointment.fetal_bebek_sayisi === "ikiz" ? "Ikiz Bebek" : "Ucuz Bebek"}
+                                              {getTypeLabel(appointment) && (
+                                                <div className="text-[9px] font-medium bg-white/20 rounded px-1 mt-0.5 inline-block truncate max-w-full">
+                                                  {getTypeLabel(appointment)}
+                                                  {appointment.appointment_type === "ayrintili-fetal-ultrason" && appointment.fetal_bebek_sayisi && (
+                                                    <span className="ml-1">
+                                                      ({appointment.fetal_bebek_sayisi === "tek" ? "Tek" : appointment.fetal_bebek_sayisi === "ikiz" ? "İkiz" : "Üçüz"})
+                                                    </span>
+                                                  )}
                                                 </div>
                                               )}
+                                              <div className="flex items-center gap-1 mt-0.5">
+                                                {appointment.payment_status === "paid" && (
+                                                  <span className="text-[9px] font-semibold bg-green-500/90 rounded px-1">
+                                                    {appointment.payment_amount ? `₺${appointment.payment_amount}` : "Ödendi"}
+                                                  </span>
+                                                )}
+                                                {appointment.confirmation_status === "confirmed" && (
+                                                  <Check className="h-3 w-3 opacity-90" />
+                                                )}
+                                              </div>
                                             </>
                                           ) : (
                                             <div className="font-semibold">Dolu</div>

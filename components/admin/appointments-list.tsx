@@ -413,20 +413,11 @@ export default function AppointmentsList({ appointments: initialAppointments, do
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Hafta / Gün görünüm değiştirici */}
-      {calendarAvailable && (
+      {calendarAvailable && viewMode === "calendar" && (
         <div className="flex items-center gap-2 flex-wrap">
           <div className="inline-flex rounded-lg border bg-muted/40 p-1">
-            <Button
-              variant={calendarView === "week" ? "default" : "ghost"}
-              size="sm"
-              className="gap-1.5 h-8"
-              onClick={() => setCalendarView("week")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Hafta
-            </Button>
             <Button
               variant={calendarView === "day" ? "default" : "ghost"}
               size="sm"
@@ -435,6 +426,15 @@ export default function AppointmentsList({ appointments: initialAppointments, do
             >
               <CalendarDays className="h-4 w-4" />
               Gün
+            </Button>
+            <Button
+              variant={calendarView === "week" ? "default" : "ghost"}
+              size="sm"
+              className="gap-1.5 h-8"
+              onClick={() => setCalendarView("week")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Hafta
             </Button>
           </div>
         </div>
@@ -506,17 +506,15 @@ export default function AppointmentsList({ appointments: initialAppointments, do
       {viewMode === "calendar" ? (
         /* TAKVİM — tam genişlik + sağdan açılan detay drawer */
         <>
-          <Card className="overflow-hidden p-2">
-            <WeeklyCalendar
-              doctor={doctor as any}
-              schedules={schedules}
-              existingAppointments={appointments as any}
-              isAdmin={true}
-              embedded={true}
-              viewMode={calendarView}
-              onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
-            />
-          </Card>
+          <WeeklyCalendar
+            doctor={doctor as any}
+            schedules={schedules}
+            existingAppointments={appointments as any}
+            isAdmin={true}
+            embedded={true}
+            viewMode={calendarView}
+            onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
+          />
 
           {selectedAppointment && (
             <>

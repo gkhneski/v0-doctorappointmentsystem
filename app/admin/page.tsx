@@ -163,96 +163,70 @@ export default async function AdminDashboard() {
 
   const appointmentsWithEvaluations = appointments
 
+  const todayCount = appointments?.filter((a) => a.appointment_date === today).length || 0
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold text-gray-900">Dashboard</h2>
-            <QuickBlockAppointment />
-          </div>
-          <div className="flex items-center gap-3">
-            <NotificationsDropdown />
-            <div className="h-6 w-px bg-gray-200" />
-            <div className="text-right">
-              <div className="text-sm font-medium text-gray-900">{adminUser.full_name}</div>
-              <div className="text-xs text-gray-600">{adminUser.role === "doktor" ? "Doktor" : "Sekreter"}</div>
-            </div>
-            <form action={handleSignOut}>
-              <Button variant="outline" size="sm" type="submit" className="border-gray-300 bg-transparent">
-                Çıkış Yap
+      <Tabs defaultValue="randevular" className="flex min-h-screen flex-col">
+        {/* Kompakt üst bar — sekmeler küçük butonlar halinde solda, kullanıcı sağda */}
+        <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 px-4 py-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <TabsList className="h-8 bg-gray-100">
+                <TabsTrigger value="randevular" className="h-6 gap-1 px-2.5 text-xs">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Randevular
+                </TabsTrigger>
+                <TabsTrigger value="past" className="h-6 gap-1 px-2.5 text-xs">
+                  <Clock className="h-3.5 w-3.5" />
+                  Geçmiş
+                </TabsTrigger>
+                <TabsTrigger value="cancelled" className="h-6 gap-1 px-2.5 text-xs">
+                  <Users className="h-3.5 w-3.5" />
+                  İptal
+                </TabsTrigger>
+              </TabsList>
+              <QuickBlockAppointment />
+              <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-600">
+                <Link href="/admin/schedules">Programları Yönet</Link>
               </Button>
-            </form>
+            </div>
+            <div className="flex items-center gap-2">
+              {pendingAppointments > 0 && (
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+                  {pendingAppointments} onay bekliyor
+                </span>
+              )}
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 border border-green-200">
+                Bugün {todayCount}
+              </span>
+              <NotificationsDropdown />
+              <div className="h-5 w-px bg-gray-200" />
+              <div className="text-right leading-tight">
+                <div className="text-xs font-medium text-gray-900">{adminUser.full_name}</div>
+                <div className="text-[10px] text-gray-500">{adminUser.role === "doktor" ? "Doktor" : "Sekreter"}</div>
+              </div>
+              <form action={handleSignOut}>
+                <Button variant="outline" size="sm" type="submit" className="h-7 border-gray-300 bg-transparent px-2 text-xs">
+                  Çıkış
+                </Button>
+              </form>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="px-6 py-8">
-        <div className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold text-gray-900">Bugün</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-base font-semibold text-gray-900">Bekleyen Onaylar</CardTitle>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-600">{pendingAppointments || 0}</div>
-                <p className="mt-1 text-xs text-gray-600">Onay bekleyen randevular</p>
-              </CardContent>
-            </Card>
+        {/* Randevular — tam ekran takvim */}
+        <TabsContent value="randevular" className="flex-1 p-3 mt-0">
+          <Suspense fallback={<div className="flex items-center justify-center py-12"><Spinner className="h-8 w-8" /></div>}>
+            <AppointmentsList
+              appointments={appointments || []}
+              doctor={calendarDoctors?.[0] || null}
+              schedules={schedules || []}
+            />
+          </Suspense>
+        </TabsContent>
 
-            <Card className="border-green-200 bg-white shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-base font-semibold text-gray-900">Bugünkü Randevular</CardTitle>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                  <Calendar className="h-5 w-5 text-green-600" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">
-                  {appointments?.filter((a) => a.appointment_date === today).length || 0}
-                </div>
-                <p className="mt-1 text-xs text-gray-600">Bugün gerçekleşecek</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        <Tabs defaultValue="randevular" className="space-y-4">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <TabsList className="h-9">
-              <TabsTrigger value="randevular" className="text-sm gap-1.5">
-                <Calendar className="h-3.5 w-3.5" />
-                Randevular
-              </TabsTrigger>
-              <TabsTrigger value="past" className="text-sm gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
-                Geçmiş
-              </TabsTrigger>
-              <TabsTrigger value="cancelled" className="text-sm gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                İptal Edilenler
-              </TabsTrigger>
-            </TabsList>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/admin/schedules">Programları Yönet</Link>
-            </Button>
-          </div>
-
-          {/* Randevular — takvim + liste tek yerde (Takvim/Liste ve Gün/Hafta geçişi içeride) */}
-          <TabsContent value="randevular" className="space-y-4">
-            <Suspense fallback={<div className="flex items-center justify-center py-12"><Spinner className="h-8 w-8" /></div>}>
-              <AppointmentsList
-                appointments={appointments || []}
-                doctor={calendarDoctors?.[0] || null}
-                schedules={schedules || []}
-              />
-            </Suspense>
-          </TabsContent>
-
+        <div className="px-4 pb-8">
           <TabsContent value="past" className="space-y-4">
             <Card className="border-gray-200 bg-white shadow-sm">
               <CardHeader className="border-b border-gray-100 bg-gray-50/50">
@@ -396,8 +370,8 @@ export default async function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-      </div>
+        </div>
+      </Tabs>
     </div>
   )
 }
