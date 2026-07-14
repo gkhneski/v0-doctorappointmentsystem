@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { Calendar, Users, Clock } from "lucide-react"
 import AppointmentsList from "@/components/admin/appointments-list"
-import WeeklyCalendar from "@/components/weekly-calendar"
 import { QuickBlockAppointment } from "@/components/admin/quick-block-appointment"
 import { NotificationsDropdown } from "@/components/admin/notifications-dropdown"
 import { Spinner } from "@/components/ui/spinner"
@@ -222,81 +221,12 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        <div className="mb-8">
-          <h3 className="mb-3 text-sm font-medium text-gray-600">Toplam İstatistikler</h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Toplam Randevu</CardTitle>
-                <Calendar className="h-4 w-4 text-gray-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{totalAppointments || 0}</div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700">Kayıtlı Hasta</CardTitle>
-                <Users className="h-4 w-4 text-gray-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{totalPatients || 0}</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Bu haftanın randevu tipi istatistikleri */}
-        {weeklyTypesSorted.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-gray-600">
-                Bu Hafta — {weeklyAppointments.length} Randevu
-              </h3>
-              <span className="text-xs text-gray-400">
-                {weekStart.toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} –{" "}
-                {weekEnd.toLocaleDateString("tr-TR", { day: "numeric", month: "long" })}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {weeklyTypesSorted.map(([type, count], idx) => {
-                const cfg = TYPE_CONFIG[type] || TYPE_CONFIG["diger"]
-                const pct = Math.round((count / weeklyAppointments.length) * 100)
-                const isTop = idx === 0
-                return (
-                  <div
-                    key={type}
-                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${cfg.bg} ${cfg.border} ${isTop ? "ring-2 ring-offset-1 ring-current/20" : ""}`}
-                  >
-                    <div className="flex flex-col">
-                      <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-xl font-bold ${cfg.color}`}>{count}</span>
-                        <span className={`text-xs ${cfg.color} opacity-70`}>%{pct}</span>
-                      </div>
-                    </div>
-                    {isTop && (
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
-                        En Cok
-                      </span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        <Tabs defaultValue="appointments" className="space-y-4">
+        <Tabs defaultValue="randevular" className="space-y-4">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <TabsList className="h-9">
-              <TabsTrigger value="calendar" className="text-sm gap-1.5">
+              <TabsTrigger value="randevular" className="text-sm gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
-                Takvim
-              </TabsTrigger>
-              <TabsTrigger value="appointments" className="text-sm">
-                Liste
+                Randevular
               </TabsTrigger>
               <TabsTrigger value="past" className="text-sm gap-1.5">
                 <Clock className="h-3.5 w-3.5" />
@@ -312,38 +242,15 @@ export default async function AdminDashboard() {
             </Button>
           </div>
 
-          {/* Takvim tab — WeeklyCalendar doğrudan burada */}
-          <TabsContent value="calendar">
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader className="border-b border-gray-100 bg-gray-50/50 pb-3">
-                <CardTitle className="text-lg font-semibold text-gray-900">Randevu Takvimi</CardTitle>
-                <CardDescription className="text-gray-600">Hasta adına randevu oluşturun veya mevcut randevuları yönetin</CardDescription>
-              </CardHeader>
-              <CardContent className="p-4">
-                <Suspense fallback={<div className="flex items-center justify-center py-12"><Spinner className="h-8 w-8" /></div>}>
-                  <WeeklyCalendar
-                    doctor={calendarDoctors?.[0] || null}
-                    schedules={schedules || []}
-                    existingAppointments={existingAppointments || []}
-                    isAdmin={true}
-                  />
-                </Suspense>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="appointments" className="space-y-4">
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader className="border-b border-gray-100 bg-gray-50/50">
-                <CardTitle className="text-lg font-semibold text-gray-900">Randevu Listesi</CardTitle>
-                <CardDescription className="text-gray-600">Hasta randevularını görüntüleyin ve yönetin</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Suspense fallback={<div className="flex items-center justify-center py-12"><Spinner className="h-8 w-8" /></div>}>
-                  <AppointmentsList appointments={appointments || []} />
-                </Suspense>
-              </CardContent>
-            </Card>
+          {/* Randevular — takvim + liste tek yerde (Takvim/Liste ve Gün/Hafta geçişi içeride) */}
+          <TabsContent value="randevular" className="space-y-4">
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><Spinner className="h-8 w-8" /></div>}>
+              <AppointmentsList
+                appointments={appointments || []}
+                doctor={calendarDoctors?.[0] || null}
+                schedules={schedules || []}
+              />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="past" className="space-y-4">

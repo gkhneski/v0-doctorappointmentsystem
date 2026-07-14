@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar, Trash2, Edit, Search, X } from "lucide-react"
+import { Calendar, Trash2, Search, X, CalendarDays, List, LayoutGrid } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import WeeklyCalendar from "@/components/weekly-calendar"
 
 // Hooks
 import { useAppointmentActions } from "@/components/admin/appointments/hooks/use-appointment-actions"
@@ -37,15 +38,29 @@ const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
   diger: { label: "Diğer", color: "bg-gray-100 text-gray-800" },
 }
 
-type Props = {
-  appointments: Appointment[]
+type CalendarDoctor = {
+  id: string
+  name: string
+  specialization: string
+  working_hours?: any
 }
 
-export default function AppointmentsList({ appointments: initialAppointments }: Props) {
+type Props = {
+  appointments: Appointment[]
+  doctor?: CalendarDoctor | null
+  schedules?: any[]
+}
+
+export default function AppointmentsList({ appointments: initialAppointments, doctor = null, schedules = [] }: Props) {
   const router = useRouter()
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+
+  // Görünüm modu: takvim (varsayilan, doktor+program varsa) veya liste
+  const calendarAvailable = !!doctor
+  const [viewMode, setViewMode] = useState<"calendar" | "list">(calendarAvailable ? "calendar" : "list")
+  const [calendarView, setCalendarView] = useState<"week" | "day">("week")
 
   // Appointment actions hook
   const { isUpdating, deleteId, setDeleteId, handleDelete } = useAppointmentActions(setAppointments, setSelectedAppointment)
@@ -90,7 +105,7 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
     const supabase = createClient()
 
     const channel = supabase
-      .channel("appointments-realtime")
+      .channel(`appointments-realtime-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "appointments" },
@@ -340,7 +355,56 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
 
   return (
     <div className="space-y-6">
-      {/* Filtreler */}
+      {/* Görünüm Değiştirici */}
+      {calendarAvailable && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex rounded-lg border bg-muted/40 p-1">
+            <Button
+              variant={viewMode === "calendar" ? "default" : "ghost"}
+              size="sm"
+              className="gap-1.5 h-8"
+              onClick={() => setViewMode("calendar")}
+            >
+              <CalendarDays className="h-4 w-4" />
+              Takvim
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              className="gap-1.5 h-8"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4" />
+              Liste
+            </Button>
+          </div>
+          {viewMode === "calendar" && (
+            <div className="inline-flex rounded-lg border bg-muted/40 p-1">
+              <Button
+                variant={calendarView === "week" ? "default" : "ghost"}
+                size="sm"
+                className="gap-1.5 h-8"
+                onClick={() => setCalendarView("week")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Hafta
+              </Button>
+              <Button
+                variant={calendarView === "day" ? "default" : "ghost"}
+                size="sm"
+                className="gap-1.5 h-8"
+                onClick={() => setCalendarView("day")}
+              >
+                <CalendarDays className="h-4 w-4" />
+                Gün
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Filtreler - sadece liste görünümünde */}
+      {viewMode === "list" && (
       <Card className="p-4">
         <div className="flex flex-col gap-4">
           {/* Arama */}
@@ -400,11 +464,25 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
           </div>
         </div>
       </Card>
+      )}
 
       {/* Randevular Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sol Taraf - Tablo */}
+        {/* Sol Taraf - Takvim veya Tablo */}
         <div className="lg:col-span-2">
+          {viewMode === "calendar" ? (
+            <Card className="overflow-hidden p-2">
+              <WeeklyCalendar
+                doctor={doctor as any}
+                schedules={schedules}
+                existingAppointments={appointments as any}
+                isAdmin={true}
+                embedded={true}
+                viewMode={calendarView}
+                onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
+              />
+            </Card>
+          ) : (
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
@@ -482,6 +560,7 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
               </Table>
             </div>
           </Card>
+          )}
         </div>
 
         {/* Sağ Taraf - Detail Panel */}
@@ -543,7 +622,7 @@ export default function AppointmentsList({ appointments: initialAppointments }: 
           ) : (
             <div className="rounded-lg border border-dashed border-muted p-4 flex flex-col items-center justify-center h-64 text-muted-foreground">
               <Calendar className="h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">Detaylar görmek için sol taraftan randevu seçin</p>
+              <p className="text-sm">Detaylar için bir randevuya tıklayın</p>
             </div>
           )}
         </div>

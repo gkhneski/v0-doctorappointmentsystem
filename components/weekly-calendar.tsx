@@ -57,6 +57,7 @@ type ExistingAppointment = {
   appointment_date: string
   appointment_time: string
   appointment_type?: string
+  fetal_bebek_sayisi?: string | null
   notes?: string | null
   status?: string
   patients?: {
@@ -84,9 +85,11 @@ type Props = {
   fetalBebekSayisi?: string | null
   prefilledPatient?: PrefilledPatient | null
   embedded?: boolean
+  onAppointmentClick?: (appointment: ExistingAppointment) => void
+  viewMode?: "week" | "day"
 }
 
-export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false }: Props) {
+export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false, onAppointmentClick, viewMode = "week" }: Props) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     // If AI preselected a date, show that week
     if (preselectedDate) {
@@ -450,7 +453,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="md:hidden">
+          <div className={viewMode === "day" ? "block" : "md:hidden"}>
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {weekDays.map((date, index) => {
                 const isSelected = index === selectedDay
@@ -497,8 +500,9 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
           })()}
 
           <div className="hidden md:block overflow-x-auto">
-            <div className="grid min-w-[800px] grid-cols-5 gap-2">
-              {weekDays.map((date, index) => {
+            <div className={`grid gap-2 ${viewMode === "day" ? "grid-cols-1 max-w-lg" : "min-w-[800px] grid-cols-5"}`}>
+              {(viewMode === "day" ? [weekDays[selectedDay]] : weekDays).map((date, idx) => {
+                const index = viewMode === "day" ? selectedDay : idx
                 const dateStr = formatDateForDB(date)
                 const workingHours = getWorkingHoursForDay(date)
                 const daySchedules = schedules.filter((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
@@ -554,7 +558,11 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                       onDragStart={() => !isCancelled && handleDragStart(appointment)}
                                       onDragEnd={handleDragEnd}
                                       onClick={(e) => {
-                                        if (isAdmin && appointment.patient_id && !isCancelled) {
+                                        if (isCancelled) return
+                                        if (onAppointmentClick) {
+                                          e.stopPropagation()
+                                          onAppointmentClick(appointment)
+                                        } else if (isAdmin && appointment.patient_id) {
                                           e.stopPropagation()
                                           router.push(`/admin/patients/${appointment.patient_id}`)
                                         }
@@ -696,7 +704,15 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                         <button
                           key={time}
                           disabled={isPast && !isBooked}
-                          onClick={() => !isBooked && handleSlotClick(selectedDate, time, schedule.doctor_id)}
+                          onClick={() => {
+                            if (isBooked) {
+                              if (onAppointmentClick && appointment && appointment.status !== "cancelled") {
+                                onAppointmentClick(appointment)
+                              }
+                              return
+                            }
+                            handleSlotClick(selectedDate, time, schedule.doctor_id)
+                          }}
                           className={`w-full min-h-[52px] rounded-xl border-2 px-6 py-3 font-medium transition-all duration-200 ${
                             isBooked
                               ? "border-red-200 bg-red-50 text-red-700 cursor-pointer"

@@ -2,21 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Users, UserCog, PlusCircle, LayoutDashboard, Menu, MessageSquare, Pill } from "lucide-react"
+import { Calendar, UserCog, LayoutDashboard, Menu, MessageSquare, Pill } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
 const navigation = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard, roles: ["doktor", "sekreter", "hemsire"] },
-  {
-    name: "Randevu Oluştur",
-    href: "/admin/create-appointment",
-    icon: PlusCircle,
-    roles: ["doktor", "sekreter", "hemsire"],
-  },
+  { name: "Randevular", href: "/admin", icon: LayoutDashboard, roles: ["doktor", "sekreter", "hemsire"] },
   { name: "Randevu Programı", href: "/admin/schedules", icon: Calendar, roles: ["doktor", "sekreter", "hemsire"] },
-  { name: "Hastalar", href: "/admin/patients", icon: Users, roles: ["doktor", "sekreter", "hemsire"] },
   {
     name: "SMS Şablonları",
     href: "/admin/sms-templates",
