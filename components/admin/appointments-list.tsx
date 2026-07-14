@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar, Trash2, Search, X, CalendarDays, List, LayoutGrid } from "lucide-react"
+import { Calendar, Trash2, Search, X, CalendarDays, LayoutGrid } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import WeeklyCalendar from "@/components/weekly-calendar"
@@ -353,53 +353,90 @@ export default function AppointmentsList({ appointments: initialAppointments, do
     }
   }
 
+  const detailPanelInner = selectedAppointment ? (
+    <Suspense fallback={<div className="rounded-lg border border-gray-200 p-4 flex items-center justify-center h-96"><Spinner className="h-8 w-8" /></div>}>
+      <DetailPanel
+        appointment={selectedAppointment}
+        onSmsClick={(phone) => {
+          setSmsPhone(phone)
+          setSmsDialogOpen(true)
+        }}
+        onPatientClick={() => setPatientDialogOpen(true)}
+        onEditClick={() => setEditDialogOpen(true)}
+        onUpdatePrintType={(id, type) => {
+          setAppointments(prev => prev.map(a => a.id === id ? { ...a, print_type: type } : a))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({ ...selectedAppointment, print_type: type })
+          }
+        }}
+        onUpdatePaymentStatus={(id, status) => {
+          setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_status: status } : a))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({ ...selectedAppointment, payment_status: status })
+          }
+        }}
+        onUpdatePaymentAmount={(id, amount) => {
+          setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_amount: amount } : a))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({ ...selectedAppointment, payment_amount: amount })
+          }
+        }}
+        onCancelAppointment={(id) => {
+          setAppointments(prev => prev.map(a =>
+            a.id === id ? { ...a, status: "cancelled" } : a
+          ))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({ ...selectedAppointment, status: "cancelled" })
+          }
+        }}
+        onRescheduleAppointment={(id, newDate, newTime) => {
+          setAppointments(prev => prev.map(a =>
+            a.id === id
+              ? { ...a, appointment_date: newDate, appointment_time: newTime }
+              : a
+          ))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({
+              ...selectedAppointment,
+              appointment_date: newDate,
+              appointment_time: newTime,
+            })
+          }
+        }}
+      />
+    </Suspense>
+  ) : (
+    <div className="rounded-lg border border-dashed border-muted p-4 flex flex-col items-center justify-center h-64 text-muted-foreground">
+      <Calendar className="h-8 w-8 mb-2 opacity-50" />
+      <p className="text-sm">Detaylar için bir randevuya tıklayın</p>
+    </div>
+  )
+
   return (
     <div className="space-y-6">
-      {/* Görünüm Değiştirici */}
+      {/* Hafta / Gün görünüm değiştirici */}
       {calendarAvailable && (
         <div className="flex items-center gap-2 flex-wrap">
           <div className="inline-flex rounded-lg border bg-muted/40 p-1">
             <Button
-              variant={viewMode === "calendar" ? "default" : "ghost"}
+              variant={calendarView === "week" ? "default" : "ghost"}
               size="sm"
               className="gap-1.5 h-8"
-              onClick={() => setViewMode("calendar")}
+              onClick={() => setCalendarView("week")}
             >
-              <CalendarDays className="h-4 w-4" />
-              Takvim
+              <LayoutGrid className="h-4 w-4" />
+              Hafta
             </Button>
             <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
+              variant={calendarView === "day" ? "default" : "ghost"}
               size="sm"
               className="gap-1.5 h-8"
-              onClick={() => setViewMode("list")}
+              onClick={() => setCalendarView("day")}
             >
-              <List className="h-4 w-4" />
-              Liste
+              <CalendarDays className="h-4 w-4" />
+              Gün
             </Button>
           </div>
-          {viewMode === "calendar" && (
-            <div className="inline-flex rounded-lg border bg-muted/40 p-1">
-              <Button
-                variant={calendarView === "week" ? "default" : "ghost"}
-                size="sm"
-                className="gap-1.5 h-8"
-                onClick={() => setCalendarView("week")}
-              >
-                <LayoutGrid className="h-4 w-4" />
-                Hafta
-              </Button>
-              <Button
-                variant={calendarView === "day" ? "default" : "ghost"}
-                size="sm"
-                className="gap-1.5 h-8"
-                onClick={() => setCalendarView("day")}
-              >
-                <CalendarDays className="h-4 w-4" />
-                Gün
-              </Button>
-            </div>
-          )}
         </div>
       )}
 
@@ -466,23 +503,45 @@ export default function AppointmentsList({ appointments: initialAppointments, do
       </Card>
       )}
 
-      {/* Randevular Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sol Taraf - Takvim veya Tablo */}
-        <div className="lg:col-span-2">
-          {viewMode === "calendar" ? (
-            <Card className="overflow-hidden p-2">
-              <WeeklyCalendar
-                doctor={doctor as any}
-                schedules={schedules}
-                existingAppointments={appointments as any}
-                isAdmin={true}
-                embedded={true}
-                viewMode={calendarView}
-                onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
+      {viewMode === "calendar" ? (
+        /* TAKVİM — tam genişlik + sağdan açılan detay drawer */
+        <>
+          <Card className="overflow-hidden p-2">
+            <WeeklyCalendar
+              doctor={doctor as any}
+              schedules={schedules}
+              existingAppointments={appointments as any}
+              isAdmin={true}
+              embedded={true}
+              viewMode={calendarView}
+              onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
+            />
+          </Card>
+
+          {selectedAppointment && (
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-black/30 animate-in fade-in duration-200"
+                onClick={() => setSelectedAppointment(null)}
               />
-            </Card>
-          ) : (
+              <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-md flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-200">
+                <div className="flex items-center justify-between border-b p-4">
+                  <h2 className="text-base font-semibold text-gray-900">Randevu Detayı</h2>
+                  <Button variant="ghost" size="icon" onClick={() => setSelectedAppointment(null)} aria-label="Kapat">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  {detailPanelInner}
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        /* LİSTE — tablo + yandan sabit panel (Geçmiş / İptal sekmeleri) */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
@@ -560,73 +619,12 @@ export default function AppointmentsList({ appointments: initialAppointments, do
               </Table>
             </div>
           </Card>
-          )}
+          </div>
+          <div className="lg:col-span-1 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+            {detailPanelInner}
+          </div>
         </div>
-
-        {/* Sağ Taraf - Detail Panel */}
-        <div className="lg:col-span-1 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
-          {selectedAppointment ? (
-            <Suspense fallback={<div className="rounded-lg border border-gray-200 p-4 flex items-center justify-center h-96"><Spinner className="h-8 w-8" /></div>}>
-              <DetailPanel
-                appointment={selectedAppointment}
-                onSmsClick={(phone) => {
-                  setSmsPhone(phone)
-                  setSmsDialogOpen(true)
-                }}
-                onPatientClick={() => setPatientDialogOpen(true)}
-                onEditClick={() => setEditDialogOpen(true)}
-                onUpdatePrintType={(id, type) => {
-                  setAppointments(prev => prev.map(a => a.id === id ? { ...a, print_type: type } : a))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({ ...selectedAppointment, print_type: type })
-                  }
-                }}
-                onUpdatePaymentStatus={(id, status) => {
-                  setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_status: status } : a))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({ ...selectedAppointment, payment_status: status })
-                  }
-                }}
-                onUpdatePaymentAmount={(id, amount) => {
-                  setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_amount: amount } : a))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({ ...selectedAppointment, payment_amount: amount })
-                  }
-                }}
-                onCancelAppointment={(id) => {
-                  // Randevuyu listede "cancelled" olarak işaretle
-                  setAppointments(prev => prev.map(a =>
-                    a.id === id ? { ...a, status: "cancelled" } : a
-                  ))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({ ...selectedAppointment, status: "cancelled" })
-                  }
-                }}
-                onRescheduleAppointment={(id, newDate, newTime) => {
-                  // Listede tarihi ve saati güncelle
-                  setAppointments(prev => prev.map(a =>
-                    a.id === id
-                      ? { ...a, appointment_date: newDate, appointment_time: newTime }
-                      : a
-                  ))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({
-                      ...selectedAppointment,
-                      appointment_date: newDate,
-                      appointment_time: newTime,
-                    })
-                  }
-                }}
-              />
-            </Suspense>
-          ) : (
-            <div className="rounded-lg border border-dashed border-muted p-4 flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <Calendar className="h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">Detaylar için bir randevuya tıklayın</p>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Dialogs */}
       <DeleteDialog
