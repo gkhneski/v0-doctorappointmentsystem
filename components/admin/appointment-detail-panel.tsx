@@ -494,17 +494,21 @@ export function AppointmentDetailPanel({
               {/* Onay Linki */}
               <div className="flex gap-3">
                 <div className="flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${liveData.link_clicked_at ? "bg-blue-500" : "bg-orange-400"}`} />
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                    liveData.link_clicked_at ? "bg-blue-500" : "bg-gray-300"
+                  }`} />
                   <div className="w-0.5 h-12 bg-gray-200 mt-1" />
                 </div>
                 <div className="flex-1 pb-2">
-                  <p className={`text-xs font-semibold ${liveData.link_clicked_at ? "text-blue-600" : "text-orange-600"}`}>
+                  <p className={`text-xs font-semibold ${liveData.link_clicked_at ? "text-blue-600" : "text-gray-500"}`}>
                     Onay Linki
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {liveData.link_clicked_at 
-                      ? `Hasta tıkladı: ${new Date(liveData.link_clicked_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
-                      : "Tıklanmadı"
+                    {liveData.link_clicked_at
+                      ? `Hasta açtı: ${new Date(liveData.link_clicked_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
+                      : liveData.reminder_sent_at
+                      ? "Gönderildi, hasta henüz açmadı"
+                      : "Hatırlatma gönderilince aktif olur"
                     }
                   </p>
                 </div>

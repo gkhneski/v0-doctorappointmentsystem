@@ -52,19 +52,37 @@ export function PatientDialog({
       }}
     >
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {verificationStep === "form" ? "Hasta Bilgilerini Tamamlayın" : "KVKK Onay Kodu"}
-          </DialogTitle>
-          <DialogDescription>
-            {selectedAppointment?.patients?.full_name}
-            {selectedAppointment?.patients?.tc_no?.startsWith("TEMP_") && (
-              <span className="block mt-1 text-orange-600 font-medium">
-                Geçici Kayıt - Bilgiler tamamlanmalı
-              </span>
-            )}
-          </DialogDescription>
-        </DialogHeader>
+        {(() => {
+          const p = selectedAppointment?.patients
+          const isTemp = p?.tc_no?.startsWith("TEMP_")
+          const hasPhone = p?.phone && p.phone !== "0000000000"
+          const infoMissing = isTemp || !p?.tc_no || !hasPhone
+          return (
+            <DialogHeader>
+              <DialogTitle>
+                {verificationStep === "code"
+                  ? "KVKK Onay Kodu"
+                  : infoMissing
+                  ? "Hasta Bilgilerini Tamamlayın"
+                  : "Hasta Bilgileri / KVKK Doğrulama"}
+              </DialogTitle>
+              <DialogDescription>
+                {p?.full_name}
+                {verificationStep === "form" && (
+                  isTemp ? (
+                    <span className="block mt-1 text-orange-600 font-medium">
+                      Geçici Kayıt - Bilgiler tamamlanmalı
+                    </span>
+                  ) : !infoMissing ? (
+                    <span className="block mt-1 text-green-700 font-medium">
+                      Bilgiler kayıtlı - dilerseniz KVKK onay kodu gönderebilirsiniz
+                    </span>
+                  ) : null
+                )}
+              </DialogDescription>
+            </DialogHeader>
+          )
+        })()}
 
         {selectedAppointment && verificationStep === "form" && (
           <div className="space-y-4 py-4">

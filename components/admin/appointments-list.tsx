@@ -361,7 +361,17 @@ export default function AppointmentsList({ appointments: initialAppointments, do
           setSmsPhone(phone)
           setSmsDialogOpen(true)
         }}
-        onPatientClick={() => setPatientDialogOpen(true)}
+        onPatientClick={() => {
+          const p = selectedAppointment?.patients as any
+          setCompleteFormData({
+            tc_no: p?.tc_no?.startsWith("TEMP_") ? "" : (p?.tc_no || ""),
+            phone: p?.phone === "0000000000" ? "" : (p?.phone || ""),
+            date_of_birth: p?.date_of_birth || "",
+          })
+          setVerificationStep("form")
+          setVerificationCode("")
+          setPatientDialogOpen(true)
+        }}
         onEditClick={() => setEditDialogOpen(true)}
         onUpdatePrintType={(id, type) => {
           setAppointments(prev => prev.map(a => a.id === id ? { ...a, print_type: type } : a))
