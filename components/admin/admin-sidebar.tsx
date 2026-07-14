@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, UserCog, LayoutDashboard, Menu, MessageSquare, Pill } from "lucide-react"
+import { Calendar, UserCog, LayoutDashboard, Menu, MessageSquare, Pill, BellRing } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,12 @@ const navigation = [
     href: "/admin/predefined-lists",
     icon: Pill,
     roles: ["doktor", "sekreter", "hemsire"],
+  },
+  {
+    name: "Hatırlatmalar",
+    href: "/admin/reminders",
+    icon: BellRing,
+    roles: ["doktor", "sekreter"],
   },
   { name: "Personel", href: "/admin/staff", icon: UserCog, roles: ["doktor"] }, // Only doctors
 ]
