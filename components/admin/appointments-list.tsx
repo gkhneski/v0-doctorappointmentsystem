@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar, Trash2, Search, X, CalendarDays, LayoutGrid } from "lucide-react"
+import { Calendar, Trash2, Search, X, CalendarDays, LayoutGrid, Printer } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import WeeklyCalendar from "@/components/weekly-calendar"
@@ -99,6 +99,11 @@ export default function AppointmentsList({ appointments: initialAppointments, do
   // Filters
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>("")
   const [appointmentTypeFilter, setAppointmentTypeFilter] = useState<string>("all")
+  // Takvimden günlük yazdırma için seçilen tarih (varsayılan bugün)
+  const [printDate, setPrintDate] = useState<string>(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })
 
   // Supabase realtime subscription — appointments tablosu degisince listeyi ve secili randevuyu guncelle
   useEffect(() => {
@@ -206,7 +211,14 @@ export default function AppointmentsList({ appointments: initialAppointments, do
     await verifyCodeFn(selectedAppointment, verificationCode, completeFormData, appointments)
   }
 
-  const handlePrint = () => {
+  const handlePrint = (printDateOverride?: string) => {
+    // printDateOverride verilirse o güne ait randevuları yazdır (takvimden günlük yazdırma),
+    // verilmezse liste görünümündeki filtrelenmiş randevuları yazdır
+    const listToPrint = printDateOverride
+      ? appointments
+          .filter((a) => a.appointment_date === printDateOverride)
+          .sort((a, b) => (a.appointment_time || "").localeCompare(b.appointment_time || ""))
+      : filteredAppointments
     // Sadece liste tablosunu yazdır
     const shortTypeNames: Record<string, string> = {
       "asilama-tup-bebek": "IVF kontrol",
@@ -230,11 +242,12 @@ export default function AppointmentsList({ appointments: initialAppointments, do
       return shortTypeNames[appointment.appointment_type] || appointment.appointment_type.replace(/-/g, " ")
     }
 
-    const dateLabel = selectedDateFilter
-      ? " - " + new Date(selectedDateFilter).toLocaleDateString("tr-TR")
+    const labelDate = printDateOverride || selectedDateFilter
+    const dateLabel = labelDate
+      ? " - " + new Date(labelDate).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
       : ""
 
-    const rows = filteredAppointments
+    const rows = listToPrint
       .map((a, index) => {
         const no = index + 1
         const time = a.appointment_time || "-"
@@ -321,7 +334,7 @@ export default function AppointmentsList({ appointments: initialAppointments, do
         <div class="header">
           <h1>Randevu Listesi${dateLabel}</h1>
           <p>Prof. Dr. Eray Çalışkan - Kadın Hastalıkları ve Doğum</p>
-          <div class="count">Toplam: ${filteredAppointments.length} hasta</div>
+          <div class="count">Toplam: ${listToPrint.length} hasta</div>
         </div>
         
         <table>
@@ -499,34 +512,54 @@ export default function AppointmentsList({ appointments: initialAppointments, do
             viewMode={calendarView}
             onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
             viewControls={
-              <div className="inline-flex rounded-md border bg-muted/40 p-0.5">
-                <Button
-                  variant={calendarView === "day" ? "default" : "ghost"}
-                  size="sm"
-                  className="gap-1 h-7 px-2.5 text-xs"
-                  onClick={() => setCalendarView("day")}
-                >
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  Gün
-                </Button>
-                <Button
-                  variant={calendarView === "week" ? "default" : "ghost"}
-                  size="sm"
-                  className="gap-1 h-7 px-2.5 text-xs"
-                  onClick={() => setCalendarView("week")}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                  1 Hafta
-                </Button>
-                <Button
-                  variant={calendarView === "2week" ? "default" : "ghost"}
-                  size="sm"
-                  className="gap-1 h-7 px-2.5 text-xs"
-                  onClick={() => setCalendarView("2week")}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                  2 Hafta
-                </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex rounded-md border bg-muted/40 p-0.5">
+                  <Button
+                    variant={calendarView === "day" ? "default" : "ghost"}
+                    size="sm"
+                    className="gap-1 h-7 px-2.5 text-xs"
+                    onClick={() => setCalendarView("day")}
+                  >
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Gün
+                  </Button>
+                  <Button
+                    variant={calendarView === "week" ? "default" : "ghost"}
+                    size="sm"
+                    className="gap-1 h-7 px-2.5 text-xs"
+                    onClick={() => setCalendarView("week")}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    1 Hafta
+                  </Button>
+                  <Button
+                    variant={calendarView === "2week" ? "default" : "ghost"}
+                    size="sm"
+                    className="gap-1 h-7 px-2.5 text-xs"
+                    onClick={() => setCalendarView("2week")}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    2 Hafta
+                  </Button>
+                </div>
+                {/* Günlük randevu listesi yazdırma */}
+                <div className="inline-flex items-center gap-1 rounded-md border bg-muted/40 p-0.5">
+                  <Input
+                    type="date"
+                    value={printDate}
+                    onChange={(e) => setPrintDate(e.target.value)}
+                    className="h-7 w-[140px] border-0 bg-transparent text-xs shadow-none focus-visible:ring-0"
+                  />
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-1 h-7 px-2.5 text-xs"
+                    onClick={() => handlePrint(printDate)}
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    Yazdır
+                  </Button>
+                </div>
               </div>
             }
           />
