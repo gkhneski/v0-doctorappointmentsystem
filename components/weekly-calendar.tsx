@@ -116,9 +116,10 @@ type Props = {
   embedded?: boolean
   onAppointmentClick?: (appointment: ExistingAppointment) => void
   viewMode?: "day" | "week" | "2week"
+  viewControls?: React.ReactNode
 }
 
-export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false, onAppointmentClick, viewMode = "week" }: Props) {
+export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false, onAppointmentClick, viewMode = "week", viewControls = null }: Props) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     // If AI preselected a date, show that week
     if (preselectedDate) {
@@ -193,8 +194,16 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
       date.setDate(currentWeekStart.getDate() + offset)
       days.push(date)
     }
-    return days
+    // Geçmiş günleri gizle (bugünden önceki günler ekranda yer kaplamasın)
+    const startOfToday = new Date()
+    startOfToday.setHours(0, 0, 0, 0)
+    const upcoming = days.filter((d) => d >= startOfToday)
+    // Tüm günler geçmişteyse (geçmiş bir haftaya gidilmişse) hepsini göster
+    return upcoming.length > 0 ? upcoming : days
   }
+
+  // Tarihten Türkçe gün adı (dizi indeksine güvenmeden, filtrelenmiş günlerde doğru etiket için)
+  const getDayName = (date: Date) => date.toLocaleDateString("tr-TR", { weekday: "long" })
 
   const goToPreviousWeek = () => {
     const newStart = new Date(currentWeekStart)
@@ -464,7 +473,8 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
       )}
 
       <Card className={embedded ? "border-0 shadow-none" : ""}>
-        <div className={embedded ? "flex items-center justify-between gap-2 px-1 py-1" : "flex items-center justify-between gap-2 p-4"}>
+        <div className={embedded ? "flex flex-wrap items-center justify-between gap-2 px-1 py-1" : "flex flex-wrap items-center justify-between gap-2 p-4"}>
+          {viewControls}
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToPreviousWeek}>
               <ChevronLeft className="h-4 w-4" />
@@ -500,7 +510,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                           : "border-border bg-muted opacity-60"
                     }`}
                   >
-                    <div className="text-xs font-medium">{daysOfWeek[index % 5]}</div>
+                    <div className="text-xs font-medium">{getDayName(date)}</div>
                     <div className="text-sm font-semibold">{date.toLocaleDateString("tr-TR", { day: "numeric" })}</div>
                     <div className="text-xs opacity-80">{date.toLocaleDateString("tr-TR", { month: "short" })}</div>
                   </button>
@@ -537,7 +547,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                 return (
                   <div key={index} className="space-y-1">
                     <div className={`sticky top-0 z-10 rounded-md p-1 text-center ${isToday ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                      <div className="text-[10px] font-medium leading-tight">{daysOfWeek[index % 5]}</div>
+                      <div className="text-[10px] font-medium leading-tight">{getDayName(date)}</div>
                       <div className="text-xs font-semibold leading-tight">
                         {date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
                       </div>
