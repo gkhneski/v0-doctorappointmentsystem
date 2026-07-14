@@ -60,7 +60,7 @@ export default function AppointmentsList({ appointments: initialAppointments, do
   // Görünüm modu: takvim (varsayilan, doktor+program varsa) veya liste
   const calendarAvailable = !!doctor
   const [viewMode, setViewMode] = useState<"calendar" | "list">(calendarAvailable ? "calendar" : "list")
-  const [calendarView, setCalendarView] = useState<"week" | "day">("week")
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "2week">("week")
 
   // Appointment actions hook
   const { isUpdating, deleteId, setDeleteId, handleDelete } = useAppointmentActions(setAppointments, setSelectedAppointment)
@@ -414,29 +414,36 @@ export default function AppointmentsList({ appointments: initialAppointments, do
 
   return (
     <div className="space-y-3">
-      {/* Hafta / Gün görünüm değiştirici */}
+      {/* Gun / 1 Hafta / 2 Hafta gorunum degistirici */}
       {calendarAvailable && viewMode === "calendar" && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="inline-flex rounded-lg border bg-muted/40 p-1">
-            <Button
-              variant={calendarView === "day" ? "default" : "ghost"}
-              size="sm"
-              className="gap-1.5 h-8"
-              onClick={() => setCalendarView("day")}
-            >
-              <CalendarDays className="h-4 w-4" />
-              Gün
-            </Button>
-            <Button
-              variant={calendarView === "week" ? "default" : "ghost"}
-              size="sm"
-              className="gap-1.5 h-8"
-              onClick={() => setCalendarView("week")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Hafta
-            </Button>
-          </div>
+        <div className="inline-flex rounded-md border bg-muted/40 p-0.5">
+          <Button
+            variant={calendarView === "day" ? "default" : "ghost"}
+            size="sm"
+            className="gap-1 h-6 px-2 text-xs"
+            onClick={() => setCalendarView("day")}
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Gün
+          </Button>
+          <Button
+            variant={calendarView === "week" ? "default" : "ghost"}
+            size="sm"
+            className="gap-1 h-6 px-2 text-xs"
+            onClick={() => setCalendarView("week")}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            1 Hafta
+          </Button>
+          <Button
+            variant={calendarView === "2week" ? "default" : "ghost"}
+            size="sm"
+            className="gap-1 h-6 px-2 text-xs"
+            onClick={() => setCalendarView("2week")}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            2 Hafta
+          </Button>
         </div>
       )}
 

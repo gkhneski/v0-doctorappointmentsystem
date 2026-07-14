@@ -115,7 +115,7 @@ type Props = {
   prefilledPatient?: PrefilledPatient | null
   embedded?: boolean
   onAppointmentClick?: (appointment: ExistingAppointment) => void
-  viewMode?: "week" | "day"
+  viewMode?: "day" | "week" | "2week"
 }
 
 export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false, onAppointmentClick, viewMode = "week" }: Props) {
@@ -185,9 +185,12 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
 
   const getWeekDays = () => {
     const days = []
-    for (let i = 0; i < 5; i++) {
+    // 2 hafta görünümü: 1. hafta Pzt-Cum (0-4) + 2. hafta Pzt-Cum (hafta sonu atlanır)
+    const count = viewMode === "2week" ? 10 : 5
+    for (let i = 0; i < count; i++) {
       const date = new Date(currentWeekStart)
-      date.setDate(currentWeekStart.getDate() + i)
+      const offset = i >= 5 ? i + 2 : i // ikinci haftaya geçerken Cmt+Pzr atla
+      date.setDate(currentWeekStart.getDate() + offset)
       days.push(date)
     }
     return days
@@ -460,28 +463,22 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>Tarih ve Saat Seçin</CardTitle>
-              <CardDescription>Müsait bir saat seçin</CardDescription>
+      <Card className={embedded ? "border-0 shadow-none" : ""}>
+        <div className={embedded ? "flex items-center justify-between gap-2 px-1 py-1" : "flex items-center justify-between gap-2 p-4"}>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToPreviousWeek}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-sm font-semibold whitespace-nowrap px-1">
+              {weekDays[0].toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} -{" "}
+              {weekDays[weekDays.length - 1].toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="text-sm font-medium whitespace-nowrap">
-                {weekDays[0].toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} -{" "}
-                {weekDays[4].toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
-              </div>
-              <Button variant="outline" size="icon" onClick={goToNextWeek}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToNextWeek}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        </div>
+        <CardContent className={embedded ? "space-y-2 p-1" : "space-y-3 p-4 pt-0"}>
           <div className={viewMode === "day" ? "block" : "md:hidden"}>
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {weekDays.map((date, index) => {
@@ -503,7 +500,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                           : "border-border bg-muted opacity-60"
                     }`}
                   >
-                    <div className="text-xs font-medium">{daysOfWeek[index]}</div>
+                    <div className="text-xs font-medium">{daysOfWeek[index % 5]}</div>
                     <div className="text-sm font-semibold">{date.toLocaleDateString("tr-TR", { day: "numeric" })}</div>
                     <div className="text-xs opacity-80">{date.toLocaleDateString("tr-TR", { month: "short" })}</div>
                   </button>
@@ -529,22 +526,23 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
           })()}
 
           <div className="hidden md:block overflow-x-auto">
-            <div className={`grid gap-2 ${viewMode === "day" ? "grid-cols-1 max-w-lg" : "min-w-[800px] grid-cols-5"}`}>
+            <div className={`grid gap-1.5 ${viewMode === "day" ? "grid-cols-1 max-w-md" : viewMode === "2week" ? "min-w-[1400px] grid-cols-10" : "min-w-[700px] grid-cols-5"}`}>
               {(viewMode === "day" ? [weekDays[selectedDay]] : weekDays).map((date, idx) => {
                 const index = viewMode === "day" ? selectedDay : idx
                 const dateStr = formatDateForDB(date)
                 const workingHours = getWorkingHoursForDay(date)
                 const daySchedules = schedules.filter((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
+                const isToday = dateStr === formatDateForDB(new Date())
 
                 return (
-                  <div key={index} className="space-y-2">
-                    <div className="rounded-lg bg-muted p-2 text-center">
-                      <div className="text-xs font-medium">{daysOfWeek[index]}</div>
-                      <div className="text-sm">
+                  <div key={index} className="space-y-1">
+                    <div className={`sticky top-0 z-10 rounded-md p-1 text-center ${isToday ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                      <div className="text-[10px] font-medium leading-tight">{daysOfWeek[index % 5]}</div>
+                      <div className="text-xs font-semibold leading-tight">
                         {date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
                       </div>
                       {daySchedules.length > 0 && (
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className={`text-[9px] leading-tight ${isToday ? "opacity-90" : "text-muted-foreground"}`}>
                           {daySchedules[0].start_time.slice(0,5)}-{daySchedules[0].end_time.slice(0,5)}
                         </div>
                       )}
