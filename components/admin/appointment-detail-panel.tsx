@@ -569,34 +569,44 @@ export function AppointmentDetailPanel({
                 </div>
               </div>
 
-              {/* Hasta Cevabı - Gelecek/Gelmeyecek */}
-              <div className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                    liveData.status === "attended" ? "bg-green-500" : 
-                    liveData.status === "no_show" ? "bg-red-500" : 
-                    liveData.status === "cancelled" ? "bg-red-400" :
-                    "bg-gray-300"
-                  }`} />
-                </div>
-                <div className="flex-1">
-                  <p className={`text-xs font-semibold ${
-                    liveData.status === "attended" ? "text-green-600" : 
-                    liveData.status === "no_show" ? "text-red-600" :
-                    liveData.status === "cancelled" ? "text-red-500" :
-                    "text-gray-500"
-                  }`}>
-                    Hasta Cevabı
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {liveData.status === "attended" && "GELECEK"}
-                    {liveData.status === "no_show" && "GELMEYECEK"}
-                    {liveData.status === "confirmed" && "Cevap Bekleniyor"}
-                    {liveData.status === "cancelled" && "Randevu İptal Edildi"}
-                    {!["attended", "no_show", "confirmed", "cancelled"].includes(liveData.status || "") && "-"}
-                  </p>
-                </div>
-              </div>
+              {/* Hasta Cevabı - hastanın onay linkinden verdiği cevap */}
+              {(() => {
+                const cs = liveData.confirmation_status
+                const respondedAt = liveData.confirmed_at
+                  ? new Date(liveData.confirmed_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                  : null
+
+                let dotColor = "bg-gray-300"
+                let textColor = "text-gray-500"
+                let label: string
+                if (cs === "confirmed") {
+                  dotColor = "bg-green-500"
+                  textColor = "text-green-600"
+                  label = respondedAt ? `GELECEK - Hasta onayladı (${respondedAt})` : "GELECEK - Hasta onayladı"
+                } else if (cs === "cancelled") {
+                  dotColor = "bg-red-500"
+                  textColor = "text-red-600"
+                  label = respondedAt ? `GELMEYECEK - Hasta iptal etti (${respondedAt})` : "GELMEYECEK - Hasta iptal etti"
+                } else if (liveData.link_clicked_at) {
+                  dotColor = "bg-blue-400"
+                  textColor = "text-blue-600"
+                  label = "Linke tıkladı, henüz cevap vermedi"
+                } else {
+                  label = "Cevap Bekleniyor"
+                }
+
+                return (
+                  <div className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${dotColor}`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-xs font-semibold ${textColor}`}>Hasta Cevabı</p>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div>
