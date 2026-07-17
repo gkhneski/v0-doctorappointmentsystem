@@ -124,6 +124,26 @@ export function AppointmentDetailPanel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointment.id])
 
+  const [sendingDocs, setSendingDocs] = useState(false)
+
+  const handleSendDocuments = async () => {
+    setSendingDocs(true)
+    try {
+      const res = await fetch(`/api/appointments/${appointment.id}/send-documents`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Gönderilemedi")
+      toast({ title: "Evrak listesi gönderildi", description: "Hastaya evrak listesi SMS'i başarıyla gönderildi." })
+    } catch (err) {
+      toast({
+        title: "Hata",
+        description: err instanceof Error ? err.message : "Evrak SMS'i gönderilemedi.",
+        variant: "destructive",
+      })
+    } finally {
+      setSendingDocs(false)
+    }
+  }
+
   const handleCancelAppointment = async () => {
     setIsLoading(true)
     try {
@@ -239,6 +259,17 @@ export function AppointmentDetailPanel({
           >
             <MessageSquare className="h-3 w-3 mr-1" />
             SMS
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs h-8 border-blue-300 text-blue-700 hover:bg-blue-50"
+            disabled={!appointment.patients?.phone || !appointment.appointment_type || sendingDocs}
+            onClick={handleSendDocuments}
+          >
+            <FileText className="h-3 w-3 mr-1" />
+            {sendingDocs ? "Gönderiliyor..." : "Evrak Gönder"}
           </Button>
 
           <Button variant="outline" size="sm" className="text-xs h-8" onClick={onPatientClick}>
