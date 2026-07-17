@@ -504,23 +504,47 @@ export function AppointmentDetailPanel({
               </div>
 
               {/* Hatırlatma SMS */}
-              <div className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${liveData.reminder_sent_at ? "bg-green-500" : "bg-gray-300"}`} />
-                  <div className="w-0.5 h-12 bg-gray-200 mt-1" />
-                </div>
-                <div className="flex-1 pb-2">
-                  <p className={`text-xs font-semibold ${liveData.reminder_sent_at ? "text-green-600" : "text-gray-500"}`}>
-                    Hatırlatma SMS
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {liveData.reminder_sent_at 
-                      ? `Gönderildi: ${new Date(liveData.reminder_sent_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
-                      : "Gönderilmedi"
-                    }
-                  </p>
-                </div>
-              </div>
+              {(() => {
+                const phone = liveData.patients?.phone
+                const hasValidPhone = !!phone && phone !== "0000000000"
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+                const apptDate = liveData.appointment_date ? new Date(liveData.appointment_date + "T00:00:00") : null
+                const isFuture = apptDate ? apptDate > today : false
+                const sent = !!liveData.reminder_sent_at
+
+                let dotColor = "bg-gray-300"
+                let textColor = "text-gray-500"
+                let label: string
+                if (sent) {
+                  dotColor = "bg-green-500"
+                  textColor = "text-green-600"
+                  label = `Gönderildi: ${new Date(liveData.reminder_sent_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
+                } else if (!hasValidPhone) {
+                  dotColor = "bg-amber-400"
+                  textColor = "text-amber-600"
+                  label = "Telefon numarası yok - gönderilemiyor"
+                } else if (isFuture) {
+                  label = "Randevudan 1 gün önce otomatik gönderilecek"
+                } else {
+                  dotColor = "bg-amber-400"
+                  textColor = "text-amber-600"
+                  label = "Gönderilmedi"
+                }
+
+                return (
+                  <div className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${dotColor}`} />
+                      <div className="w-0.5 h-12 bg-gray-200 mt-1" />
+                    </div>
+                    <div className="flex-1 pb-2">
+                      <p className={`text-xs font-semibold ${textColor}`}>Hatırlatma SMS</p>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* Onay Linki */}
               <div className="flex gap-3">
