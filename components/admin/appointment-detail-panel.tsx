@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { MessageSquare, User, Edit, ClipboardCheck, Calendar, Phone, FileText, Printer, AlertCircle, CheckCircle2, XCircle, Ban, RefreshCw } from "lucide-react"
+import { MessageSquare, User, Edit, ClipboardCheck, Calendar, Phone, FileText, Printer, AlertCircle, CheckCircle2, XCircle, Ban, RefreshCw, Droplets, MapPin, Briefcase, Users, ExternalLink } from "lucide-react"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -111,7 +112,7 @@ export function AppointmentDetailPanel({
     const fetchFresh = async () => {
       const { data } = await supabase
         .from("appointments")
-        .select(`*, patients (id, full_name, phone, tc_no, date_of_birth, email), doctors (id, full_name)`)
+        .select(`*, patients (id, full_name, phone, tc_no, date_of_birth, email, blood_group, city, district, country, occupation, mother_name, father_name, spouse_name, spouse_phone, spouse_blood_group), doctors (id, full_name)`)
         .eq("id", appointment.id)
         .single()
       if (data) {
@@ -356,6 +357,75 @@ export function AppointmentDetailPanel({
               <p className="font-medium">{appointment.patients?.tc_no || "Girilmedi"}</p>
             </div>
           </div>
+
+          {/* Ek Hasta Bilgileri: kan grubu, adres, meslek, eş */}
+          {(() => {
+            const pt = liveData.patients || appointment.patients || {}
+            const address = [pt.district, pt.city, pt.country].filter(Boolean).join(", ")
+            return (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-muted-foreground">Hasta Bilgileri</p>
+                  {pt.id && (
+                    <Link
+                      href={`/admin/patients/${pt.id}`}
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                    >
+                      Tam Profil
+                      <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  )}
+                </div>
+
+                {/* Kan Grubu */}
+                <div className="flex items-start gap-2">
+                  <Droplets className="h-4 w-4 mt-0.5 text-red-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Kan Grubu</p>
+                    <p className="font-medium">{pt.blood_group || "Girilmedi"}</p>
+                  </div>
+                </div>
+
+                {/* Adres */}
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Adres</p>
+                    <p className="font-medium">{address || "Girilmedi"}</p>
+                  </div>
+                </div>
+
+                {/* Meslek */}
+                {pt.occupation && (
+                  <div className="flex items-start gap-2">
+                    <Briefcase className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Meslek</p>
+                      <p className="font-medium">{pt.occupation}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Eş Bilgisi */}
+                {(pt.spouse_name || pt.spouse_phone || pt.spouse_blood_group) && (
+                  <div className="flex items-start gap-2">
+                    <Users className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Eş</p>
+                      <p className="font-medium">{pt.spouse_name || "—"}</p>
+                      {(pt.spouse_phone || pt.spouse_blood_group) && (
+                        <p className="text-xs text-muted-foreground">
+                          {[pt.spouse_phone, pt.spouse_blood_group && `Kan: ${pt.spouse_blood_group}`]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Randevu Tipi */}
           <div className="flex items-start gap-2">
