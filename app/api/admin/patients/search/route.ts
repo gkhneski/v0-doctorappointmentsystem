@@ -29,14 +29,8 @@ export async function GET(request: Request) {
 
     const serviceSupabase = createServiceRoleClient()
 
-    // TC ile tam eşleşme veya isimde kısmi arama
-    const { data: patients, error } = await serviceSupabase
-      .from("patients")
-      .select("id, full_name, phone, tc_no, date_of_birth")
-      .or(`tc_no.ilike.${query}%,full_name.ilike.%${query}%,phone.ilike.${query}%`)
-      .neq("is_blacklisted", true)
-      .order("full_name")
-      .limit(10)
+    // Türkçe büyük/küçük harf ve aksan duyarsız arama (isim/TC/telefon)
+    const { data: patients, error } = await serviceSupabase.rpc("search_patients_tr", { q: query })
 
     if (error) {
       console.error("[v0] Patient search error:", error)
