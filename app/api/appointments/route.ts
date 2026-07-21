@@ -67,12 +67,13 @@ export async function POST(request: Request) {
         .or(`tc_no.eq.${patient_tc_no},phone.eq.${patient_phone}`)
         .maybeSingle(),
 
-      // 4. Existing patient lookup
+      // 4. Existing patient lookup (limit(1) — mukerrer olsa bile hata firlatmaz)
       supabase
         .from("patients")
         .select("id")
         .eq("tc_no", patient_tc_no)
-        .maybeSingle(),
+        .order("created_at", { ascending: true })
+        .limit(1),
     ])
 
     if (existingAppointment) {
@@ -100,9 +101,10 @@ export async function POST(request: Request) {
     }
 
     let patientId: string
+    const foundPatient = Array.isArray(existingPatient) ? existingPatient[0] : existingPatient
 
-    if (existingPatient) {
-      patientId = existingPatient.id
+    if (foundPatient) {
+      patientId = foundPatient.id
       // Mevcut hastayı güncelle — sadece değişen alanları güncelle,
       // date_of_birth zaten doğruysa üzerine yazma (unique constraint hatası önleme)
       const updatePayload: Record<string, string | boolean> = {
@@ -137,9 +139,22 @@ export async function POST(request: Request) {
         .select("id")
         .single()
 
-      if (insertError || !newPatient) throw insertError
-
-      patientId = newPatient.id
+      if (insertError || !newPatient) {
+        // Unique TC cakismasi (esdeğer istek/yaris durumu): mevcut kaydi bul ve kullan
+        const { data: raced } = await supabase
+          .from("patients")
+          .select("id")
+          .eq("tc_no", patient_tc_no)
+          .order("created_at", { ascending: true })
+          .limit(1)
+        if (raced && raced[0]) {
+          patientId = raced[0].id
+        } else {
+          throw insertError
+        }
+      } else {
+        patientId = newPatient.id
+      }
     }
 
     // Generate unique confirmation token
