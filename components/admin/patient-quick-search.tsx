@@ -36,6 +36,14 @@ function formatDate(d: string) {
   return `${day}.${m}.${y}`
 }
 
+// Randevu geçmişte mi gelecekte mi?
+function isPastAppointment(date: string, time: string) {
+  const t = (time || "00:00").slice(0, 5)
+  const dt = new Date(`${date}T${t}:00`)
+  if (isNaN(dt.getTime())) return false
+  return dt.getTime() < Date.now()
+}
+
 export function PatientQuickSearch() {
   const router = useRouter()
   const [query, setQuery] = useState("")
@@ -201,6 +209,7 @@ export function PatientQuickSearch() {
                           {appointments.map((a) => {
                             const type = a.print_type || a.appointment_type || ""
                             const isCancelled = a.status === "cancelled"
+                            const past = isPastAppointment(a.appointment_date, a.appointment_time)
                             return (
                               <li
                                 key={a.id}
@@ -208,6 +217,13 @@ export function PatientQuickSearch() {
                               >
                                 <span className="flex items-center gap-1.5 text-gray-700">
                                   <CalendarClock className="h-3 w-3 shrink-0 text-gray-400" />
+                                  <span
+                                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                                      past ? "bg-gray-100 text-gray-500" : "bg-blue-100 text-blue-700"
+                                    }`}
+                                  >
+                                    {past ? "Geçmiş" : "Yeni"}
+                                  </span>
                                   <span className="font-medium">{formatDate(a.appointment_date)}</span>
                                   <span className="text-gray-500">{a.appointment_time?.slice(0, 5)}</span>
                                   {type && <span className="text-gray-500">· {type}</span>}
