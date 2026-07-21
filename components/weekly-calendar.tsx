@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
-import { ChevronLeft, ChevronRight, Lock, Check, StickyNote, GripVertical, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Lock, Check, StickyNote, GripVertical, Loader2, Trash2 } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -175,6 +175,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
   const [draggingAppt, setDraggingAppt] = useState<ExistingAppointment | null>(null)
   const [dragOverSlot, setDragOverSlot] = useState<{ date: string; time: string } | null>(null)
   const [movingId, setMovingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [localAppointments, setLocalAppointments] = useState(existingAppointments)
 
   // Props değişince local state'i güncelle
@@ -442,6 +443,142 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     router.refresh()
   }
 
+  // İptal edilmiş (gelmeyeceğini bildiren) randevuyu sil ve saati boşalt
+  const handleFreeSlot = async (appt: ExistingAppointment) => {
+    const label = appt.patients?.full_name || "Hasta"
+    const t = appt.appointment_time.slice(0, 5)
+    if (typeof window !== "undefined" && !window.confirm(`${label} adlı iptal edilmiş randevu silinecek ve ${t} saati boşaltılacak. Onaylıyor musunuz?`)) return
+    setDeletingId(appt.id)
+    try {
+      const res = await fetch(`/api/appointments/${appt.id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Randevu silinemedi")
+      setLocalAppointments((prev) => prev.filter((a) => a.id !== appt.id))
+      toast({ title: "Slot boşaltıldı", description: `${t} artık müsait — yeni hasta ekleyebilirsiniz.` })
+      router.refresh()
+    } catch (err: any) {
+      toast({ title: "Hata", description: err?.message || "Randevu silinemedi", variant: "destructive" })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  // Randevu kartı (grid içi normal + grid dışı "ara" randevular için ortak render)
+  const renderApptCard = (appointment: ExistingAppointment, time: string, isAra: boolean) => {
+    const phone = appointment.patients?.phone
+    const showPhone = phone && phone !== "0000000000"
+    const isDragging = draggingAppt?.id === appointment.id
+    const isMoving = movingId === appointment.id
+    const isDeleting = deletingId === appointment.id
+    const isCancelled = appointment.status === "cancelled"
+    const solidColor = isAra ? "bg-amber-500" : "bg-red-600"
+
+    const colorClass = isCancelled
+      ? "bg-gray-400 text-white opacity-70 cursor-default"
+      : isDragging
+        ? `${solidColor} text-white opacity-40 scale-95 cursor-grabbing`
+        : isAdmin
+          ? `${solidColor} text-white opacity-100 hover:shadow-lg hover:scale-[1.02] cursor-pointer`
+          : `${solidColor} text-white opacity-100 cursor-grab active:cursor-grabbing`
+
+    const card = (
+      <div
+        key={appointment.id}
+        draggable={!isCancelled}
+        onDragStart={() => !isCancelled && handleDragStart(appointment)}
+        onDragEnd={handleDragEnd}
+        onClick={(e) => {
+          if (isCancelled) return
+          if (onAppointmentClick) {
+            e.stopPropagation()
+            onAppointmentClick(appointment)
+          } else if (isAdmin && appointment.patient_id) {
+            e.stopPropagation()
+            router.push(`/admin/patients/${appointment.patient_id}`)
+          }
+        }}
+        className={`group relative w-full rounded-md px-1.5 py-1 text-xs transition-all ${colorClass}`}
+      >
+        {(isMoving || isDeleting) && (
+          <div className="absolute inset-0 rounded-md bg-white/50 flex items-center justify-center z-10">
+            <Loader2 className="h-3 w-3 animate-spin text-red-600" />
+          </div>
+        )}
+        <div className="flex items-start gap-1">
+          {!isCancelled && <GripVertical className="h-3 w-3 mt-0.5 shrink-0 opacity-50 group-hover:opacity-100" />}
+          <div className="min-w-0 flex-1">
+            <div className="font-bold text-[11px] opacity-90 mb-0.5 flex items-center gap-1">
+              {time}
+              {isAra && <span className="text-[8px] font-bold bg-white/25 rounded px-1 py-0.5 leading-none">ARA</span>}
+            </div>
+            {isAdmin ? (
+              <>
+                <div className="font-semibold truncate hover:underline">
+                  {appointment.patients?.full_name || "Hasta"}
+                  {isCancelled && <span className="ml-1 text-[9px] bg-white/30 px-1 rounded">İPTAL</span>}
+                </div>
+                {showPhone && <div className="opacity-80 truncate text-[10px]">{phone}</div>}
+                {getTypeLabel(appointment) && (
+                  <div className="text-[9px] font-medium bg-white/20 rounded px-1 mt-0.5 inline-block truncate max-w-full">
+                    {getTypeLabel(appointment)}
+                    {appointment.appointment_type === "ayrintili-fetal-ultrason" && appointment.fetal_bebek_sayisi && (
+                      <span className="ml-1">
+                        ({appointment.fetal_bebek_sayisi === "tek" ? "Tek" : appointment.fetal_bebek_sayisi === "ikiz" ? "İkiz" : "Üçüz"})
+                      </span>
+                    )}
+                  </div>
+                )}
+                {!isCancelled && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    {appointment.payment_status === "paid" && (
+                      <span className="text-[9px] font-semibold bg-green-500/90 rounded px-1">
+                        {appointment.payment_amount ? `₺${appointment.payment_amount}` : "Ödendi"}
+                      </span>
+                    )}
+                    {appointment.confirmation_status === "confirmed" && (
+                      <Check className="h-3 w-3 opacity-90" />
+                    )}
+                  </div>
+                )}
+                {isCancelled && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleFreeSlot(appointment) }}
+                    disabled={isDeleting}
+                    className="mt-1 inline-flex items-center gap-1 rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-gray-800 hover:bg-white/90 disabled:opacity-60"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Sil &amp; Boşalt
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="font-semibold">Dolu</div>
+            )}
+          </div>
+          {appointment.notes && (
+            <StickyNote className="h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" />
+          )}
+        </div>
+      </div>
+    )
+
+    if (appointment.notes) {
+      return (
+        <TooltipProvider key={appointment.id} delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>{card}</TooltipTrigger>
+            <TooltipContent side="right" className="max-w-[220px] text-xs whitespace-pre-wrap z-[100]">
+              <p className="font-semibold mb-1">Not:</p>
+              <p>{appointment.notes}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )
+    }
+
+    return card
+  }
+
   const weekDays = getWeekDays()
 
   if (!doctor) {
@@ -536,7 +673,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
           })()}
 
           <div className="hidden md:block overflow-x-auto">
-            <div className={`grid gap-1.5 ${viewMode === "day" ? "grid-cols-1 max-w-md" : viewMode === "2week" ? "min-w-[1400px] grid-cols-10" : "min-w-[700px] grid-cols-5"}`}>
+            <div className={`grid gap-1 ${viewMode === "day" ? "grid-cols-1 max-w-md" : viewMode === "2week" ? "min-w-[1200px] grid-cols-10" : "min-w-[640px] grid-cols-5"}`}>
               {(viewMode === "day" ? [weekDays[selectedDay]] : weekDays).map((date, idx) => {
                 const index = viewMode === "day" ? selectedDay : idx
                 const dateStr = formatDateForDB(date)
@@ -569,116 +706,38 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                         </div>
                       ) : (
                         daySchedules.map((schedule) => {
-                          const timeSlots = generateTimeSlots(
+                          const gridTimes = generateTimeSlots(
                             schedule.start_time,
                             schedule.end_time,
                             preselectedType,
                           )
+                          const dayStr = formatDateForDB(date)
+                          const araAppts = localAppointments.filter((a) => {
+                            const t = a.appointment_time.slice(0, 5)
+                            return (
+                              a.doctor_id === schedule.doctor_id &&
+                              a.appointment_date === dayStr &&
+                              !gridTimes.includes(t)
+                            )
+                          })
+                          const entries = [
+                            ...gridTimes.map((t) => ({ time: t, ara: false })),
+                            ...araAppts.map((a) => ({ time: a.appointment_time.slice(0, 5), ara: true })),
+                          ].sort((x, y) => x.time.localeCompare(y.time))
                           return (
                             <div key={schedule.id} className="space-y-1">
-                              {timeSlots.map((time) => {
+                              {entries.map((entry) => {
+                                const time = entry.time
+                                if (entry.ara) {
+                                  const araAppt = getBookedAppointment(schedule.doctor_id, date, time)
+                                  return araAppt ? renderApptCard(araAppt, time, true) : null
+                                }
                                 const isBooked = isSlotBooked(schedule.doctor_id, date, time)
                                 const isPast = isSlotPast(date, time)
                                 const appointment = isBooked ? getBookedAppointment(schedule.doctor_id, date, time) : null
 
                                 if (isBooked && appointment) {
-                                  const phone = appointment.patients?.phone
-                                  const showPhone = phone && phone !== "0000000000"
-                                  const isDragging = draggingAppt?.id === appointment.id
-                                  const isMoving = movingId === appointment.id
-
-                                  const isCancelled = appointment.status === "cancelled"
-                                  const card = (
-                                    <div
-                                      key={time}
-                                      draggable={!isCancelled}
-                                      onDragStart={() => !isCancelled && handleDragStart(appointment)}
-                                      onDragEnd={handleDragEnd}
-                                      onClick={(e) => {
-                                        if (isCancelled) return
-                                        if (onAppointmentClick) {
-                                          e.stopPropagation()
-                                          onAppointmentClick(appointment)
-                                        } else if (isAdmin && appointment.patient_id) {
-                                          e.stopPropagation()
-                                          router.push(`/admin/patients/${appointment.patient_id}`)
-                                        }
-                                      }}
-                                      className={`group relative w-full rounded-md px-2 py-1.5 text-xs transition-all ${
-                                        isCancelled 
-                                          ? "bg-gray-400 text-white opacity-60 cursor-not-allowed" 
-                                          : isDragging 
-                                            ? "bg-red-600 text-white opacity-40 scale-95 cursor-grabbing" 
-                                            : isAdmin 
-                                              ? "bg-red-600 text-white opacity-100 hover:shadow-lg hover:scale-[1.02] cursor-pointer" 
-                                              : "bg-red-600 text-white opacity-100 cursor-grab active:cursor-grabbing"
-                                      }`}
-                                    >
-                                      {isMoving && (
-                                        <div className="absolute inset-0 rounded-md bg-white/50 flex items-center justify-center z-10">
-                                          <Loader2 className="h-3 w-3 animate-spin text-red-600" />
-                                        </div>
-                                      )}
-                                      <div className="flex items-start gap-1">
-                                        <GripVertical className="h-3 w-3 mt-0.5 shrink-0 opacity-50 group-hover:opacity-100" />
-                                        <div className="min-w-0 flex-1">
-                                          <div className="font-bold text-[11px] opacity-80 mb-0.5">{time}</div>
-                                          {isAdmin ? (
-                                            <>
-                                              <div className="font-semibold truncate hover:underline">
-                                                {appointment.patients?.full_name || "Hasta"}
-                                                {isCancelled && <span className="ml-1 text-[9px] bg-white/30 px-1 rounded">İPTAL</span>}
-                                              </div>
-                                              {showPhone && <div className="opacity-80 truncate text-[10px]">{phone}</div>}
-                                              {getTypeLabel(appointment) && (
-                                                <div className="text-[9px] font-medium bg-white/20 rounded px-1 mt-0.5 inline-block truncate max-w-full">
-                                                  {getTypeLabel(appointment)}
-                                                  {appointment.appointment_type === "ayrintili-fetal-ultrason" && appointment.fetal_bebek_sayisi && (
-                                                    <span className="ml-1">
-                                                      ({appointment.fetal_bebek_sayisi === "tek" ? "Tek" : appointment.fetal_bebek_sayisi === "ikiz" ? "İkiz" : "Üçüz"})
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              )}
-                                              <div className="flex items-center gap-1 mt-0.5">
-                                                {appointment.payment_status === "paid" && (
-                                                  <span className="text-[9px] font-semibold bg-green-500/90 rounded px-1">
-                                                    {appointment.payment_amount ? `₺${appointment.payment_amount}` : "Ödendi"}
-                                                  </span>
-                                                )}
-                                                {appointment.confirmation_status === "confirmed" && (
-                                                  <Check className="h-3 w-3 opacity-90" />
-                                                )}
-                                              </div>
-                                            </>
-                                          ) : (
-                                            <div className="font-semibold">Dolu</div>
-                                          )}
-                                        </div>
-                                        {appointment.notes && (
-                                          <StickyNote className="h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" />
-                                        )}
-                                      </div>
-                                    </div>
-                                  )
-
-                                  if (appointment.notes) {
-                                    return (
-                                      <TooltipProvider key={time} delayDuration={200}>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            {card}
-                                          </TooltipTrigger>
-                                          <TooltipContent side="right" className="max-w-[220px] text-xs whitespace-pre-wrap z-[100]">
-                                            <p className="font-semibold mb-1">Not:</p>
-                                            <p>{appointment.notes}</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    )
-                                  }
-
-                                  return card
+                                  return renderApptCard(appointment, time, false)
                                 }
 
                                 const slotDateStr = formatDateForDB(date)
@@ -703,7 +762,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                       variant="outline"
                                       size="sm"
                                       title={isFetalBlocked ? "Fetal ultrason sadece tam ve bucuklu saatlerde" : undefined}
-                                      className={`w-full text-xs transition-all ${
+                                      className={`w-full h-7 min-h-0 px-1 text-[11px] transition-all ${
                                         isPast ? "opacity-50 cursor-not-allowed" :
                                         isFetalBlocked ? "opacity-30 cursor-not-allowed bg-gray-50 border-dashed" :
                                         isDropTarget ? "border-primary bg-primary/10 ring-2 ring-primary/30 scale-105" :
@@ -739,66 +798,100 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
               </div>
             ) : (
               selectedDaySchedules.map((schedule) => {
-                const timeSlots = generateTimeSlots(
+                const gridTimes = generateTimeSlots(
                   schedule.start_time,
                   schedule.end_time,
                   preselectedType,
                 )
+                const dayStr = formatDateForDB(selectedDate)
+                const araAppts = localAppointments.filter((a) => {
+                  const t = a.appointment_time.slice(0, 5)
+                  return (
+                    a.doctor_id === schedule.doctor_id &&
+                    a.appointment_date === dayStr &&
+                    !gridTimes.includes(t)
+                  )
+                })
+                const entries = [
+                  ...gridTimes.map((t) => ({ time: t, ara: false })),
+                  ...araAppts.map((a) => ({ time: a.appointment_time.slice(0, 5), ara: true })),
+                ].sort((x, y) => x.time.localeCompare(y.time))
                 return (
                   <div key={schedule.id} className="space-y-2">
-                    {timeSlots.map((time) => {
+                    {entries.map((entry) => {
+                      const time = entry.time
                       const isBooked = isSlotBooked(schedule.doctor_id, selectedDate, time)
                       const isPast = isSlotPast(selectedDate, time)
                       const isSelectedSlot = selectedSlot?.date === selectedDateStr && selectedSlot?.time === time
-                      const appointment = isBooked ? getBookedAppointment(schedule.doctor_id, selectedDate, time) : null
+                      const appointment = (entry.ara || isBooked) ? getBookedAppointment(schedule.doctor_id, selectedDate, time) : null
+                      const isCancelled = appointment?.status === "cancelled"
+                      const isDeleting = deletingId === appointment?.id
 
-                      const button = (
+                      if (appointment) {
+                        return (
+                          <div
+                            key={appointment.id}
+                            onClick={() => {
+                              if (isCancelled) return
+                              if (onAppointmentClick) onAppointmentClick(appointment)
+                            }}
+                            className={`relative w-full min-h-[52px] rounded-xl border-2 px-4 py-2 text-left transition-all ${
+                              isCancelled
+                                ? "border-gray-300 bg-gray-100 text-gray-500"
+                                : entry.ara
+                                  ? "border-amber-300 bg-amber-50 text-amber-800 cursor-pointer"
+                                  : "border-red-200 bg-red-50 text-red-700 cursor-pointer"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 text-xs font-bold opacity-70">
+                              {time}
+                              {entry.ara && <span className="rounded bg-amber-500 px-1 text-[9px] text-white">ARA</span>}
+                              {isCancelled && <span className="rounded bg-gray-400 px-1 text-[9px] text-white">İPTAL</span>}
+                            </div>
+                            {isAdmin ? (
+                              <>
+                                <div className="font-semibold text-sm">{appointment.patients?.full_name || "Hasta"}</div>
+                                {appointment.patients?.phone && appointment.patients.phone !== "0000000000" && (
+                                  <div className="text-xs opacity-80">{appointment.patients.phone}</div>
+                                )}
+                                {isCancelled && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleFreeSlot(appointment) }}
+                                    disabled={isDeleting}
+                                    className="mt-1 inline-flex items-center gap-1 rounded bg-gray-700 px-2 py-1 text-[11px] font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                    Sil &amp; Boşalt
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <div className="font-semibold text-sm">Dolu</div>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      return (
                         <button
                           key={time}
-                          disabled={isPast && !isBooked}
-                          onClick={() => {
-                            if (isBooked) {
-                              if (onAppointmentClick && appointment && appointment.status !== "cancelled") {
-                                onAppointmentClick(appointment)
-                              }
-                              return
-                            }
-                            handleSlotClick(selectedDate, time, schedule.doctor_id)
-                          }}
-                          className={`w-full min-h-[52px] rounded-xl border-2 px-6 py-3 font-medium transition-all duration-200 ${
-                            isBooked
-                              ? "border-red-200 bg-red-50 text-red-700 cursor-pointer"
-                              : isPast
-                                ? "border-muted bg-muted/50 text-muted-foreground/50 cursor-not-allowed"
-                                : isSelectedSlot
-                                  ? "border-primary bg-primary text-primary-foreground shadow-lg scale-[1.02]"
-                                  : "border-border bg-background hover:border-primary/50 hover:shadow-md active:scale-[0.98]"
+                          disabled={isPast}
+                          onClick={() => handleSlotClick(selectedDate, time, schedule.doctor_id)}
+                          className={`w-full min-h-[44px] rounded-xl border-2 px-4 py-2 font-medium transition-all duration-200 ${
+                            isPast
+                              ? "border-muted bg-muted/50 text-muted-foreground/50 cursor-not-allowed"
+                              : isSelectedSlot
+                                ? "border-primary bg-primary text-primary-foreground shadow-lg scale-[1.02]"
+                                : "border-border bg-background hover:border-primary/50 hover:shadow-md active:scale-[0.98]"
                           }`}
                         >
-                          {isBooked ? (
-                            <div className="flex flex-col items-start gap-0.5 w-full">
-                              <div className="text-xs font-bold opacity-70">{time}</div>
-                              {isAdmin ? (
-                                <>
-                                  <div className="font-semibold text-sm">{appointment?.patients?.full_name || "Hasta"}</div>
-                                  {appointment?.patients?.phone && appointment.patients.phone !== "0000000000" && (
-                                    <div className="text-xs opacity-80">{appointment.patients.phone}</div>
-                                  )}
-                                </>
-                              ) : (
-                                <div className="font-semibold text-sm">Dolu</div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between">
-                              <span className="text-base">{time}</span>
-                              {isSelectedSlot && <Check className="h-5 w-5" />}
-                            </div>
-                          )}
+                          <div className="flex items-center justify-between">
+                            <span className="text-base">{time}</span>
+                            {isSelectedSlot && <Check className="h-5 w-5" />}
+                          </div>
                         </button>
                       )
-
-                      return button
                     })}
                   </div>
                 )
@@ -814,6 +907,14 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
             <div className="flex items-center gap-1">
               <div className="h-4 w-4 rounded border bg-red-600" />
               <span>Dolu</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="h-4 w-4 rounded border bg-amber-500" />
+              <span>Ara Randevu</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="h-4 w-4 rounded border bg-gray-400" />
+              <span>İptal</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="h-4 w-4 rounded border bg-muted opacity-50" />
