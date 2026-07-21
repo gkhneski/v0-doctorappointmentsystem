@@ -1,5 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
-import { sendWhatsAppTemplate } from "@/lib/whatsapp"
+import { sendTelegramMessage, escapeHtml } from "@/lib/telegram"
 
 // Randevu tipi kisa etiketleri (WhatsApp ozetinde gostermek icin)
 const TYPE_SHORT_LABELS: Record<string, string> = {
@@ -32,7 +32,7 @@ function toYMD(d: Date): string {
 
 /**
  * Belirtilen gun icin randevu ozet metni olusturur.
- * WhatsApp sablonu tek satir parametre bekledigi icin " | " ile ayrilir.
+ * Telegram cok satirli mesaji destekledigi icin okunakli bir liste uretilir (HTML).
  */
 export async function buildDailyDigest(
   targetDate: Date,
@@ -59,28 +59,31 @@ export async function buildDailyDigest(
     weekday: "long",
   })
 
+  const labelText = label === "yarin" ? "Yarinki" : "Bugunku"
+
   if (!appointments || appointments.length === 0) {
     return {
-      text: `${dateLabelTr} (${label}) icin randevu bulunmuyor.`,
+      text: `<b>${labelText} Randevular</b>\n${escapeHtml(dateLabelTr)}\n\nRandevu bulunmuyor.`,
       count: 0,
     }
   }
 
-  const items = appointments.map((a: any) => {
+  const lines = appointments.map((a: any) => {
     const time = (a.appointment_time || "").slice(0, 5)
     const name = a.patients?.full_name || "Hasta"
     const t = typeLabel(a)
-    return t ? `${time} ${name} (${t})` : `${time} ${name}`
+    const suffix = t ? ` <i>(${escapeHtml(t)})</i>` : ""
+    return `• <b>${escapeHtml(time)}</b>  ${escapeHtml(name)}${suffix}`
   })
 
-  const header = `${dateLabelTr} - ${appointments.length} randevu:`
-  const text = `${header} ${items.join(" | ")}`
+  const header = `<b>${labelText} Randevular</b>\n${escapeHtml(dateLabelTr)} — ${appointments.length} randevu`
+  const text = `${header}\n\n${lines.join("\n")}`
 
   return { text, count: appointments.length }
 }
 
 /**
- * Personel alicilarina (staff_recipients) gunun ozetini WhatsApp ile gonderir.
+ * Personel alicilarina (staff_recipients) gunun ozetini Telegram ile gonderir.
  * which = "evening" -> receive_evening true olanlar (yarinki liste)
  * which = "morning" -> receive_morning true olanlar (bugunku liste)
  */
@@ -99,7 +102,7 @@ export async function sendStaffDigest(which: "evening" | "morning") {
   const column = which === "evening" ? "receive_evening" : "receive_morning"
   const { data: recipients, error } = await supabase
     .from("staff_recipients")
-    .select("id, full_name, phone")
+    .select("id, full_name, telegram_chat_id")
     .eq("is_active", true)
     .eq(column, true)
 
@@ -117,7 +120,12 @@ export async function sendStaffDigest(which: "evening" | "morning") {
   const errors: string[] = []
 
   for (const r of recipients) {
-    const res = await sendWhatsAppTemplate(r.phone, text)
+    if (!r.telegram_chat_id) {
+      failed++
+      errors.push(`${r.full_name}: Telegram chat_id yok`)
+      continue
+    }
+    const res = await sendTelegramMessage(r.telegram_chat_id, text)
     if (res.success) {
       sent++
     } else {
