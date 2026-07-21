@@ -30,17 +30,18 @@ export async function POST(request: Request) {
   if (error || !supabase) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await request.json()
-  const { full_name, phone, role, receive_evening, receive_morning } = body
+  const { full_name, telegram_chat_id, phone, role, receive_evening, receive_morning } = body
 
-  if (!full_name || !phone) {
-    return NextResponse.json({ error: "Ad ve telefon zorunludur" }, { status: 400 })
+  if (!full_name || !telegram_chat_id) {
+    return NextResponse.json({ error: "Ad ve Telegram Chat ID zorunludur" }, { status: 400 })
   }
 
   const { data, error: dbError } = await supabase
     .from("staff_recipients")
     .insert({
       full_name,
-      phone,
+      telegram_chat_id: String(telegram_chat_id).trim(),
+      phone: phone || null,
       role: role || "hemsire",
       receive_evening: receive_evening ?? true,
       receive_morning: receive_morning ?? false,

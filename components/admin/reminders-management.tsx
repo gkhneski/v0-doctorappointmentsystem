@@ -9,12 +9,13 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Trash2, Plus, Send, Eye, Loader2, MessageCircle } from "lucide-react"
+import { Trash2, Plus, Send, Eye, Loader2, MessageCircle, Search } from "lucide-react"
 
 type Recipient = {
   id: string
   full_name: string
-  phone: string
+  telegram_chat_id: string
+  phone: string | null
   role: string
   receive_evening: boolean
   receive_morning: boolean
@@ -34,19 +35,41 @@ export default function RemindersManagement({ initialRecipients }: { initialReci
   const [preview, setPreview] = useState<{ which: string; text: string; count: number } | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [sendingWhich, setSendingWhich] = useState<string | null>(null)
+  const [chatLookup, setChatLookup] = useState<{ chatId: string; name: string; username?: string }[] | null>(null)
+  const [lookupLoading, setLookupLoading] = useState(false)
+
+  async function findChats() {
+    setLookupLoading(true)
+    try {
+      const res = await fetch("/api/admin/reminders/telegram-chats")
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setChatLookup(data.chats)
+      if (!data.chats?.length) {
+        toast({
+          title: "Kimse bulunamadı",
+          description: "Önce personel Telegram'da botunuza /start yazmalı.",
+        })
+      }
+    } catch (e: any) {
+      toast({ title: "Hata", description: e.message, variant: "destructive" })
+    } finally {
+      setLookupLoading(false)
+    }
+  }
 
   // Yeni alici formu
   const [form, setForm] = useState({
     full_name: "",
-    phone: "",
+    telegram_chat_id: "",
     role: "hemsire",
     receive_evening: true,
     receive_morning: false,
   })
 
   async function addRecipient() {
-    if (!form.full_name || !form.phone) {
-      toast({ title: "Eksik bilgi", description: "Ad ve telefon zorunludur.", variant: "destructive" })
+    if (!form.full_name || !form.telegram_chat_id) {
+      toast({ title: "Eksik bilgi", description: "Ad ve Telegram Chat ID zorunludur.", variant: "destructive" })
       return
     }
     setSaving(true)
@@ -59,7 +82,7 @@ export default function RemindersManagement({ initialRecipients }: { initialReci
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setRecipients((prev) => [...prev, data.recipient])
-      setForm({ full_name: "", phone: "", role: "hemsire", receive_evening: true, receive_morning: false })
+      setForm({ full_name: "", telegram_chat_id: "", role: "hemsire", receive_evening: true, receive_morning: false })
       toast({ title: "Eklendi", description: `${data.recipient.full_name} eklendi.` })
     } catch (e: any) {
       toast({ title: "Hata", description: e.message || "Eklenemedi", variant: "destructive" })
@@ -141,11 +164,13 @@ export default function RemindersManagement({ initialRecipients }: { initialReci
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base text-blue-900">
             <MessageCircle className="h-4 w-4" />
-            WhatsApp Otomatik Hatırlatma
+            Telegram Otomatik Hatırlatma
           </CardTitle>
           <CardDescription className="text-blue-800">
             Her akşam <strong>19:00</strong>&apos;da yarınki randevu listesi (akşam alıcılarına), her sabah{" "}
-            <strong>08:00</strong>&apos;de bugünkü liste (sabah alıcılarına) WhatsApp ile otomatik gönderilir.
+            <strong>08:00</strong>&apos;de bugünkü liste (sabah alıcılarına) Telegram ile otomatik gönderilir.
+            Alıcının Chat ID&apos;sini almak için: kişi Telegram&apos;da botunuza <strong>/start</strong> yazar,
+            ardından <strong>@userinfobot</strong>&apos;a yazarak kendi numeric ID&apos;sini öğrenip buraya girersiniz.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -154,7 +179,7 @@ export default function RemindersManagement({ initialRecipients }: { initialReci
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Yeni Alıcı Ekle</CardTitle>
-          <CardDescription>Hatırlatmaları alacak personel numarası (uluslararası veya 05xx formatı).</CardDescription>
+          <CardDescription>Hatırlatmaları alacak personelin Telegram Chat ID&apos;si (örn. 123456789).</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -168,12 +193,12 @@ export default function RemindersManagement({ initialRecipients }: { initialReci
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Telefon</Label>
+              <Label htmlFor="chatid">Telegram Chat ID</Label>
               <Input
-                id="phone"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="05xx xxx xx xx"
+                id="chatid"
+                value={form.telegram_chat_id}
+                onChange={(e) => setForm({ ...form, telegram_chat_id: e.target.value })}
+                placeholder="123456789"
               />
             </div>
             <div className="space-y-1.5">
@@ -212,6 +237,42 @@ export default function RemindersManagement({ initialRecipients }: { initialReci
               Sabah (bugünkü liste)
             </label>
           </div>
+
+          {/* Chat ID bulma yardimcisi */}
+          <div className="mt-4 border-t pt-4">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={findChats} disabled={lookupLoading}>
+              {lookupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              Chat ID&apos;leri Bul
+            </Button>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Personel botunuza <strong>/start</strong> yazdıktan sonra bu butona basın; aşağıda çıkan ID&apos;yi
+              &quot;Telegram Chat ID&quot; alanına yazın.
+            </p>
+            {chatLookup && chatLookup.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {chatLookup.map((c) => (
+                  <div
+                    key={c.chatId}
+                    className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm"
+                  >
+                    <div>
+                      <span className="font-medium">{c.name}</span>
+                      {c.username && <span className="text-muted-foreground"> · @{c.username}</span>}
+                      <span className="ml-2 text-muted-foreground">ID: {c.chatId}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setForm((f) => ({ ...f, full_name: f.full_name || c.name, telegram_chat_id: c.chatId }))}
+                    >
+                      Kullan
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -240,7 +301,7 @@ export default function RemindersManagement({ initialRecipients }: { initialReci
                           {ROLE_LABELS[r.role] || r.role}
                         </Badge>
                       </div>
-                      <div className="text-sm text-muted-foreground">{r.phone}</div>
+                      <div className="text-sm text-muted-foreground">Chat ID: {r.telegram_chat_id}</div>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
@@ -305,7 +366,9 @@ export default function RemindersManagement({ initialRecipients }: { initialReci
               <div className="mb-1 text-xs font-medium text-muted-foreground">
                 {preview.which === "evening" ? "Akşam (yarın)" : "Sabah (bugün)"} · {preview.count} randevu
               </div>
-              <p className="text-sm whitespace-pre-wrap">{preview.text}</p>
+              <p className="text-sm whitespace-pre-wrap">
+                {preview.text.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")}
+              </p>
             </div>
           )}
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { buildDailyDigest, sendStaffDigest } from "@/lib/staff-reminder"
-import { sendWhatsAppTemplate } from "@/lib/whatsapp"
+import { sendTelegramMessage } from "@/lib/telegram"
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -40,12 +40,12 @@ export async function POST(request: Request) {
   const which = body.which === "morning" ? "morning" : "evening"
 
   try {
-    // Tek numaraya test gonderimi
-    if (body.phone) {
+    // Tek chat_id'ye test gonderimi
+    if (body.telegram_chat_id) {
       const target = new Date()
       if (which === "evening") target.setDate(target.getDate() + 1)
       const { text } = await buildDailyDigest(target, which === "evening" ? "yarin" : "bugun")
-      const res = await sendWhatsAppTemplate(body.phone, text)
+      const res = await sendTelegramMessage(String(body.telegram_chat_id).trim(), text)
       return NextResponse.json({ mode: "single", ...res })
     }
 
