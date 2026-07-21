@@ -12,6 +12,7 @@ import { Calendar, Users, Clock } from "lucide-react"
 import AppointmentsList from "@/components/admin/appointments-list"
 import { QuickBlockAppointment } from "@/components/admin/quick-block-appointment"
 import { NotificationsDropdown } from "@/components/admin/notifications-dropdown"
+import { PatientQuickSearch } from "@/components/admin/patient-quick-search"
 import { Spinner } from "@/components/ui/spinner"
 
 export default async function AdminDashboard() {
@@ -177,6 +178,7 @@ export default async function AdminDashboard() {
               <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-600">
                 <Link href="/admin/schedules">Programları Yönet</Link>
               </Button>
+              <PatientQuickSearch />
             </div>
             <div className="flex items-center gap-2">
               {pendingAppointments > 0 && (
