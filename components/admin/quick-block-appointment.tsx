@@ -41,6 +41,11 @@ const PRINT_TYPES = [
   { value: "mens", label: "9. mens" },
   { value: "gebe kontrol", label: "10. gebe kontrol" },
   { value: "gebe muayene", label: "11. gebe muayene" },
+  { value: "OHSS kontrol", label: "12. OHSS kontrol" },
+  { value: "Kese kontrol", label: "13. Kese kontrol" },
+  { value: "C/S sonrasi kontrol", label: "14. C/S sonrası kontrol" },
+  { value: "Kist kontrol", label: "15. Kist kontrol" },
+  { value: "Akinti kontrol", label: "16. Akıntı kontrol" },
 ]
 
 // Saat seçenekleri (08:00 - 19:00)

@@ -486,6 +486,11 @@ export function AppointmentDetailPanel({
                 <option value="Kontrol">21. Kontrol</option>
                 <option value="Amniosentez sonrasi k.">22. Amniosentez sonrasi k.</option>
                 <option value="Kurtaj sonrasi k.">23. Kurtaj sonrasi k.</option>
+                <option value="OHSS kontrol">24. OHSS kontrol</option>
+                <option value="Kese kontrol">25. Kese kontrol</option>
+                <option value="C/S sonrasi kontrol">26. C/S sonrasi kontrol</option>
+                <option value="Kist kontrol">27. Kist kontrol</option>
+                <option value="Akinti kontrol">28. Akinti kontrol</option>
               </select>
             </div>
           </div>
