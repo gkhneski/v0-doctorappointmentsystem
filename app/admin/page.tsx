@@ -45,15 +45,13 @@ export default async function AdminDashboard() {
   const endDate = sixMonthsLater.toISOString().split("T")[0]
 
   // OPTİMİZE EDİLMİŞ: Tüm randevuları tek sorguda çekiyoruz
+  // NOT: Tüm tablo üzerinde count:exact HEAD sorguları kaldırıldı — kullanılmıyordu
+  // ve büyük tablolarda 5+ saniye sürüyordu (yavaşlığın ana sebebiydi).
   const [
-    { count: totalAppointments },
-    { count: totalPatients },
     { data: allAppointments },
     { data: calendarDoctors },
     { data: schedules },
   ] = await Promise.all([
-    supabase.from("appointments").select("*", { count: "exact", head: true }),
-    supabase.from("patients").select("*", { count: "exact", head: true }),
     // TÜM randevuları tek sorguda çek (gelecek + geçmiş + iptal)
     supabase
       .from("appointments")
