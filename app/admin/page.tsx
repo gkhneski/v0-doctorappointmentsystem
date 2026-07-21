@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
+import { getAdminAuth } from "@/lib/admin-auth"
 import { Button } from "@/components/ui/button"
 
 export const dynamic = 'force-dynamic'
@@ -14,26 +15,14 @@ import { NotificationsDropdown } from "@/components/admin/notifications-dropdown
 import { Spinner } from "@/components/ui/spinner"
 
 export default async function AdminDashboard() {
+  // Cache'li helper: layout ile AYNI istekte paylasilir; ekstra auth gidis-donusu YOK
+  const { user, adminUser } = await getAdminAuth()
+
+  if (!user || !adminUser) {
+    redirect("/auth/admin/login")
+  }
+
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/admin/login")
-  }
-
-  // Sadece gerekli alanları çek - layout'ta zaten kontrol edildi
-  const { data: adminUser } = await supabase
-    .from("admin_users")
-    .select("full_name, role")
-    .eq("id", user.id)
-    .maybeSingle()
-
-  if (!adminUser) {
-    redirect("/auth/admin/login")
-  }
 
   // Turkiye saatine gore bugunu hesapla (UTC+3)
   const turkeyTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }))
