@@ -19,7 +19,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const body = await request.json()
   const allowed: Record<string, any> = {}
-  for (const key of ["full_name", "telegram_chat_id", "phone", "role", "receive_evening", "receive_morning", "is_active"]) {
+  for (const key of [
+    "full_name",
+    "telegram_chat_id",
+    "phone",
+    "role",
+    "send_hour",
+    "content_today",
+    "content_tomorrow",
+    "content_unconfirmed",
+    "content_cancelled",
+    "is_active",
+  ]) {
     if (key in body) allowed[key] = body[key]
   }
   allowed.updated_at = new Date().toISOString()

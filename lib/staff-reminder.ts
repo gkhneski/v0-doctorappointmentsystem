@@ -1,7 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { sendTelegramMessage, escapeHtml } from "@/lib/telegram"
 
-// Randevu tipi kisa etiketleri (WhatsApp ozetinde gostermek icin)
+// Randevu tipi kisa etiketleri (ozetlerde gostermek icin)
 const TYPE_SHORT_LABELS: Record<string, string> = {
   "ilk-muayene": "Ilk Muayene",
   "kontrol-takip": "Kontrol",
@@ -26,93 +26,158 @@ function typeLabel(appt: { appointment_type?: string; print_type?: string | null
   return TYPE_SHORT_LABELS[appt.appointment_type] || appt.appointment_type.replace(/-/g, " ")
 }
 
-function toYMD(d: Date): string {
-  return d.toISOString().split("T")[0]
+// Turkiye saati (UTC+3, yaz saati yok) icin gunun tarihini YYYY-MM-DD dondurur
+export function istanbulDate(offsetDays = 0): string {
+  const now = new Date()
+  const tr = new Date(now.getTime() + 3 * 60 * 60 * 1000)
+  tr.setUTCDate(tr.getUTCDate() + offsetDays)
+  return tr.toISOString().split("T")[0]
+}
+
+// Turkiye'de su anki saat (0-23)
+export function istanbulHour(): number {
+  const now = new Date()
+  const tr = new Date(now.getTime() + 3 * 60 * 60 * 1000)
+  return tr.getUTCHours()
+}
+
+function dateLabelTr(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00")
+  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "long" })
+}
+
+function formatPhone(phone?: string | null): string {
+  if (!phone) return ""
+  return phone
+}
+
+// Tek bir randevu satiri (detayli: saat, isim, tip, telefon)
+function apptLine(a: any, opts: { showPhone?: boolean } = {}): string {
+  const time = (a.appointment_time || "").slice(0, 5)
+  const name = a.patients?.full_name || "Hasta"
+  const t = typeLabel(a)
+  const typeSuffix = t ? ` <i>(${escapeHtml(t)})</i>` : ""
+  let line = `• <b>${escapeHtml(time)}</b>  ${escapeHtml(name)}${typeSuffix}`
+  if (opts.showPhone) {
+    const phone = formatPhone(a.patients?.phone)
+    if (phone) line += `\n   📞 ${escapeHtml(phone)}`
+  }
+  return line
+}
+
+export type ContentType = "today" | "tomorrow" | "unconfirmed" | "cancelled"
+
+const SECTION_SELECT = `appointment_time, appointment_type, print_type, status, confirmation_status, link_clicked_at, patients (full_name, phone)`
+
+/**
+ * Belirli bir icerik turu icin baslik + satirlar dondurur.
+ */
+async function buildSection(type: ContentType): Promise<{ title: string; body: string; count: number }> {
+  const supabase = await createServiceRoleClient()
+
+  if (type === "today" || type === "tomorrow") {
+    const dateStr = type === "today" ? istanbulDate(0) : istanbulDate(1)
+    const label = type === "today" ? "BUGUNKU RANDEVULAR" : "YARINKI RANDEVULAR"
+    const { data } = await supabase
+      .from("appointments")
+      .select(SECTION_SELECT)
+      .eq("appointment_date", dateStr)
+      .in("status", ["scheduled", "confirmed"])
+      .order("appointment_time", { ascending: true })
+
+    const appts = data || []
+    const title = `📋 <b>${label}</b>\n${escapeHtml(dateLabelTr(dateStr))} — ${appts.length} randevu`
+    if (appts.length === 0) return { title, body: "Randevu yok.", count: 0 }
+    return { title, body: appts.map((a: any) => apptLine(a, { showPhone: true })).join("\n"), count: appts.length }
+  }
+
+  if (type === "unconfirmed") {
+    // Yarinki randevulardan HALA onaylanmamis olanlar (hasta linke cevap vermemis)
+    const dateStr = istanbulDate(1)
+    const { data } = await supabase
+      .from("appointments")
+      .select(SECTION_SELECT)
+      .eq("appointment_date", dateStr)
+      .in("status", ["scheduled", "confirmed"])
+      .or("confirmation_status.is.null,confirmation_status.eq.pending")
+      .order("appointment_time", { ascending: true })
+
+    const appts = data || []
+    const title = `⚠️ <b>ONAYLANMAMIS RANDEVULAR</b>\n${escapeHtml(dateLabelTr(dateStr))} — ${appts.length} randevu\n<i>Hasta henuz teyit etmedi. Arayip teyit edin veya iptal edip yer acin.</i>`
+    if (appts.length === 0) return { title, body: "Tum randevular onaylanmis.", count: 0 }
+    return { title, body: appts.map((a: any) => apptLine(a, { showPhone: true })).join("\n"), count: appts.length }
+  }
+
+  // cancelled: hasta linke tiklayip "gelmeyecegim" dedigi icin bosalan slotlar (yarin)
+  const dateStr = istanbulDate(1)
+  const { data } = await supabase
+    .from("appointments")
+    .select(SECTION_SELECT)
+    .eq("appointment_date", dateStr)
+    .eq("status", "cancelled")
+    .eq("confirmation_status", "cancelled")
+    .order("appointment_time", { ascending: true })
+
+  const appts = data || []
+  const title = `🔴 <b>BOSALAN SLOTLAR (Hasta Iptal)</b>\n${escapeHtml(dateLabelTr(dateStr))} — ${appts.length} bosluk\n<i>Hasta gelmeyecegini bildirdi. Bu saatlere yeni hasta koyabilirsiniz.</i>`
+  if (appts.length === 0) return { title, body: "Bosalan slot yok.", count: 0 }
+  return { title, body: appts.map((a: any) => apptLine(a, { showPhone: true })).join("\n"), count: appts.length }
 }
 
 /**
- * Belirtilen gun icin randevu ozet metni olusturur.
- * Telegram cok satirli mesaji destekledigi icin okunakli bir liste uretilir (HTML).
+ * Secilen icerik turlerini tek bir mesajda birlestirir.
+ */
+export async function buildDigestForTypes(types: ContentType[]): Promise<{ text: string; totalCount: number }> {
+  const order: ContentType[] = ["today", "tomorrow", "unconfirmed", "cancelled"]
+  const selected = order.filter((t) => types.includes(t))
+
+  if (selected.length === 0) {
+    return { text: "Icerik turu secilmemis.", totalCount: 0 }
+  }
+
+  const sections = await Promise.all(selected.map((t) => buildSection(t)))
+  let totalCount = 0
+  const parts = sections.map((s) => {
+    totalCount += s.count
+    return `${s.title}\n\n${s.body}`
+  })
+
+  return { text: parts.join("\n\n———————————\n\n"), totalCount }
+}
+
+/**
+ * Geriye donuk uyumluluk: tek gun ozeti (test/onizleme icin).
  */
 export async function buildDailyDigest(
   targetDate: Date,
   label: "yarin" | "bugun",
 ): Promise<{ text: string; count: number }> {
-  const supabase = await createServiceRoleClient()
-  const dateStr = toYMD(targetDate)
-
-  const { data: appointments, error } = await supabase
-    .from("appointments")
-    .select(`appointment_time, appointment_type, print_type, patients (full_name)`)
-    .eq("appointment_date", dateStr)
-    .in("status", ["scheduled", "confirmed"])
-    .order("appointment_time", { ascending: true })
-
-  if (error) {
-    console.error("[v0] Digest fetch error:", error)
-    throw new Error("Randevular alinamadi")
-  }
-
-  const dateLabelTr = targetDate.toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-    weekday: "long",
-  })
-
-  const labelText = label === "yarin" ? "Yarinki" : "Bugunku"
-
-  if (!appointments || appointments.length === 0) {
-    return {
-      text: `<b>${labelText} Randevular</b>\n${escapeHtml(dateLabelTr)}\n\nRandevu bulunmuyor.`,
-      count: 0,
-    }
-  }
-
-  const lines = appointments.map((a: any) => {
-    const time = (a.appointment_time || "").slice(0, 5)
-    const name = a.patients?.full_name || "Hasta"
-    const t = typeLabel(a)
-    const suffix = t ? ` <i>(${escapeHtml(t)})</i>` : ""
-    return `• <b>${escapeHtml(time)}</b>  ${escapeHtml(name)}${suffix}`
-  })
-
-  const header = `<b>${labelText} Randevular</b>\n${escapeHtml(dateLabelTr)} — ${appointments.length} randevu`
-  const text = `${header}\n\n${lines.join("\n")}`
-
-  return { text, count: appointments.length }
+  const type: ContentType = label === "yarin" ? "tomorrow" : "today"
+  const { text, totalCount } = await buildDigestForTypes([type])
+  return { text, count: totalCount }
 }
 
 /**
- * Personel alicilarina (staff_recipients) gunun ozetini Telegram ile gonderir.
- * which = "evening" -> receive_evening true olanlar (yarinki liste)
- * which = "morning" -> receive_morning true olanlar (bugunku liste)
+ * Su anki Turkiye saatine denk gelen tum alicilara, sectikleri icerigi gonderir.
+ * Saatlik cron tarafindan cagrilir.
  */
-export async function sendStaffDigest(which: "evening" | "morning") {
+export async function sendDueDigests(forceHour?: number) {
   const supabase = await createServiceRoleClient()
+  const hour = forceHour ?? istanbulHour()
 
-  const now = new Date()
-  const target = new Date(now)
-  if (which === "evening") {
-    target.setDate(now.getDate() + 1) // yarin
-  }
-  const label = which === "evening" ? "yarin" : "bugun"
-
-  const { text, count } = await buildDailyDigest(target, label)
-
-  const column = which === "evening" ? "receive_evening" : "receive_morning"
   const { data: recipients, error } = await supabase
     .from("staff_recipients")
-    .select("id, full_name, telegram_chat_id")
+    .select("id, full_name, telegram_chat_id, content_today, content_tomorrow, content_unconfirmed, content_cancelled")
     .eq("is_active", true)
-    .eq(column, true)
+    .eq("send_hour", hour)
 
   if (error) {
-    console.error("[v0] Staff recipients fetch error:", error)
+    console.error("[v0] sendDueDigests recipients error:", error)
     throw new Error("Alicilar alinamadi")
   }
 
   if (!recipients || recipients.length === 0) {
-    return { sent: 0, failed: 0, appointmentCount: count, message: "Alici yok" }
+    return { hour, sent: 0, failed: 0, message: "Bu saatte alici yok" }
   }
 
   let sent = 0
@@ -120,19 +185,27 @@ export async function sendStaffDigest(which: "evening" | "morning") {
   const errors: string[] = []
 
   for (const r of recipients) {
+    const types: ContentType[] = []
+    if (r.content_today) types.push("today")
+    if (r.content_tomorrow) types.push("tomorrow")
+    if (r.content_unconfirmed) types.push("unconfirmed")
+    if (r.content_cancelled) types.push("cancelled")
+
+    if (types.length === 0) continue
     if (!r.telegram_chat_id) {
       failed++
-      errors.push(`${r.full_name}: Telegram chat_id yok`)
+      errors.push(`${r.full_name}: chat_id yok`)
       continue
     }
+
+    const { text } = await buildDigestForTypes(types)
     const res = await sendTelegramMessage(r.telegram_chat_id, text)
-    if (res.success) {
-      sent++
-    } else {
+    if (res.success) sent++
+    else {
       failed++
       errors.push(`${r.full_name}: ${res.error}`)
     }
   }
 
-  return { sent, failed, appointmentCount: count, errors }
+  return { hour, sent, failed, errors }
 }

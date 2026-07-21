@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { buildDailyDigest, sendStaffDigest } from "@/lib/staff-reminder"
+import { buildDigestForTypes, sendDueDigests, type ContentType } from "@/lib/staff-reminder"
 import { sendTelegramMessage } from "@/lib/telegram"
 
 async function requireAdmin() {
@@ -14,43 +14,51 @@ async function requireAdmin() {
   return { error: null }
 }
 
-// GET -> aksam/sabah ozet metnini onizler (gonderim yapmaz)
+const VALID: ContentType[] = ["today", "tomorrow", "unconfirmed", "cancelled"]
+
+function parseTypes(raw: string | null | undefined): ContentType[] {
+  if (!raw) return ["tomorrow"]
+  const parts = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s): s is ContentType => (VALID as string[]).includes(s))
+  return parts.length ? parts : ["tomorrow"]
+}
+
+// GET -> secilen icerik turlerinin onizleme metni (gonderim yapmaz)
 export async function GET(request: Request) {
   const { error } = await requireAdmin()
   if (error) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const which = new URL(request.url).searchParams.get("which") === "morning" ? "morning" : "evening"
-  const target = new Date()
-  if (which === "evening") target.setDate(target.getDate() + 1)
+  const types = parseTypes(new URL(request.url).searchParams.get("types"))
 
   try {
-    const { text, count } = await buildDailyDigest(target, which === "evening" ? "yarin" : "bugun")
-    return NextResponse.json({ which, text, count })
+    const { text, totalCount } = await buildDigestForTypes(types)
+    return NextResponse.json({ types, text, count: totalCount })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Onizleme hatasi" }, { status: 500 })
   }
 }
 
-// POST -> ya tum alicilara gonderir (which) ya da tek numaraya test (phone)
+// POST -> tek chat_id'ye test gonderimi (telegram_chat_id + types)
+//         veya belirli bir saatteki tum alicilara "simdi gonder" (hour)
 export async function POST(request: Request) {
   const { error } = await requireAdmin()
   if (error) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await request.json().catch(() => ({}))
-  const which = body.which === "morning" ? "morning" : "evening"
 
   try {
-    // Tek chat_id'ye test gonderimi
     if (body.telegram_chat_id) {
-      const target = new Date()
-      if (which === "evening") target.setDate(target.getDate() + 1)
-      const { text } = await buildDailyDigest(target, which === "evening" ? "yarin" : "bugun")
+      const types = Array.isArray(body.types) && body.types.length ? (body.types as ContentType[]) : ["tomorrow"]
+      const { text } = await buildDigestForTypes(types)
       const res = await sendTelegramMessage(String(body.telegram_chat_id).trim(), text)
       return NextResponse.json({ mode: "single", ...res })
     }
 
-    // Tum alicilara gonderim
-    const result = await sendStaffDigest(which)
+    // Belirli saatteki alicilara manuel tetikleme
+    const hour = typeof body.hour === "number" ? body.hour : undefined
+    const result = await sendDueDigests(hour)
     return NextResponse.json({ mode: "broadcast", ...result })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Gonderim hatasi" }, { status: 500 })
