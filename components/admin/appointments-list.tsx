@@ -115,8 +115,8 @@ export default function AppointmentsList({ appointments: initialAppointments, do
         "postgres_changes",
         { event: "*", schema: "public", table: "appointments" },
         async (payload) => {
-          if (payload.eventType === "UPDATE") {
-            // Degisen randevuyu Supabase'den tam veriyle tekrar cek (patient bilgisi dahil)
+          if (payload.eventType === "UPDATE" || payload.eventType === "INSERT") {
+            // Degisen/yeni randevuyu Supabase'den tam veriyle cek (patient bilgisi dahil)
             const { data: fresh } = await supabase
               .from("appointments")
               .select(`
@@ -128,13 +128,24 @@ export default function AppointmentsList({ appointments: initialAppointments, do
               .single()
 
             if (fresh) {
-              setAppointments(prev =>
-                prev.map(a => a.id === fresh.id ? { ...a, ...fresh } : a)
-              )
+              setAppointments(prev => {
+                const exists = prev.some(a => a.id === fresh.id)
+                // Yeni randevu ise listeye ekle, mevcutsa guncelle
+                return exists
+                  ? prev.map(a => (a.id === fresh.id ? { ...a, ...fresh } : a))
+                  : [...prev, fresh as any]
+              })
               // Eger bu secili randevuysa onu da guncelle
               setSelectedAppointment(prev =>
                 prev?.id === fresh.id ? { ...prev, ...fresh } : prev
               )
+            }
+          } else if (payload.eventType === "DELETE") {
+            // Silinen randevuyu listeden cikar
+            const removedId = (payload.old as { id?: string })?.id
+            if (removedId) {
+              setAppointments(prev => prev.filter(a => a.id !== removedId))
+              setSelectedAppointment(prev => (prev?.id === removedId ? null : prev))
             }
           }
         }
@@ -145,6 +156,12 @@ export default function AppointmentsList({ appointments: initialAppointments, do
       supabase.removeChannel(channel)
     }
   }, [])
+
+  // router.refresh() sonrasi server'dan gelen taze veriyi state'e yansit
+  // (realtime kacirilan durumlar icin guvenlik agi)
+  useEffect(() => {
+    setAppointments(initialAppointments)
+  }, [initialAppointments])
 
   // Sync selectedAppointment with appointments list
   useEffect(() => {
