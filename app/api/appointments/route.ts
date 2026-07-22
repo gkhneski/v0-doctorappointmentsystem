@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { resolvePatientId } from "@/lib/resolve-patient"
 
 export async function POST(request: Request) {
   try {
@@ -39,7 +40,6 @@ export async function POST(request: Request) {
       { data: existingAppointment },
       { data: sameWeekAppointments },
       { data: blacklistedPatient },
-      { data: existingPatient },
     ] = await Promise.all([
       // 1. Slot conflict
       supabase
@@ -66,14 +66,6 @@ export async function POST(request: Request) {
         .eq("is_blacklisted", true)
         .or(`tc_no.eq.${patient_tc_no},phone.eq.${patient_phone}`)
         .maybeSingle(),
-
-      // 4. Existing patient lookup (limit(1) — mukerrer olsa bile hata firlatmaz)
-      supabase
-        .from("patients")
-        .select("id")
-        .eq("tc_no", patient_tc_no)
-        .order("created_at", { ascending: true })
-        .limit(1),
     ])
 
     if (existingAppointment) {
@@ -100,62 +92,15 @@ export async function POST(request: Request) {
       )
     }
 
-    let patientId: string
-    const foundPatient = Array.isArray(existingPatient) ? existingPatient[0] : existingPatient
-
-    if (foundPatient) {
-      patientId = foundPatient.id
-      // Mevcut hastayı güncelle — sadece değişen alanları güncelle,
-      // date_of_birth zaten doğruysa üzerine yazma (unique constraint hatası önleme)
-      const updatePayload: Record<string, string | boolean> = {
-        full_name: patient_name,
-        phone: patient_phone,
-        kvkk_approved,
-      }
-      // Doğum tarihi farklıysa güncelle, aynıysa dokunma
-      if (patient_dob) {
-        updatePayload.date_of_birth = patient_dob
-      }
-
-      const { error: updateError } = await supabase
-        .from("patients")
-        .update(updatePayload)
-        .eq("id", patientId)
-
-      if (updateError) {
-        // Unique constraint hatası — yine de devam et, hasta zaten sistemde var
-        console.error("[v0] Patient update warning (non-blocking):", updateError.message)
-      }
-    } else {
-      const { data: newPatient, error: insertError } = await supabase
-        .from("patients")
-        .insert({
-          tc_no: patient_tc_no,
-          full_name: patient_name,
-          phone: patient_phone,
-          date_of_birth: patient_dob,
-          kvkk_approved,
-        })
-        .select("id")
-        .single()
-
-      if (insertError || !newPatient) {
-        // Unique TC cakismasi (esdeğer istek/yaris durumu): mevcut kaydi bul ve kullan
-        const { data: raced } = await supabase
-          .from("patients")
-          .select("id")
-          .eq("tc_no", patient_tc_no)
-          .order("created_at", { ascending: true })
-          .limit(1)
-        if (raced && raced[0]) {
-          patientId = raced[0].id
-        } else {
-          throw insertError
-        }
-      } else {
-        patientId = newPatient.id
-      }
-    }
+    // Hasta kaydını çöz: gerçek TC → aynı telefonlu geçici kaydı yükselt → yeni kayıt
+    // (duplicate oluşmasını engeller)
+    const patientId = await resolvePatientId(supabase, {
+      tc_no: patient_tc_no,
+      full_name: patient_name,
+      phone: patient_phone,
+      date_of_birth: patient_dob,
+      kvkk_approved,
+    })
 
     // Generate unique confirmation token
     const confirmationToken = Math.random().toString(36).substring(2) + Date.now().toString(36)

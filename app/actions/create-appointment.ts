@@ -1,6 +1,7 @@
 "use server"
 
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { resolvePatientId } from "@/lib/resolve-patient"
 
 export async function createAppointment(data: {
   patientData: {
@@ -20,46 +21,14 @@ export async function createAppointment(data: {
   const supabase = await createServiceRoleClient()
 
   try {
-    // Check if patient exists
-    const { data: existingPatient } = await supabase
-      .from("patients")
-      .select("id")
-      .eq("tc_no", data.patientData.tc_no)
-      .maybeSingle()
-
-    let patientId: string
-
-    if (existingPatient) {
-      // Update existing patient
-      const { data: updatedPatient, error: updateError } = await supabase
-        .from("patients")
-        .update({
-          full_name: data.patientData.full_name,
-          phone: data.patientData.phone,
-          date_of_birth: data.patientData.birth_date,
-        })
-        .eq("id", existingPatient.id)
-        .select("id")
-        .single()
-
-      if (updateError) throw updateError
-      patientId = updatedPatient.id
-    } else {
-      // Create new patient
-      const { data: newPatient, error: insertError } = await supabase
-        .from("patients")
-        .insert({
-          tc_no: data.patientData.tc_no,
-          full_name: data.patientData.full_name,
-          phone: data.patientData.phone,
-          date_of_birth: data.patientData.birth_date,
-        })
-        .select("id")
-        .single()
-
-      if (insertError) throw insertError
-      patientId = newPatient.id
-    }
+    // Hasta kaydını çöz: gerçek TC → aynı telefonlu geçici kaydı yükselt → yeni kayıt
+    // (duplicate oluşmasını engeller)
+    const patientId = await resolvePatientId(supabase, {
+      tc_no: data.patientData.tc_no,
+      full_name: data.patientData.full_name,
+      phone: data.patientData.phone,
+      date_of_birth: data.patientData.birth_date,
+    })
 
     // Create appointment with notes containing extra data
     const notes = JSON.stringify({
