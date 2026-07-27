@@ -113,6 +113,25 @@ export function PatientQuickSearch() {
     }
   }
 
+  // Randevuya tıklayınca takvimi o randevunun gününe getir
+  const goToAppointmentDay = (date: string) => {
+    setOpen(false)
+    setQuery("")
+    setResults([])
+    setExpandedId(null)
+
+    // Randevular sekmesi aktif değilse ona geç (takvim orada render ediliyor)
+    const tabs = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]'))
+    const randevularTab = tabs.find((t) => t.textContent?.includes("Randevular"))
+    const needsTabSwitch = randevularTab?.getAttribute("data-state") === "inactive"
+    if (needsTabSwitch) randevularTab?.click()
+
+    // Sekme geçişi varsa takvimin mount olmasını bekle
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("admin:calendar-jump", { detail: { date } }))
+    }, needsTabSwitch ? 120 : 0)
+  }
+
   const goToPatient = (id: string) => {
     setOpen(false)
     setQuery("")
@@ -211,10 +230,13 @@ export function PatientQuickSearch() {
                             const isCancelled = a.status === "cancelled"
                             const past = isPastAppointment(a.appointment_date, a.appointment_time)
                             return (
-                              <li
-                                key={a.id}
-                                className="flex items-center justify-between gap-2 rounded border border-gray-200 bg-white px-2 py-1.5 text-[11px]"
-                              >
+                              <li key={a.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => goToAppointmentDay(a.appointment_date)}
+                                  title="Takvimde bu güne git"
+                                  className="flex w-full items-center justify-between gap-2 rounded border border-gray-200 bg-white px-2 py-1.5 text-left text-[11px] transition-colors hover:border-primary hover:bg-primary/5"
+                                >
                                 <span className="flex items-center gap-1.5 text-gray-700">
                                   <CalendarClock className="h-3 w-3 shrink-0 text-gray-400" />
                                   <span
@@ -243,6 +265,7 @@ export function PatientQuickSearch() {
                                     {STATUS_LABELS[a.status] || a.status}
                                   </span>
                                 )}
+                                </button>
                               </li>
                             )
                           })}

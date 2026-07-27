@@ -103,6 +103,36 @@ type PrefilledPatient = {
   date_of_birth?: string | null
 }
 
+// Bir hafta başlangıcından görünecek günleri üretir (hafta sonu atlanır, geçmiş günler gizlenir)
+function buildWeekDays(weekStart: Date, viewMode: "day" | "week" | "2week") {
+  const days: Date[] = []
+  // 2 hafta görünümü: 1. hafta Pzt-Cum (0-4) + 2. hafta Pzt-Cum (hafta sonu atlanır)
+  const count = viewMode === "2week" ? 10 : 5
+  for (let i = 0; i < count; i++) {
+    const date = new Date(weekStart)
+    const offset = i >= 5 ? i + 2 : i // ikinci haftaya geçerken Cmt+Pzr atla
+    date.setDate(weekStart.getDate() + offset)
+    days.push(date)
+  }
+  // Geçmiş günleri gizle (bugünden önceki günler ekranda yer kaplamasın)
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const upcoming = days.filter((d) => d >= startOfToday)
+  // Tüm günler geçmişteyse (geçmiş bir haftaya gidilmişse) hepsini göster
+  return upcoming.length > 0 ? upcoming : days
+}
+
+// Verilen tarihin haftasının Pazartesi'sini döndürür (hafta sonu ise sonraki Pazartesi)
+function getMondayOf(date: Date) {
+  const dayOfWeek = date.getDay()
+  const monday = new Date(date)
+  if (dayOfWeek === 0) monday.setDate(date.getDate() + 1)
+  else if (dayOfWeek === 6) monday.setDate(date.getDate() + 2)
+  else monday.setDate(date.getDate() - (dayOfWeek - 1))
+  monday.setHours(0, 0, 0, 0)
+  return monday
+}
+
 type Props = {
   doctor: Doctor | null
   schedules: Schedule[]
@@ -117,9 +147,11 @@ type Props = {
   onAppointmentClick?: (appointment: ExistingAppointment) => void
   viewMode?: "day" | "week" | "2week"
   viewControls?: React.ReactNode
+  /** Dışarıdan belirli bir güne atlama isteği (YYYY-MM-DD + benzersiz nonce) */
+  jumpToDate?: { date: string; nonce: number } | null
 }
 
-export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false, onAppointmentClick, viewMode = "week", viewControls = null }: Props) {
+export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false, onAppointmentClick, viewMode = "week", viewControls = null, jumpToDate = null }: Props) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     // If AI preselected a date, show that week
     if (preselectedDate) {
@@ -183,25 +215,25 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     setLocalAppointments(existingAppointments)
   }, [existingAppointments])
 
+  // Dışarıdan gelen "şu güne git" isteği: o haftaya geç ve ilgili günü seç
+  useEffect(() => {
+    if (!jumpToDate?.date) return
+    const target = new Date(`${jumpToDate.date}T00:00:00`)
+    if (isNaN(target.getTime())) return
+
+    const monday = getMondayOf(target)
+    setCurrentWeekStart(monday)
+
+    // Yeni haftanın gün listesinde hedef günün index'ini bul
+    const days = buildWeekDays(monday, viewMode)
+    const targetStr = formatDateForDB(target)
+    const idx = days.findIndex((d) => formatDateForDB(d) === targetStr)
+    setSelectedDay(idx >= 0 ? idx : 0)
+  }, [jumpToDate, viewMode])
+
   const daysOfWeek = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma"]
 
-  const getWeekDays = () => {
-    const days = []
-    // 2 hafta görünümü: 1. hafta Pzt-Cum (0-4) + 2. hafta Pzt-Cum (hafta sonu atlanır)
-    const count = viewMode === "2week" ? 10 : 5
-    for (let i = 0; i < count; i++) {
-      const date = new Date(currentWeekStart)
-      const offset = i >= 5 ? i + 2 : i // ikinci haftaya geçerken Cmt+Pzr atla
-      date.setDate(currentWeekStart.getDate() + offset)
-      days.push(date)
-    }
-    // Geçmiş günleri gizle (bugünden önceki günler ekranda yer kaplamasın)
-    const startOfToday = new Date()
-    startOfToday.setHours(0, 0, 0, 0)
-    const upcoming = days.filter((d) => d >= startOfToday)
-    // Tüm günler geçmişteyse (geçmiş bir haftaya gidilmişse) hepsini göster
-    return upcoming.length > 0 ? upcoming : days
-  }
+  const getWeekDays = () => buildWeekDays(currentWeekStart, viewMode)
 
   // Tarihten Türkçe gün adı (dizi indeksine güvenmeden, filtrelenmiş günlerde doğru etiket için)
   const getDayName = (date: Date) => date.toLocaleDateString("tr-TR", { weekday: "long" })

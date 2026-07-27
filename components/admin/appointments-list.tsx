@@ -61,6 +61,21 @@ export default function AppointmentsList({ appointments: initialAppointments, do
   const calendarAvailable = !!doctor
   const [viewMode, setViewMode] = useState<"calendar" | "list">(calendarAvailable ? "calendar" : "list")
   const [calendarView, setCalendarView] = useState<"day" | "week" | "2week">("week")
+  // Hasta aramasından "randevu gününe git" isteği
+  const [jumpToDate, setJumpToDate] = useState<{ date: string; nonce: number } | null>(null)
+
+  // Hasta hızlı aramasında bir randevuya tıklanınca takvimi o günün görünümüne getir
+  useEffect(() => {
+    function handleJump(e: Event) {
+      const date = (e as CustomEvent<{ date?: string }>).detail?.date
+      if (!date) return
+      if (calendarAvailable) setViewMode("calendar")
+      setCalendarView("day")
+      setJumpToDate({ date, nonce: Date.now() })
+    }
+    window.addEventListener("admin:calendar-jump", handleJump)
+    return () => window.removeEventListener("admin:calendar-jump", handleJump)
+  }, [calendarAvailable])
 
   // Appointment actions hook
   const { isUpdating, deleteId, setDeleteId, handleDelete } = useAppointmentActions(setAppointments, setSelectedAppointment)
@@ -526,8 +541,9 @@ export default function AppointmentsList({ appointments: initialAppointments, do
             existingAppointments={appointments as any}
             isAdmin={true}
             embedded={true}
-            viewMode={calendarView}
-            onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
+              viewMode={calendarView}
+              jumpToDate={jumpToDate}
+              onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
             viewControls={
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex rounded-md border bg-muted/40 p-0.5">
