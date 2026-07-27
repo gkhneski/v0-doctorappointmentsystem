@@ -209,11 +209,17 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
   const [movingId, setMovingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [localAppointments, setLocalAppointments] = useState(existingAppointments)
+  const [localSchedules, setLocalSchedules] = useState(schedules)
+  const [togglingDate, setTogglingDate] = useState<string | null>(null)
 
   // Props değişince local state'i güncelle
   useEffect(() => {
     setLocalAppointments(existingAppointments)
   }, [existingAppointments])
+
+  useEffect(() => {
+    setLocalSchedules(schedules)
+  }, [schedules])
 
   // Dışarıdan gelen "şu güne git" isteği: o haftaya geç ve ilgili günü seç
   useEffect(() => {
@@ -475,6 +481,70 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     router.refresh()
   }
 
+  const isDayClosed = (dateStr: string) => {
+    const daySchedules = localSchedules.filter(
+      (schedule) => schedule.doctor_id === doctor?.id && schedule.schedule_date === dateStr,
+    )
+    return daySchedules.length > 0 && daySchedules.every((schedule) => schedule.is_available === false)
+  }
+
+  const handleToggleDay = async (date: Date) => {
+    if (!isAdmin || !doctor || togglingDate) return
+
+    const dateStr = formatDateForDB(date)
+    const daySchedules = localSchedules.filter(
+      (schedule) => schedule.doctor_id === doctor.id && schedule.schedule_date === dateStr,
+    )
+    if (!daySchedules.length) {
+      toast({ title: "Program bulunamadı", description: "Bu gün için tanımlı doktor programı yok.", variant: "destructive" })
+      return
+    }
+
+    const currentlyClosed = daySchedules.every((schedule) => schedule.is_available === false)
+    const nextAvailable = currentlyClosed
+    const formattedDate = date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "long" })
+    const confirmed = window.confirm(
+      currentlyClosed
+        ? `${formattedDate} gününü yeniden randevu alımına açmak istiyor musunuz?`
+        : `${formattedDate} gününü yeni randevulara kapatmak istiyor musunuz? Mevcut randevular korunacaktır.`,
+    )
+    if (!confirmed) return
+
+    setTogglingDate(dateStr)
+    try {
+      const response = await fetch("/api/admin/schedules/toggle-availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ doctor_id: doctor.id, schedule_date: dateStr, is_available: nextAvailable }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Gün durumu güncellenemedi")
+
+      setLocalSchedules((current) =>
+        current.map((schedule) =>
+          schedule.doctor_id === doctor.id && schedule.schedule_date === dateStr
+            ? { ...schedule, is_available: nextAvailable }
+            : schedule,
+        ),
+      )
+      toast({
+        title: nextAvailable ? "Gün yeniden açıldı" : "Gün kapatıldı",
+        description: nextAvailable
+          ? "Bu gün yeniden randevu alabilir."
+          : "Yeni randevular engellendi; mevcut randevular korunuyor.",
+      })
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: "İşlem başarısız",
+        description: error instanceof Error ? error.message : "Gün durumu güncellenemedi",
+        variant: "destructive",
+      })
+    } finally {
+      setTogglingDate(null)
+    }
+  }
+
   // İptal edilmiş (gelmeyeceğini bildiren) randevuyu sil ve saati boşalt
   const handleFreeSlot = async (appt: ExistingAppointment) => {
     const label = appt.patients?.full_name || "Hasta"
@@ -528,7 +598,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
             router.push(`/admin/patients/${appointment.patient_id}`)
           }
         }}
-        className={`group relative w-full rounded-md px-1.5 py-1 text-xs transition-all ${colorClass}`}
+        className={`group relative w-full rounded-md text-xs transition-all ${isAdmin ? "px-1.5 py-0.5 leading-tight" : "px-1.5 py-1"} ${colorClass}`}
       >
         {(isMoving || isDeleting) && (
           <div className="absolute inset-0 rounded-md bg-white/50 flex items-center justify-center z-10">
@@ -538,7 +608,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         <div className="flex items-start gap-1">
           {!isCancelled && <GripVertical className="h-3 w-3 mt-0.5 shrink-0 opacity-50 group-hover:opacity-100" />}
           <div className="min-w-0 flex-1">
-            <div className="font-bold text-[11px] opacity-90 mb-0.5 flex items-center gap-1">
+            <div className={`font-bold text-[11px] opacity-90 flex items-center gap-1 ${isAdmin ? "mb-0" : "mb-0.5"}`}>
               {time}
               {isAra && <span className="text-[8px] font-bold bg-white/25 rounded px-1 py-0.5 leading-none">ARA</span>}
             </div>
@@ -548,7 +618,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                   {appointment.patients?.full_name || "Hasta"}
                   {isCancelled && <span className="ml-1 text-[9px] bg-white/30 px-1 rounded">İPTAL</span>}
                 </div>
-                {showPhone && <div className="opacity-80 truncate text-[10px]">{phone}</div>}
+                {showPhone && <div className="truncate text-[12px] font-semibold leading-tight opacity-95">{phone}</div>}
                 {getTypeLabel(appointment) && (
                   <div className="text-[9px] font-medium bg-white/20 rounded px-1 mt-0.5 inline-block truncate max-w-full">
                     {getTypeLabel(appointment)}
@@ -626,7 +696,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
   const selectedDate = weekDays[selectedDay]
   const selectedDateStr = formatDateForDB(selectedDate)
   const selectedDayWorkingHours = getWorkingHoursForDay(selectedDate)
-  const selectedDaySchedules = schedules.filter((s) => s.schedule_date === selectedDateStr && s.doctor_id === doctor.id)
+  const selectedDaySchedules = localSchedules.filter((s) => s.schedule_date === selectedDateStr && s.doctor_id === doctor.id)
 
   return (
     <div className={embedded ? "space-y-4" : "space-y-6"}>
@@ -663,7 +733,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
               {weekDays.map((date, index) => {
                 const isSelected = index === selectedDay
                 const dateStr = formatDateForDB(date)
-                const hasSlotsAvailable = schedules.some(
+                const hasSlotsAvailable = localSchedules.some(
                   (s) => s.schedule_date === dateStr && s.doctor_id === doctor.id,
                 )
 
@@ -692,7 +762,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
           {(() => {
             const hasAnySchedule = weekDays.some((date) => {
               const dateStr = formatDateForDB(date)
-              return schedules.some((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
+              return localSchedules.some((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
             })
             if (!hasAnySchedule) {
               return (
@@ -705,27 +775,47 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
           })()}
 
           <div className="hidden md:block overflow-x-auto">
-            <div className={`grid gap-1 ${viewMode === "day" ? "grid-cols-1 max-w-md" : viewMode === "2week" ? "min-w-[1200px] grid-cols-10" : "min-w-[640px] grid-cols-5"}`}>
+            <div className={`grid ${isAdmin ? "gap-0.5" : "gap-1"} ${viewMode === "day" ? "grid-cols-1 max-w-md" : viewMode === "2week" ? "min-w-[1200px] grid-cols-10" : "min-w-[640px] grid-cols-5"}`}>
               {(viewMode === "day" ? [weekDays[selectedDay]] : weekDays).map((date, idx) => {
                 const index = viewMode === "day" ? selectedDay : idx
                 const dateStr = formatDateForDB(date)
                 const workingHours = getWorkingHoursForDay(date)
-                const daySchedules = schedules.filter((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
+                const daySchedules = localSchedules.filter((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
                 const isToday = dateStr === formatDateForDB(new Date())
+                const closed = isDayClosed(dateStr)
+                const isToggling = togglingDate === dateStr
 
                 return (
-                  <div key={index} className="space-y-1">
-                    <div className={`sticky top-0 z-10 rounded-md p-1 text-center ${isToday ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                  <div key={index} className={isAdmin ? "space-y-0.5" : "space-y-1"}>
+                    <button
+                      type="button"
+                      disabled={!isAdmin || daySchedules.length === 0 || isToggling}
+                      onClick={() => handleToggleDay(date)}
+                      aria-label={closed ? `${getDayName(date)} gününü randevu alımına aç` : `${getDayName(date)} gününü randevu alımına kapat`}
+                      title={isAdmin ? (closed ? "Günü yeniden aç" : "Yeni randevulara kapat") : undefined}
+                      className={`sticky top-0 z-10 w-full rounded-md p-1 text-center transition-colors ${
+                        closed
+                          ? "border border-dashed border-amber-500 bg-amber-50 text-amber-900"
+                          : isToday
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-foreground"
+                      } ${isAdmin && daySchedules.length > 0 ? "cursor-pointer hover:ring-2 hover:ring-primary/30" : "cursor-default"}`}
+                    >
                       <div className="text-[10px] font-medium leading-tight">{getDayName(date)}</div>
                       <div className="text-xs font-semibold leading-tight">
                         {date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
                       </div>
-                      {daySchedules.length > 0 && (
+                      {closed ? (
+                        <div className="flex items-center justify-center gap-1 text-[9px] font-bold leading-tight">
+                          {isToggling ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Lock className="h-2.5 w-2.5" />}
+                          Kapalı
+                        </div>
+                      ) : daySchedules.length > 0 ? (
                         <div className={`text-[9px] leading-tight ${isToday ? "opacity-90" : "text-muted-foreground"}`}>
                           {daySchedules[0].start_time.slice(0,5)}-{daySchedules[0].end_time.slice(0,5)}
                         </div>
-                      )}
-                    </div>
+                      ) : null}
+                    </button>
 
                     <div className="space-y-1">
                       {!workingHours ? (
@@ -756,12 +846,15 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                 )
                               })
                             : []
+                          const visibleGridTimes = schedule.is_available === false
+                            ? gridTimes.filter((time) => isSlotBooked(schedule.doctor_id, date, time))
+                            : gridTimes
                           const entries = [
-                            ...gridTimes.map((t) => ({ time: t, ara: false })),
+                            ...visibleGridTimes.map((t) => ({ time: t, ara: false })),
                             ...araAppts.map((a) => ({ time: a.appointment_time.slice(0, 5), ara: true })),
                           ].sort((x, y) => x.time.localeCompare(y.time))
                           return (
-                            <div key={schedule.id} className="space-y-1">
+                            <div key={schedule.id} className={isAdmin ? "space-y-0.5" : "space-y-1"}>
                               {entries.map((entry) => {
                                 const time = entry.time
                                 if (entry.ara) {
@@ -798,7 +891,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                       variant="outline"
                                       size="sm"
                                       title={isFetalBlocked ? "Fetal ultrason sadece tam ve bucuklu saatlerde" : undefined}
-                                      className={`w-full h-7 min-h-0 px-1 text-[11px] transition-all ${
+                                      className={`w-full min-h-0 px-1 text-[11px] transition-all ${isAdmin ? "h-6" : "h-7"} ${
                                         isPast ? "opacity-50 cursor-not-allowed" :
                                         isFetalBlocked ? "opacity-30 cursor-not-allowed bg-gray-50 border-dashed" :
                                         isDropTarget ? "border-primary bg-primary/10 ring-2 ring-primary/30 scale-105" :
@@ -852,8 +945,11 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                       )
                     })
                   : []
+                const visibleGridTimes = schedule.is_available === false
+                  ? gridTimes.filter((time) => isSlotBooked(schedule.doctor_id, selectedDate, time))
+                  : gridTimes
                 const entries = [
-                  ...gridTimes.map((t) => ({ time: t, ara: false })),
+                  ...visibleGridTimes.map((t) => ({ time: t, ara: false })),
                   ...araAppts.map((a) => ({ time: a.appointment_time.slice(0, 5), ara: true })),
                 ].sort((x, y) => x.time.localeCompare(y.time))
                 return (

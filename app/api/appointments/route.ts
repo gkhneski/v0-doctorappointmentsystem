@@ -40,6 +40,7 @@ export async function POST(request: Request) {
       { data: existingAppointment },
       { data: sameWeekAppointments },
       { data: blacklistedPatient },
+      { data: availableSchedule },
     ] = await Promise.all([
       // 1. Slot conflict
       supabase
@@ -66,7 +67,24 @@ export async function POST(request: Request) {
         .eq("is_blacklisted", true)
         .or(`tc_no.eq.${patient_tc_no},phone.eq.${patient_phone}`)
         .maybeSingle(),
+
+      // 4. Gün yeni randevu alımına açık mı?
+      supabase
+        .from("doctor_schedules")
+        .select("id")
+        .eq("doctor_id", doctor_id)
+        .eq("schedule_date", appointment_date)
+        .eq("is_active", true)
+        .eq("is_available", true)
+        .limit(1),
     ])
+
+    if (!availableSchedule?.length) {
+      return NextResponse.json(
+        { error: "Bu gün yeni randevu alımına kapalı. Acil durumlar için lütfen kliniğimizi arayın." },
+        { status: 409 },
+      )
+    }
 
     if (existingAppointment) {
       return NextResponse.json({ error: "Bu randevu saati dolu. Lütfen başka bir saat seçin." }, { status: 409 })

@@ -76,7 +76,7 @@ export default async function AdminDashboard() {
     supabase
       .from("doctor_schedules")
       .select(`*, doctors (id, name, specialization)`)
-      .eq("is_available", true)
+      .eq("is_active", true)
       .gte("schedule_date", today)
       .lte("schedule_date", endDate)
       .order("schedule_date")
