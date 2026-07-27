@@ -712,14 +712,18 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                             preselectedType,
                           )
                           const dayStr = formatDateForDB(date)
-                          const araAppts = localAppointments.filter((a) => {
-                            const t = a.appointment_time.slice(0, 5)
-                            return (
-                              a.doctor_id === schedule.doctor_id &&
-                              a.appointment_date === dayStr &&
-                              !gridTimes.includes(t)
-                            )
-                          })
+                          // Ara randevular (grid dışı saatler) sadece adminlere gösterilir.
+                          // Hastalar ara slot alamadığı için onlara göstermek gereksiz.
+                          const araAppts = isAdmin
+                            ? localAppointments.filter((a) => {
+                                const t = a.appointment_time.slice(0, 5)
+                                return (
+                                  a.doctor_id === schedule.doctor_id &&
+                                  a.appointment_date === dayStr &&
+                                  !gridTimes.includes(t)
+                                )
+                              })
+                            : []
                           const entries = [
                             ...gridTimes.map((t) => ({ time: t, ara: false })),
                             ...araAppts.map((a) => ({ time: a.appointment_time.slice(0, 5), ara: true })),
@@ -804,14 +808,18 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                   preselectedType,
                 )
                 const dayStr = formatDateForDB(selectedDate)
-                const araAppts = localAppointments.filter((a) => {
-                  const t = a.appointment_time.slice(0, 5)
-                  return (
-                    a.doctor_id === schedule.doctor_id &&
-                    a.appointment_date === dayStr &&
-                    !gridTimes.includes(t)
-                  )
-                })
+                // Ara randevular (grid dışı saatler) sadece adminlere gösterilir.
+                // Hastalar ara slot alamadığı için onlara göstermek gereksiz.
+                const araAppts = isAdmin
+                  ? localAppointments.filter((a) => {
+                      const t = a.appointment_time.slice(0, 5)
+                      return (
+                        a.doctor_id === schedule.doctor_id &&
+                        a.appointment_date === dayStr &&
+                        !gridTimes.includes(t)
+                      )
+                    })
+                  : []
                 const entries = [
                   ...gridTimes.map((t) => ({ time: t, ara: false })),
                   ...araAppts.map((a) => ({ time: a.appointment_time.slice(0, 5), ara: true })),
