@@ -545,8 +545,8 @@ export default function AppointmentsList({ appointments: initialAppointments, do
               jumpToDate={jumpToDate}
               onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
             viewControls={
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex rounded-md border bg-muted/40 p-0.5">
+              <div className="flex flex-wrap items-center gap-1">
+                <div className="inline-flex rounded-md bg-background p-0.5">
                   <Button
                     variant={calendarView === "day" ? "default" : "ghost"}
                     size="sm"
@@ -576,7 +576,7 @@ export default function AppointmentsList({ appointments: initialAppointments, do
                   </Button>
                 </div>
                 {/* Günlük randevu listesi yazdırma */}
-                <div className="inline-flex items-center gap-1 rounded-md border bg-muted/40 p-0.5">
+                <div className="inline-flex items-center gap-1 rounded-md bg-background p-0.5">
                   <Input
                     type="date"
                     value={printDate}

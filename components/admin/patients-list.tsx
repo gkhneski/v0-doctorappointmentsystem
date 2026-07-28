@@ -36,7 +36,13 @@ type Patient = {
   blacklist_reason?: string
 }
 
-export default function PatientsList({ patients: initialPatients }: { patients: Patient[] }) {
+export default function PatientsList({
+  patients: initialPatients,
+  blacklistOnly = false,
+}: {
+  patients: Patient[]
+  blacklistOnly?: boolean
+}) {
   const router = useRouter()
   const [profilePhotos, setProfilePhotos] = useState<Record<string, string>>({})
   const [loadedPatients, setLoadedPatients] = useState<Set<string>>(new Set())
@@ -154,15 +160,17 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
     if (error) throw error
 
     setPatients((prev) =>
-      prev.map((p) =>
-        p.id === patientId
-          ? {
-              ...p,
-              is_blacklisted: newBlacklistStatus,
-              blacklist_reason: newBlacklistStatus ? reason : null,
-            }
-          : p
-      )
+      blacklistOnly && !newBlacklistStatus
+        ? prev.filter((p) => p.id !== patientId)
+        : prev.map((p) =>
+            p.id === patientId
+              ? {
+                  ...p,
+                  is_blacklisted: newBlacklistStatus,
+                  blacklist_reason: newBlacklistStatus ? reason : undefined,
+                }
+              : p,
+          ),
     )
 
     toast({
@@ -264,14 +272,27 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
     return () => observerRef.current?.disconnect()
   }, [loadProfilePhoto])
 
-  // Search filter - isim, TC, telefon ile arama
-  const filteredPatients = patients.filter(p => {
+  const normalizeTurkish = (value: string) =>
+    value
+      .replace(/[İIıi]/g, "i")
+      .toLocaleLowerCase("tr-TR")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/ş/g, "s")
+      .replace(/ğ/g, "g")
+      .replace(/ç/g, "c")
+      .replace(/ö/g, "o")
+      .replace(/ü/g, "u")
+
+  // Search filter - isim, TC, telefon ile Türkçe duyarsız arama
+  const filteredPatients = patients.filter((patient) => {
+    if (blacklistOnly && !patient.is_blacklisted) return false
     if (!searchQuery.trim()) return true
-    const query = searchQuery.toLowerCase().trim()
+    const query = normalizeTurkish(searchQuery.trim())
     return (
-      p.full_name?.toLowerCase().includes(query) ||
-      p.tc_no?.toLowerCase().includes(query) ||
-      p.phone?.includes(query)
+      normalizeTurkish(patient.full_name || "").includes(query) ||
+      (patient.tc_no || "").includes(searchQuery.trim()) ||
+      (patient.phone || "").includes(searchQuery.trim())
     )
   })
 
@@ -306,28 +327,34 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
             )}
           </div>
           <div className="text-sm text-gray-600">
-            {searchQuery ? `${filteredPatients.length} sonuç` : `Toplam: ${filteredPatients.length} hasta`}
+            {searchQuery
+              ? `${filteredPatients.length} sonuç`
+              : blacklistOnly
+                ? `${filteredPatients.length} kara liste kaydı`
+                : `Toplam: ${filteredPatients.length} hasta`}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => setQuickAddDialog(true)}
-            className="gap-2 bg-primary hover:bg-primary/90"
-          >
-            <UserPlus className="h-4 w-4" />
-            Hizli Hasta Ekle + SMS
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setManualBlacklistDialog({ open: true })}
-            className="gap-2"
-          >
-            <AlertTriangle className="h-4 w-4" />
-            Black List
-          </Button>
-        </div>
+        {!blacklistOnly && (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => setQuickAddDialog(true)}
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
+              <UserPlus className="h-4 w-4" />
+              Hizli Hasta Ekle + SMS
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setManualBlacklistDialog({ open: true })}
+              className="gap-2"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Black List
+            </Button>
+          </div>
+        )}
       </div>
       <div className="rounded-md border">
         <Table>
@@ -336,13 +363,20 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
               <TableHead>Hasta Adı</TableHead>
               <TableHead>TC Kimlik No</TableHead>
               <TableHead>Telefon</TableHead>
-              <TableHead>Doğum Tarihi</TableHead>
-              <TableHead>Kayıt Tarihi</TableHead>
-              <TableHead>Durum</TableHead>
+              {!blacklistOnly && <TableHead>Doğum Tarihi</TableHead>}
+              {!blacklistOnly && <TableHead>Kayıt Tarihi</TableHead>}
+              <TableHead>{blacklistOnly ? "Kara Liste Nedeni" : "Durum"}</TableHead>
               <TableHead className="text-right">İşlemler</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
+            {filteredPatients.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={blacklistOnly ? 5 : 7} className="h-32 text-center text-sm text-muted-foreground">
+                  {searchQuery ? "Aramanızla eşleşen kayıt bulunamadı." : "Kara listede hasta bulunmuyor."}
+                </TableCell>
+              </TableRow>
+            )}
             {filteredPatients.map((patient) => (
               <TableRow
                 key={patient.id}
@@ -381,24 +415,32 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
                     {patient.phone}
                   </div>
                 </TableCell>
+                {!blacklistOnly && (
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm">
+                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      {new Date(patient.date_of_birth).toLocaleDateString("tr-TR")}
+                    </div>
+                  </TableCell>
+                )}
+                {!blacklistOnly && (
+                  <TableCell>
+                    <Badge variant="outline">{new Date(patient.created_at).toLocaleDateString("tr-TR")}</Badge>
+                  </TableCell>
+                )}
                 <TableCell>
-                  <div className="flex items-center gap-1 text-sm">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    {new Date(patient.date_of_birth).toLocaleDateString("tr-TR")}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{new Date(patient.created_at).toLocaleDateString("tr-TR")}</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {patient.is_blacklisted && (
-                      <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-                        <AlertTriangle className="mr-1 h-3 w-3" />
-                        Black List
-                      </Badge>
-                    )}
-                  </div>
+                  {blacklistOnly ? (
+                    <span className="text-sm text-red-800">{patient.blacklist_reason || "Neden belirtilmedi"}</span>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {patient.is_blacklisted && (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                          <AlertTriangle className="mr-1 h-3 w-3" />
+                          Black List
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -417,17 +459,19 @@ export default function PatientsList({ patients: initialPatients }: { patients: 
                     >
                       {patient.is_blacklisted ? "Listeden Çıkar" : "Black List'e Al"}
                     </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setPatientToDelete(patient)
-                        setDeleteDialogOpen(true)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!blacklistOnly && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPatientToDelete(patient)
+                          setDeleteDialogOpen(true)
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

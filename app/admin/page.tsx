@@ -8,8 +8,9 @@ export const dynamic = 'force-dynamic'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
-import { Calendar, Users, Clock } from "lucide-react"
+import { Calendar, Users, Clock, AlertTriangle } from "lucide-react"
 import AppointmentsList from "@/components/admin/appointments-list"
+import PatientsList from "@/components/admin/patients-list"
 import { QuickBlockAppointment } from "@/components/admin/quick-block-appointment"
 import { NotificationsDropdown } from "@/components/admin/notifications-dropdown"
 import { PatientQuickSearch } from "@/components/admin/patient-quick-search"
@@ -41,6 +42,7 @@ export default async function AdminDashboard() {
     { data: allAppointments },
     { data: calendarDoctors },
     { data: schedules },
+    { data: blacklistedPatients },
   ] = await Promise.all([
     // TÜM randevuları tek sorguda çek (gelecek + geçmiş + iptal)
     supabase
@@ -81,6 +83,12 @@ export default async function AdminDashboard() {
       .lte("schedule_date", endDate)
       .order("schedule_date")
       .order("start_time"),
+    supabase
+      .from("patients")
+      .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
+      .eq("is_blacklisted", true)
+      .order("full_name")
+      .limit(500),
   ])
 
   // Client-side filtreleme (çok daha hızlı)
@@ -173,6 +181,13 @@ export default async function AdminDashboard() {
                   <Users className="h-3.5 w-3.5" />
                   İptal
                 </TabsTrigger>
+                <TabsTrigger value="blacklist" className="h-6 gap-1 px-2.5 text-xs data-[state=active]:text-red-700">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Kara Liste
+                  <span className="rounded-full bg-red-100 px-1.5 text-[10px] font-semibold text-red-700">
+                    {blacklistedPatients?.length || 0}
+                  </span>
+                </TabsTrigger>
               </TabsList>
               <QuickBlockAppointment />
               <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-600">
@@ -216,6 +231,23 @@ export default async function AdminDashboard() {
         </TabsContent>
 
         <div className="px-4 pb-8">
+          <TabsContent value="blacklist" className="space-y-4">
+            <Card className="overflow-hidden border-red-200 bg-white shadow-sm">
+              <CardHeader className="border-b border-red-100 bg-red-50/50 py-4">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-red-900">
+                  <AlertTriangle className="h-5 w-5" />
+                  Kara Listedeki Hastalar
+                </CardTitle>
+                <CardDescription className="text-red-700/80">
+                  Yeni randevu alamayan hastaları görüntüleyin, arayın veya listeden çıkarın.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <PatientsList patients={blacklistedPatients || []} blacklistOnly />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="past" className="space-y-4">
             <Card className="border-gray-200 bg-white shadow-sm">
               <CardHeader className="border-b border-gray-100 bg-gray-50/50">

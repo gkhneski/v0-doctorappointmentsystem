@@ -723,9 +723,11 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
       )}
 
       <Card className={embedded ? "border-0 shadow-none" : ""}>
-        <div className={embedded ? "flex flex-wrap items-center justify-between gap-2 px-1 py-1" : "flex flex-wrap items-center justify-between gap-2 p-4"}>
-          {viewControls}
-          <div className="flex items-center gap-1">
+        <div className={embedded ? "px-1 py-1" : "p-4"}>
+          <div className="flex flex-wrap items-center gap-1 rounded-lg border bg-muted/20 p-1 shadow-sm">
+            {viewControls}
+            <div className="hidden h-5 w-px bg-border lg:block" />
+            <div className="ml-auto flex items-center gap-1">
             {isAdmin && (
               <Button variant="outline" size="sm" className="h-7 px-2 text-xs font-semibold" onClick={goToCurrentWeek}>
                 Bu Hafta
@@ -738,9 +740,10 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
               {weekDays[0].toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} -{" "}
               {weekDays[weekDays.length - 1].toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}
             </div>
-            <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToNextWeek}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToNextWeek}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
         <CardContent className={embedded ? "space-y-2 p-1" : "space-y-3 p-4 pt-0"}>
