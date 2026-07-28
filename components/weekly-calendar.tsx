@@ -262,6 +262,17 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     setCurrentWeekStart(newStart)
   }
 
+  const goToCurrentWeek = () => {
+    const today = new Date()
+    const monday = getMondayOf(today)
+    const days = buildWeekDays(monday, viewMode)
+    const todayStr = formatDateForDB(today)
+    const todayIndex = days.findIndex((date) => formatDateForDB(date) === todayStr)
+
+    setCurrentWeekStart(monday)
+    setSelectedDay(todayIndex >= 0 ? todayIndex : 0)
+  }
+
   const getWorkingHoursForDay = (date: Date): { start: string; end: string } | null => {
     if (!doctor?.working_hours) {
       return { start: "09:00", end: "17:00" } // Default fallback
@@ -715,6 +726,11 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         <div className={embedded ? "flex flex-wrap items-center justify-between gap-2 px-1 py-1" : "flex flex-wrap items-center justify-between gap-2 p-4"}>
           {viewControls}
           <div className="flex items-center gap-1">
+            {isAdmin && (
+              <Button variant="outline" size="sm" className="h-7 px-2 text-xs font-semibold" onClick={goToCurrentWeek}>
+                Bu Hafta
+              </Button>
+            )}
             <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToPreviousWeek}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
