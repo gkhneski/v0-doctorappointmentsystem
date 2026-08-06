@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { resolvePatientId } from "@/lib/resolve-patient"
 
@@ -20,7 +21,32 @@ export async function POST(request: Request) {
       kvkk_approved,
       medical_documents,
       fetal_bebek_sayisi,
+      created_by_admin,
     } = body
+
+    let isVerifiedAdmin = false
+    if (created_by_admin === true) {
+      const authClient = await createClient()
+      const {
+        data: { user },
+      } = await authClient.auth.getUser()
+
+      if (!user) {
+        return NextResponse.json({ error: "Yetkisiz admin işlemi" }, { status: 401 })
+      }
+
+      const { data: adminUser } = await authClient
+        .from("admin_users")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle()
+
+      if (!adminUser) {
+        return NextResponse.json({ error: "Yetkisiz admin işlemi" }, { status: 403 })
+      }
+
+      isVerifiedAdmin = true
+    }
 
     const supabase = createServiceRoleClient()
 
@@ -90,7 +116,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Bu randevu saati dolu. Lütfen başka bir saat seçin." }, { status: 409 })
     }
 
-    if (sameWeekAppointments && sameWeekAppointments.length > 0) {
+    if (!isVerifiedAdmin && sameWeekAppointments && sameWeekAppointments.length > 0) {
       const existing = sameWeekAppointments[0]
       const existingDate = new Date(existing.appointment_date).toLocaleDateString("tr-TR")
       return NextResponse.json(
