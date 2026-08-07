@@ -1,11 +1,15 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
+import { getAdminAuth } from "@/lib/admin-auth"
+import { recordAppointmentAudit } from "@/lib/appointment-audit"
 
 export async function POST(request: Request) {
   try {
-    const { appointmentId } = await request.json()
+    const { user, adminUser } = await getAdminAuth()
+    if (!user || !adminUser) return NextResponse.json({ error: "Yetkisiz" }, { status: 401 })
 
+    const { appointmentId } = await request.json()
     const supabase = createServiceRoleClient()
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.dreraycaliskan.com"
 
@@ -53,8 +57,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "SMS gonderilemedi: " + smsResult }, { status: 500 })
     }
 
-    // Mark as sent
-    await supabase.from("appointments").update({ reminder_sent_at: new Date().toISOString() }).eq("id", appointmentId)
+    const sentAt = new Date().toISOString()
+    await supabase.from("appointments").update({ reminder_sent_at: sentAt }).eq("id", appointmentId)
+    await recordAppointmentAudit({
+      patientId: appointment.patient_id,
+      appointmentId: appointment.id,
+      eventType: "reminder_sent",
+      occurredAt: sentAt,
+      patientName: appointment.patients?.full_name || "Bilinmeyen Hasta",
+      patientPhone: appointment.patients?.phone,
+      appointmentDate: appointment.appointment_date,
+      appointmentTime: appointment.appointment_time,
+      messageText: message,
+      channel: "sms",
+      deliveryStatus: "sent",
+      providerReference: smsResult.trim(),
+    })
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,6 @@
+import { headers } from "next/headers"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { getRequestEvidence, recordAppointmentAudit } from "@/lib/appointment-audit"
 import { AppointmentConfirmation } from "@/components/appointment-confirmation"
 
 export const dynamic = 'force-dynamic'
@@ -32,12 +34,28 @@ export default async function ConfirmAppointmentPage({ params }: { params: Promi
     )
   }
 
-  // Link tiklandi - link_clicked_at kaydet (ilk tiklamada)
+  // Link tiklandi - ilk açılışı hem randevuya hem değiştirilemez işlem geçmişine kaydet.
   if (!appointment.link_clicked_at) {
-    await supabase
-      .from("appointments")
-      .update({ link_clicked_at: new Date().toISOString() })
-      .eq("id", appointment.id)
+    const openedAt = new Date().toISOString()
+    const requestHeaders = await headers()
+    const evidence = getRequestEvidence(requestHeaders)
+
+    await supabase.from("appointments").update({ link_clicked_at: openedAt }).eq("id", appointment.id)
+    try {
+      await recordAppointmentAudit({
+        patientId: appointment.patient_id,
+        appointmentId: appointment.id,
+        eventType: "link_opened",
+        occurredAt: openedAt,
+        patientName: appointment.patients?.full_name || "Bilinmeyen Hasta",
+        patientPhone: appointment.patients?.phone,
+        appointmentDate: appointment.appointment_date,
+        appointmentTime: appointment.appointment_time,
+        ...evidence,
+      })
+    } catch (auditError) {
+      console.error("[v0] Link audit error:", auditError)
+    }
   }
 
   return <AppointmentConfirmation appointment={appointment} token={token} />

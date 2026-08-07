@@ -4,6 +4,8 @@ import { getAdminAuth } from "@/lib/admin-auth"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { Button } from "@/components/ui/button"
 import RemindersManagement from "@/components/admin/reminders-management"
+import PatientAuditHistory from "@/components/admin/patient-audit-history"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default async function RemindersPage() {
   const supabase = await createClient()
@@ -50,7 +52,18 @@ export default async function RemindersPage() {
       </header>
 
       <div className="px-6 py-8">
-        <RemindersManagement initialRecipients={recipients || []} />
+        <Tabs defaultValue="settings" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="settings">Hatırlatma Ayarları</TabsTrigger>
+            <TabsTrigger value="history">Hasta İşlem Geçmişi</TabsTrigger>
+          </TabsList>
+          <TabsContent value="settings">
+            <RemindersManagement initialRecipients={recipients || []} />
+          </TabsContent>
+          <TabsContent value="history">
+            <PatientAuditHistory />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
