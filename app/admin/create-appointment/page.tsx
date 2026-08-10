@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { getAdminAuth } from "@/lib/admin-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import WeeklyCalendar from "@/components/weekly-calendar"
@@ -8,22 +9,10 @@ import { QuickBlockAppointment } from "@/components/admin/quick-block-appointmen
 export default async function CreateAppointmentPage() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+  // Cache'li helper: layout ile ayni istekte paylasilir (ekstra auth gidis-donusu yok)
+  const { user, adminUser } = await getAdminAuth()
 
-  if (userError || !user) {
-    redirect("/auth/admin/login")
-  }
-
-  const { data: adminUser, error: adminError } = await supabase
-    .from("admin_users")
-    .select("*")
-    .eq("id", user.id)
-    .single()
-
-  if (adminError || !adminUser) {
+  if (!user || !adminUser) {
     redirect("/auth/admin/login")
   }
 
@@ -57,17 +46,19 @@ export default async function CreateAppointmentPage() {
     .select(`
       id,
       doctor_id,
+      patient_id,
       appointment_date,
       appointment_time,
       appointment_type,
       notes,
+      status,
       patients (
         full_name,
         phone
       )
     `)
     .gte("appointment_date", today)
-    .neq("status", "cancelled")
+    // İptal edilenler de dahil - admin görüntüler
 
   const handleSignOut = async () => {
     "use server"

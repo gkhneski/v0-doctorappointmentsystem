@@ -15,27 +15,42 @@ export async function POST(request: Request) {
 
     const supabase = createServiceRoleClient()
 
-    // Önce geçici hasta kaydı oluştur (TC ve telefon olmadan, KVKK onaysız)
-    const { data: patient, error: patientError } = await supabase
-      .from("patients")
-      .insert({
-        full_name,
-        tc_no: `TEMP_${Date.now()}`, // Geçici TC
-        phone: "0000000000", // Geçici telefon
-        date_of_birth: "1900-01-01", // Geçici doğum tarihi
-        kvkk_approved: false, // Henüz onay yok
-        kvkk_approved_at: null,
-        kvkk_approved_via: null,
-      })
-      .select()
-      .single()
+    // Aynı isimde mevcut hasta var mı? (duplicate önleme)
+    // Varsa onu yeniden kullan; her seferinde yeni geçici kayıt açma.
+    let patient: { id: string } | null = null
 
-    if (patientError || !patient) {
-      console.error("[v0] Patient creation error:", patientError)
-      return NextResponse.json(
-        { error: "Hasta kaydı oluşturulamadı" },
-        { status: 500 }
-      )
+    const { data: existingId } = await supabase.rpc("find_patient_by_name", { p_name: full_name })
+
+    if (existingId) {
+      patient = { id: existingId as string }
+    } else {
+      // Mevcut kayıt yoksa geçici hasta oluştur (TC ve telefon olmadan, KVKK onaysız)
+      const { data: newPatient, error: patientError } = await supabase
+        .from("patients")
+        .insert({
+          full_name,
+          tc_no: `TEMP_${Date.now()}`, // Geçici TC
+          phone: "0000000000", // Geçici telefon
+          date_of_birth: "1900-01-01", // Geçici doğum tarihi
+          kvkk_approved: false, // Henüz onay yok
+          kvkk_approved_at: null,
+          kvkk_approved_via: null,
+        })
+        .select()
+        .single()
+
+      if (patientError || !newPatient) {
+        console.error("[v0] Patient creation error:", patientError)
+        return NextResponse.json(
+          { error: "Hasta kaydı oluşturulamadı" },
+          { status: 500 }
+        )
+      }
+      patient = newPatient
+    }
+
+    if (!patient) {
+      return NextResponse.json({ error: "Hasta kaydı bulunamadı" }, { status: 500 })
     }
 
     // Default doktor ID'sini al (Prof. Dr. Eray Çalışkan)

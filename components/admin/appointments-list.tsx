@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense, memo, useMemo } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar, Trash2, Edit, Search, X } from "lucide-react"
+import { Calendar, Trash2, Search, X, CalendarDays, LayoutGrid, Printer } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import WeeklyCalendar from "@/components/weekly-calendar"
 
 // Hooks
 import { useAppointmentActions } from "@/components/admin/appointments/hooks/use-appointment-actions"
@@ -37,15 +38,44 @@ const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
   diger: { label: "Diğer", color: "bg-gray-100 text-gray-800" },
 }
 
-type Props = {
-  appointments: Appointment[]
+type CalendarDoctor = {
+  id: string
+  name: string
+  specialization: string
+  working_hours?: any
 }
 
-function AppointmentsList({ appointments: initialAppointments }: Props) {
+type Props = {
+  appointments: Appointment[]
+  doctor?: CalendarDoctor | null
+  schedules?: any[]
+}
+
+export default function AppointmentsList({ appointments: initialAppointments, doctor = null, schedules = [] }: Props) {
   const router = useRouter()
   const { toast } = useToast()
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+
+  // Görünüm modu: takvim (varsayilan, doktor+program varsa) veya liste
+  const calendarAvailable = !!doctor
+  const [viewMode, setViewMode] = useState<"calendar" | "list">(calendarAvailable ? "calendar" : "list")
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "2week">("week")
+  // Hasta aramasından "randevu gününe git" isteği
+  const [jumpToDate, setJumpToDate] = useState<{ date: string; nonce: number } | null>(null)
+
+  // Hasta hızlı aramasında bir randevuya tıklanınca takvimi o günün görünümüne getir
+  useEffect(() => {
+    function handleJump(e: Event) {
+      const date = (e as CustomEvent<{ date?: string }>).detail?.date
+      if (!date) return
+      if (calendarAvailable) setViewMode("calendar")
+      setCalendarView("day")
+      setJumpToDate({ date, nonce: Date.now() })
+    }
+    window.addEventListener("admin:calendar-jump", handleJump)
+    return () => window.removeEventListener("admin:calendar-jump", handleJump)
+  }, [calendarAvailable])
 
   // Appointment actions hook
   const { isUpdating, deleteId, setDeleteId, handleDelete } = useAppointmentActions(setAppointments, setSelectedAppointment)
@@ -84,19 +114,24 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
   // Filters
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>("")
   const [appointmentTypeFilter, setAppointmentTypeFilter] = useState<string>("all")
+  // Takvimden günlük yazdırma için seçilen tarih (varsayılan bugün)
+  const [printDate, setPrintDate] = useState<string>(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })
 
   // Supabase realtime subscription — appointments tablosu degisince listeyi ve secili randevuyu guncelle
   useEffect(() => {
     const supabase = createClient()
 
     const channel = supabase
-      .channel("appointments-realtime")
+      .channel(`appointments-realtime-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "appointments" },
         async (payload) => {
-          if (payload.eventType === "UPDATE") {
-            // Degisen randevuyu Supabase'den tam veriyle tekrar cek (patient bilgisi dahil)
+          if (payload.eventType === "UPDATE" || payload.eventType === "INSERT") {
+            // Degisen/yeni randevuyu Supabase'den tam veriyle cek (patient bilgisi dahil)
             const { data: fresh } = await supabase
               .from("appointments")
               .select(`
@@ -108,13 +143,24 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
               .single()
 
             if (fresh) {
-              setAppointments(prev =>
-                prev.map(a => a.id === fresh.id ? { ...a, ...fresh } : a)
-              )
+              setAppointments(prev => {
+                const exists = prev.some(a => a.id === fresh.id)
+                // Yeni randevu ise listeye ekle, mevcutsa guncelle
+                return exists
+                  ? prev.map(a => (a.id === fresh.id ? { ...a, ...fresh } : a))
+                  : [...prev, fresh as any]
+              })
               // Eger bu secili randevuysa onu da guncelle
               setSelectedAppointment(prev =>
                 prev?.id === fresh.id ? { ...prev, ...fresh } : prev
               )
+            }
+          } else if (payload.eventType === "DELETE") {
+            // Silinen randevuyu listeden cikar
+            const removedId = (payload.old as { id?: string })?.id
+            if (removedId) {
+              setAppointments(prev => prev.filter(a => a.id !== removedId))
+              setSelectedAppointment(prev => (prev?.id === removedId ? null : prev))
             }
           }
         }
@@ -125,6 +171,12 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
       supabase.removeChannel(channel)
     }
   }, [])
+
+  // router.refresh() sonrasi server'dan gelen taze veriyi state'e yansit
+  // (realtime kacirilan durumlar icin guvenlik agi)
+  useEffect(() => {
+    setAppointments(initialAppointments)
+  }, [initialAppointments])
 
   // Sync selectedAppointment with appointments list
   useEffect(() => {
@@ -191,7 +243,14 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
     await verifyCodeFn(selectedAppointment, verificationCode, completeFormData, appointments)
   }
 
-  const handlePrint = () => {
+  const handlePrint = (printDateOverride?: string) => {
+    // printDateOverride verilirse o güne ait randevuları yazdır (takvimden günlük yazdırma),
+    // verilmezse liste görünümündeki filtrelenmiş randevuları yazdır
+    const listToPrint = printDateOverride
+      ? appointments
+          .filter((a) => a.appointment_date === printDateOverride)
+          .sort((a, b) => (a.appointment_time || "").localeCompare(b.appointment_time || ""))
+      : filteredAppointments
     // Sadece liste tablosunu yazdır
     const shortTypeNames: Record<string, string> = {
       "asilama-tup-bebek": "IVF kontrol",
@@ -215,11 +274,12 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
       return shortTypeNames[appointment.appointment_type] || appointment.appointment_type.replace(/-/g, " ")
     }
 
-    const dateLabel = selectedDateFilter
-      ? " - " + new Date(selectedDateFilter).toLocaleDateString("tr-TR")
+    const labelDate = printDateOverride || selectedDateFilter
+    const dateLabel = labelDate
+      ? " - " + new Date(labelDate).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
       : ""
 
-    const rows = filteredAppointments
+    const rows = listToPrint
       .map((a, index) => {
         const no = index + 1
         const time = a.appointment_time || "-"
@@ -229,10 +289,8 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
         const paymentDisplay = a.payment_status === "paid" && a.payment_amount 
           ? a.payment_amount + " TL" 
           : "Kontrol"
-        // Admin tarafından oluşturulan randevularda (TEMP_ ile başlayan TC) notları göster
-        // Hastanın kendisi aldıysa not kısmı boş kalır (elle yazılacak)
-        const isAdminCreated = a.patients?.tc_no?.startsWith("TEMP_")
-        const notes = isAdminCreated && a.notes ? a.notes : ""
+        // Tüm randevularda notları göster (varsa)
+        const notes = a.notes || ""
         return `<tr>
           <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold; width: 30px;">${no}</td>
           <td style="border: 1px solid #ddd; padding: 8px; width: 70px;">${time}</td>
@@ -308,7 +366,7 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
         <div class="header">
           <h1>Randevu Listesi${dateLabel}</h1>
           <p>Prof. Dr. Eray Çalışkan - Kadın Hastalıkları ve Doğum</p>
-          <div class="count">Toplam: ${filteredAppointments.length} hasta</div>
+          <div class="count">Toplam: ${listToPrint.length} hasta</div>
         </div>
         
         <table>
@@ -340,9 +398,79 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
     }
   }
 
+  const detailPanelInner = selectedAppointment ? (
+    <Suspense fallback={<div className="rounded-lg border border-gray-200 p-4 flex items-center justify-center h-96"><Spinner className="h-8 w-8" /></div>}>
+      <DetailPanel
+        appointment={selectedAppointment}
+        onSmsClick={(phone) => {
+          setSmsPhone(phone)
+          setSmsDialogOpen(true)
+        }}
+        onPatientClick={() => {
+          const p = selectedAppointment?.patients as any
+          setCompleteFormData({
+            tc_no: p?.tc_no?.startsWith("TEMP_") ? "" : (p?.tc_no || ""),
+            phone: p?.phone === "0000000000" ? "" : (p?.phone || ""),
+            date_of_birth: p?.date_of_birth || "",
+          })
+          setVerificationStep("form")
+          setVerificationCode("")
+          setPatientDialogOpen(true)
+        }}
+        onEditClick={() => setEditDialogOpen(true)}
+        onUpdatePrintType={(id, type) => {
+          setAppointments(prev => prev.map(a => a.id === id ? { ...a, print_type: type } : a))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({ ...selectedAppointment, print_type: type })
+          }
+        }}
+        onUpdatePaymentStatus={(id, status) => {
+          setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_status: status } : a))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({ ...selectedAppointment, payment_status: status })
+          }
+        }}
+        onUpdatePaymentAmount={(id, amount) => {
+          setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_amount: amount } : a))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({ ...selectedAppointment, payment_amount: amount })
+          }
+        }}
+        onCancelAppointment={(id) => {
+          setAppointments(prev => prev.map(a =>
+            a.id === id ? { ...a, status: "cancelled" } : a
+          ))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({ ...selectedAppointment, status: "cancelled" })
+          }
+        }}
+        onRescheduleAppointment={(id, newDate, newTime) => {
+          setAppointments(prev => prev.map(a =>
+            a.id === id
+              ? { ...a, appointment_date: newDate, appointment_time: newTime }
+              : a
+          ))
+          if (selectedAppointment?.id === id) {
+            setSelectedAppointment({
+              ...selectedAppointment,
+              appointment_date: newDate,
+              appointment_time: newTime,
+            })
+          }
+        }}
+      />
+    </Suspense>
+  ) : (
+    <div className="rounded-lg border border-dashed border-muted p-4 flex flex-col items-center justify-center h-64 text-muted-foreground">
+      <Calendar className="h-8 w-8 mb-2 opacity-50" />
+      <p className="text-sm">Detaylar için bir randevuya tıklayın</p>
+    </div>
+  )
+
   return (
-    <div className="space-y-6">
-      {/* Filtreler */}
+    <div className="space-y-3">
+      {/* Filtreler - sadece liste görünümünde */}
+      {viewMode === "list" && (
       <Card className="p-4">
         <div className="flex flex-col gap-4">
           {/* Arama */}
@@ -402,11 +530,97 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
           </div>
         </div>
       </Card>
+      )}
 
-      {/* Randevular Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sol Taraf - Tablo */}
-        <div className="lg:col-span-2">
+      {viewMode === "calendar" ? (
+        /* TAKVİM — tam genişlik + sağdan açılan detay drawer */
+        <>
+          <WeeklyCalendar
+            doctor={doctor as any}
+            schedules={schedules}
+            existingAppointments={appointments as any}
+            isAdmin={true}
+            embedded={true}
+              viewMode={calendarView}
+              jumpToDate={jumpToDate}
+              onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
+            viewControls={
+              <div className="flex flex-wrap items-center gap-1">
+                <div className="inline-flex rounded-md bg-background p-0.5">
+                  <Button
+                    variant={calendarView === "day" ? "default" : "ghost"}
+                    size="sm"
+                    className="gap-1 h-7 px-2.5 text-xs"
+                    onClick={() => setCalendarView("day")}
+                  >
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Gün
+                  </Button>
+                  <Button
+                    variant={calendarView === "week" ? "default" : "ghost"}
+                    size="sm"
+                    className="gap-1 h-7 px-2.5 text-xs"
+                    onClick={() => setCalendarView("week")}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    1 Hafta
+                  </Button>
+                  <Button
+                    variant={calendarView === "2week" ? "default" : "ghost"}
+                    size="sm"
+                    className="gap-1 h-7 px-2.5 text-xs"
+                    onClick={() => setCalendarView("2week")}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    2 Hafta
+                  </Button>
+                </div>
+                {/* Günlük randevu listesi yazdırma */}
+                <div className="inline-flex items-center gap-1 rounded-md bg-background p-0.5">
+                  <Input
+                    type="date"
+                    value={printDate}
+                    onChange={(e) => setPrintDate(e.target.value)}
+                    className="h-7 w-[140px] border-0 bg-transparent text-xs shadow-none focus-visible:ring-0"
+                  />
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-1 h-7 px-2.5 text-xs"
+                    onClick={() => handlePrint(printDate)}
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    Yazdır
+                  </Button>
+                </div>
+              </div>
+            }
+          />
+
+          {selectedAppointment && (
+            <>
+              <div
+                className="fixed inset-0 z-40 bg-black/30 animate-in fade-in duration-200"
+                onClick={() => setSelectedAppointment(null)}
+              />
+              <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-md flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-200">
+                <div className="flex items-center justify-between border-b p-4">
+                  <h2 className="text-base font-semibold text-gray-900">Randevu Detayı</h2>
+                  <Button variant="ghost" size="icon" onClick={() => setSelectedAppointment(null)} aria-label="Kapat">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  {detailPanelInner}
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        /* LİSTE — tablo + yandan sabit panel (Geçmiş / İptal sekmeleri) */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
@@ -448,9 +662,22 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
                         )}
                       </TableCell>
                       <TableCell className="text-sm">
-                        <Badge className={APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.color || "bg-gray-100"}>
-                          {APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.label || "Diğer"}
-                        </Badge>
+                        <div className="flex flex-col gap-0.5">
+                          <Badge className={APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.color || "bg-gray-100"}>
+                            {APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.label || "Diğer"}
+                          </Badge>
+                          {appointment.appointment_type === "ayrintili-fetal-ultrason" && (
+                            <span className="text-[11px] font-semibold text-orange-600">
+                              {appointment.fetal_bebek_sayisi 
+                                ? (appointment.fetal_bebek_sayisi === "tek"
+                                    ? "Tek Bebek"
+                                    : appointment.fetal_bebek_sayisi === "ikiz"
+                                    ? "Ikiz Bebek"
+                                    : "Ucuz Bebek")
+                                : "(Bebek sayisi belirtilmemis)"}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Button
@@ -471,72 +698,12 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
               </Table>
             </div>
           </Card>
+          </div>
+          <div className="lg:col-span-1 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+            {detailPanelInner}
+          </div>
         </div>
-
-        {/* Sağ Taraf - Detail Panel */}
-        <div className="lg:col-span-1">
-          {selectedAppointment ? (
-            <Suspense fallback={<div className="rounded-lg border border-gray-200 p-4 flex items-center justify-center h-96"><Spinner className="h-8 w-8" /></div>}>
-              <DetailPanel
-                appointment={selectedAppointment}
-                onSmsClick={(phone) => {
-                  setSmsPhone(phone)
-                  setSmsDialogOpen(true)
-                }}
-                onPatientClick={() => setPatientDialogOpen(true)}
-                onEditClick={() => setEditDialogOpen(true)}
-                onUpdatePrintType={(id, type) => {
-                  setAppointments(prev => prev.map(a => a.id === id ? { ...a, print_type: type } : a))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({ ...selectedAppointment, print_type: type })
-                  }
-                }}
-                onUpdatePaymentStatus={(id, status) => {
-                  setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_status: status } : a))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({ ...selectedAppointment, payment_status: status })
-                  }
-                }}
-                onUpdatePaymentAmount={(id, amount) => {
-                  setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_amount: amount } : a))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({ ...selectedAppointment, payment_amount: amount })
-                  }
-                }}
-                onCancelAppointment={(id) => {
-                  // Randevuyu listede "cancelled" olarak işaretle
-                  setAppointments(prev => prev.map(a =>
-                    a.id === id ? { ...a, status: "cancelled" } : a
-                  ))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({ ...selectedAppointment, status: "cancelled" })
-                  }
-                }}
-                onRescheduleAppointment={(id, newDate, newTime) => {
-                  // Listede tarihi ve saati güncelle
-                  setAppointments(prev => prev.map(a =>
-                    a.id === id
-                      ? { ...a, appointment_date: newDate, appointment_time: newTime }
-                      : a
-                  ))
-                  if (selectedAppointment?.id === id) {
-                    setSelectedAppointment({
-                      ...selectedAppointment,
-                      appointment_date: newDate,
-                      appointment_time: newTime,
-                    })
-                  }
-                }}
-              />
-            </Suspense>
-          ) : (
-            <div className="rounded-lg border border-dashed border-muted p-4 flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <Calendar className="h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">Detaylar görmek için sol taraftan randevu seçin</p>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Dialogs */}
       <DeleteDialog
@@ -592,6 +759,3 @@ function AppointmentsList({ appointments: initialAppointments }: Props) {
     </div>
   )
 }
-
-// Memo ile gereksiz re-render'ları önle
-export default memo(AppointmentsList)

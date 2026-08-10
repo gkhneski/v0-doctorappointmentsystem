@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AlertCircle, MessageSquare, Check, FileText, User } from "lucide-react"
+import { AlertCircle, MessageSquare, Check, FileText, User, Search, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
@@ -55,6 +55,14 @@ haklarına sahipsiniz.
 İLETİŞİM
 Haklarınızı kullanmak için kliniğimizle iletişime geçebilirsiniz.`
 
+type PatientSearchResult = {
+  id: string
+  full_name: string
+  phone: string
+  tc_no: string
+  date_of_birth: string | null
+}
+
 type Props = {
   isOpen: boolean
   onClose: () => void
@@ -64,6 +72,14 @@ type Props = {
   preselectedType?: string
   prefilledName?: string
   fetalBebekSayisi?: string | null
+  isAdmin?: boolean
+  prefilledPatient?: {
+    id?: string
+    full_name: string
+    phone: string
+    tc_no: string
+    date_of_birth?: string | null
+  } | null
 }
 
 export default function AppointmentWizardModal({
@@ -75,10 +91,13 @@ export default function AppointmentWizardModal({
   preselectedType,
   prefilledName,
   fetalBebekSayisi = null,
+  isAdmin = false,
+  prefilledPatient = null,
 }: Props) {
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedType, setSelectedType] = useState<string | null>(preselectedType || null)
   const [kontrollTakipSubType, setKontrollTakipSubType] = useState<string | null>(null)
+  const [localFetalBebekSayisi, setLocalFetalBebekSayisi] = useState<string | null>(fetalBebekSayisi)
 
   // Sync selectedType when preselectedType prop changes or modal opens
   useEffect(() => {
@@ -118,6 +137,48 @@ export default function AppointmentWizardModal({
     }
   }, [prefilledName, isOpen])
 
+  // Admin: kayıtlı hasta arama
+  const [patientSearchQuery, setPatientSearchQuery] = useState("")
+  const [patientSearchResults, setPatientSearchResults] = useState<PatientSearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [selectedExistingPatient, setSelectedExistingPatient] = useState<PatientSearchResult | null>(null)
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const searchPatients = useCallback(async (q: string) => {
+    if (q.length < 2) { setPatientSearchResults([]); return }
+    setIsSearching(true)
+    try {
+      const res = await fetch(`/api/admin/patients/search?q=${encodeURIComponent(q)}`)
+      const data = await res.json()
+      setPatientSearchResults(data.patients || [])
+    } catch { setPatientSearchResults([]) }
+    finally { setIsSearching(false) }
+  }, [])
+
+  const handlePatientSearchChange = (value: string) => {
+    setPatientSearchQuery(value)
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    searchTimeoutRef.current = setTimeout(() => searchPatients(value), 350)
+  }
+
+  const handleSelectExistingPatient = (patient: PatientSearchResult) => {
+    setSelectedExistingPatient(patient)
+    setTcNo(patient.tc_no || "")
+    setFullName(patient.full_name || "")
+    setPhone(patient.phone || "")
+    setDateOfBirth(patient.date_of_birth?.split("T")[0] || "")
+    setPatientSearchQuery("")
+    setPatientSearchResults([])
+  }
+
+  const clearSelectedPatient = () => {
+    setSelectedExistingPatient(null)
+    setTcNo("")
+    setFullName("")
+    setPhone("")
+    setDateOfBirth("")
+  }
+
   // Step 2 form data
   const [tcNo, setTcNo] = useState("")
   const [isForeignCitizen, setIsForeignCitizen] = useState(false)
@@ -129,6 +190,7 @@ export default function AppointmentWizardModal({
   // Step 5 KVKK
   const [kvkkScrolled, setKvkkScrolled] = useState(false)
   const [kvkkApproved, setKvkkApproved] = useState(false)
+  const [nonFetalConfirmed, setNonFetalConfirmed] = useState(false)
   const kvkkScrollRef = useRef<HTMLDivElement>(null)
 
   // Step 7 Medical Documents
@@ -177,11 +239,11 @@ export default function AppointmentWizardModal({
       setTimeout(() => {
         setCurrentStep(1)
         setSelectedType(preselectedType || null)
-        setTcNo("")
+        setTcNo(prefilledPatient?.tc_no || "")
         setIsForeignCitizen(false)
-        setFullName(prefilledName || "")
-        setPhone("")
-        setDateOfBirth("")
+        setFullName(prefilledPatient?.full_name || prefilledName || "")
+        setPhone(prefilledPatient?.phone || "")
+        setDateOfBirth(prefilledPatient?.date_of_birth?.split("T")[0] || "")
         setReferralDoctor("")
         setKvkkScrolled(false)
         setKvkkApproved(false)
@@ -213,6 +275,12 @@ export default function AppointmentWizardModal({
         setSmsCode("")
         setAppointmentId(null)
         setVerificationError(null)
+        setPatientSearchQuery("")
+        setPatientSearchResults([])
+        setSelectedExistingPatient(prefilledPatient
+          ? { id: prefilledPatient.id || "", full_name: prefilledPatient.full_name, phone: prefilledPatient.phone, tc_no: prefilledPatient.tc_no, date_of_birth: prefilledPatient.date_of_birth || null }
+          : null
+        )
       }, 300)
     }
   }, [isOpen])
@@ -285,22 +353,28 @@ export default function AppointmentWizardModal({
 
   const handleStep2Next = async () => {
     if (!tcNo || !fullName || !phone || !dateOfBirth) {
-  setError("Lütfen tüm zorunlu alanları doldurun")
-  return
-  }
-  
-  if (!isForeignCitizen && !validateTcNo(tcNo)) {
-  setError("Geçerli bir TC Kimlik No giriniz")
-  return
-  }
+      setError("Lütfen tüm zorunlu alanları doldurun")
+      return
+    }
+    
+    if (!isForeignCitizen && !validateTcNo(tcNo)) {
+      setError("Geçerli bir TC Kimlik No giriniz")
+      return
+    }
 
-  if (isForeignCitizen && tcNo.length < 3) {
-  setError("Geçerli bir Pasaport No giriniz")
-  return
-  }
+    if (isForeignCitizen && tcNo.length < 3) {
+      setError("Geçerli bir Pasaport No giriniz")
+      return
+    }
 
     if (!validatePhone(phone)) {
       setError("Geçerli bir telefon numarası giriniz (05XX XXX XX XX)")
+      return
+    }
+
+    // Admin ise KVKK ve bilgi formu adımlarını atla, direkt randevu oluştur
+    if (isAdmin) {
+      await handleAdminDirectSubmit()
       return
     }
 
@@ -335,6 +409,64 @@ export default function AppointmentWizardModal({
     await handleFinalSubmit()
   }
 
+  // Admin direkt randevu oluşturma - KVKK ve bilgi formu olmadan
+  const handleAdminDirectSubmit = async () => {
+    if (!selectedSlot) {
+      setError("Randevu bilgisi bulunamadı")
+      return
+    }
+    setIsSubmitting(true)
+    setError(null)
+    const effectiveType = selectedType || "ilk-randevu"
+    try {
+      const response = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctor_id: selectedSlot.doctorId,
+          appointment_date: selectedSlot.date,
+          appointment_time: selectedSlot.time,
+          appointment_type: effectiveType,
+          kontrol_takip_subtype: effectiveType === "kontrol-takip" ? kontrollTakipSubType : null,
+          fetal_bebek_sayisi: effectiveType === "ayrintili-fetal-ultrason" ? localFetalBebekSayisi : null,
+          patient_tc_no: tcNo,
+          patient_name: fullName,
+          patient_phone: phone,
+          patient_dob: dateOfBirth,
+          referral_doctor: referralDoctor || null,
+          female_history: null,
+          male_history: null,
+          kvkk_approved: true, // Admin adına oluşturuluyor
+          medical_documents: {},
+          created_by_admin: true,
+        }),
+      })
+
+      if (!response.ok) {
+        let errorData
+        try { errorData = await response.json() } catch { throw new Error("Randevu oluşturulurken bir hata oluştu") }
+        if (errorData.error === "duplicate_appointment" && errorData.existing_appointment) {
+          setError(`Bu hasta ${errorData.existing_appointment.date} tarihinde zaten randevusu var.`)
+        } else {
+          setError(errorData.error || "Randevu oluşturulurken bir hata oluştu")
+        }
+        setIsSubmitting(false)
+        return
+      }
+
+      const data = await response.json()
+      setAppointmentId(data.appointmentId)
+      if (data.devCode) setDevCode(data.devCode)
+
+      // Admin için: SMS doğrulama adımına git (hasta kendi onaylasın)
+      goToStep(6)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const handleFinalSubmit = async () => {
     if (!selectedSlot) {
       setError("Randevu bilgisi bulunamadı")
@@ -345,8 +477,6 @@ export default function AppointmentWizardModal({
     setError(null)
 
     try {
-      console.log("[v0] Female history before submit:", femaleHistory)
-      console.log("[v0] Male history before submit:", maleHistory)
 
       const response = await fetch("/api/appointments", {
         method: "POST",
@@ -357,7 +487,7 @@ export default function AppointmentWizardModal({
           appointment_time: selectedSlot.time,
           appointment_type: selectedType,
           kontrol_takip_subtype: selectedType === "kontrol-takip" ? kontrollTakipSubType : null,
-          fetal_bebek_sayisi: selectedType === "ayrintili-fetal-ultrason" ? fetalBebekSayisi : null,
+          fetal_bebek_sayisi: selectedType === "ayrintili-fetal-ultrason" ? localFetalBebekSayisi : null,
           patient_tc_no: tcNo,
           patient_name: fullName,
           patient_phone: phone,
@@ -398,19 +528,10 @@ export default function AppointmentWizardModal({
       }
 
       const data = await response.json()
-      
-      console.log("[v0] Appointment created successfully:", data)
-      console.log("[v0] SMS Status:", data.smsStatus)
-      console.log("[v0] Dev Code:", data.devCode)
 
       setAppointmentId(data.appointmentId)
-      
-      // Save dev code if SMS failed or in dev mode
       if (data.devCode) {
         setDevCode(data.devCode)
-        console.log("[v0] SMS not sent, showing dev code to user:", data.devCode)
-      } else {
-        console.log("[v0] SMS sent successfully, no dev code needed")
       }
       
       // Go to SMS verification (Step 6)
@@ -428,8 +549,6 @@ export default function AppointmentWizardModal({
       return
     }
 
-    console.log("[v0] Verifying code:", { appointmentId, smsCode })
-
     setIsVerifying(true)
     setVerificationError(null)
 
@@ -443,15 +562,8 @@ export default function AppointmentWizardModal({
         }),
       })
 
-      console.log("[v0] Verification response status:", response.status)
-      console.log("[v0] Verification response headers:", Object.fromEntries(response.headers.entries()))
-
-      // Check if response is JSON before parsing
       const contentType = response.headers.get("content-type")
       if (!contentType || !contentType.includes("application/json")) {
-        console.error("[v0] Invalid content-type received:", contentType)
-        const textResponse = await response.text()
-        console.error("[v0] Response body (first 500 chars):", textResponse.substring(0, 500))
         throw new Error("Sunucu hatası: Geçersiz yanıt formatı")
       }
 
@@ -566,9 +678,70 @@ export default function AppointmentWizardModal({
           {currentStep === 1 && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-base sm:text-lg font-semibold mb-2">Kişisel Bilgileriniz</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-4">Lütfen bilgilerinizi eksiksiz doldurun</p>
+              <h3 className="text-base sm:text-lg font-semibold mb-2">
+                {isAdmin ? "Hasta Bilgileri" : "Kişisel Bilgileriniz"}
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-4">
+                {isAdmin ? "Kayıtlı hastayı arayın veya bilgileri manuel girin" : "Lütfen bilgilerinizi eksiksiz doldurun"}
+              </p>
             </div>
+
+            {/* ADMIN: Kayıtlı hasta arama */}
+            {isAdmin && (
+              <div className="space-y-2">
+                {selectedExistingPatient ? (
+                  <div className="flex items-center justify-between rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+                    <div>
+                      <p className="text-sm font-semibold text-green-800">{selectedExistingPatient.full_name}</p>
+                      <p className="text-xs text-green-600">{selectedExistingPatient.phone} &bull; {selectedExistingPatient.tc_no}</p>
+                    </div>
+                    <button onClick={clearSelectedPatient} className="text-green-600 hover:text-green-800 ml-2">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Label className="text-sm mb-1 block">Kayıtlı Hasta Ara</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="TC kimlik, isim veya telefon ile ara..."
+                        value={patientSearchQuery}
+                        onChange={(e) => handlePatientSearchChange(e.target.value)}
+                        className="pl-9 min-h-[44px]"
+                      />
+                      {isSearching && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      )}
+                    </div>
+                    {patientSearchResults.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {patientSearchResults.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => handleSelectExistingPatient(p)}
+                            className="w-full text-left px-3 py-2.5 hover:bg-gray-50 border-b last:border-0 transition-colors"
+                          >
+                            <p className="text-sm font-medium text-gray-900">{p.full_name}</p>
+                            <p className="text-xs text-gray-500">{p.phone} &bull; TC: {p.tc_no}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {patientSearchQuery.length >= 2 && !isSearching && patientSearchResults.length === 0 && (
+                      <p className="text-xs text-muted-foreground mt-1 px-1">Kayıtlı hasta bulunamadı. Aşağıdan manuel girin.</p>
+                    )}
+                  </div>
+                )}
+                <div className="relative flex items-center gap-2 my-3">
+                  <div className="flex-1 border-t border-gray-200" />
+                  <span className="text-xs text-muted-foreground bg-white px-2">veya manuel girin</span>
+                  <div className="flex-1 border-t border-gray-200" />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3 sm:space-y-4">
               <div className="space-y-2">
@@ -676,8 +849,8 @@ export default function AppointmentWizardModal({
               >
                 Geri
               </Button>
-              <Button type="button" className="w-full sm:flex-1 min-h-[44px]" onClick={handleStep2Next}>
-                İleri
+              <Button type="button" className="w-full sm:flex-1 min-h-[44px]" onClick={handleStep2Next} disabled={isSubmitting}>
+                {isAdmin ? (isSubmitting ? "Randevu Olu��turuluyor..." : "Randevu Oluştur") : "İleri"}
               </Button>
             </div>
           </div>
@@ -935,6 +1108,27 @@ export default function AppointmentWizardModal({
               </div>
             </div>
 
+            {/* Ayrintili Fetal Ultrason DEGIL ise ek onay */}
+            {selectedType !== "ayrintili-fetal-ultrason" && (
+              <div className="flex items-start space-x-3 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-950/20 p-3 sm:p-4 min-h-[48px]">
+                <Checkbox
+                  id="non-fetal-confirm"
+                  checked={nonFetalConfirmed}
+                  onCheckedChange={(checked) => setNonFetalConfirmed(checked === true)}
+                  disabled={!kvkkScrolled}
+                  className="mt-1 border-red-500 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label
+                    htmlFor="non-fetal-confirm"
+                    className={`text-sm sm:text-base font-bold leading-tight text-red-700 dark:text-red-400 uppercase ${!kvkkScrolled ? "opacity-50" : "cursor-pointer"}`}
+                  >
+                    AYRINTILI 2. DUZEY FETAL ULTRASON RANDEVUSU ALMADIGIMI OKUDUM ANLADIM ONAYLIYORUM *
+                  </Label>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="rounded-lg bg-destructive/10 p-3 text-xs sm:text-sm text-destructive">{error}</div>
             )}
@@ -955,6 +1149,11 @@ export default function AppointmentWizardModal({
                 onClick={() => {
                   if (!kvkkApproved) {
                     setError("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekmektedir")
+                    return
+                  }
+                  // Fetal ultrason degilse ek onay gerekli
+                  if (selectedType !== "ayrintili-fetal-ultrason" && !nonFetalConfirmed) {
+                    setError("Devam etmek için Ayrıntılı Fetal Ultrason randevusu almadığınızı onaylamanız gerekmektedir")
                     return
                   }
                   setError(null) // Clear any previous errors
@@ -1054,15 +1253,27 @@ export default function AppointmentWizardModal({
             <div>
               <h3 className="text-base sm:text-lg font-semibold mb-2">SMS Doğrulama</h3>
               <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-                Telefon numaranıza gönderilen 6 haneli doğrulama kodunu girin
+                {isAdmin
+                  ? "Hastanın telefonuna doğrulama kodu gönderildi. Hasta kodu size iletebilir ya da kendi telefonundan girebilir."
+                  : "Telefon numaranıza gönderilen 6 haneli doğrulama kodunu girin"}
               </p>
             </div>
 
-            <div className="rounded-lg border-2 border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3 sm:p-4">
-              <p className="text-xs sm:text-sm">
-                <strong>{phone}</strong> numarasına bir doğrulama kodu gönderdik.
-              </p>
-            </div>
+            {isAdmin ? (
+              <div className="rounded-lg border-2 border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4 space-y-2">
+                <p className="text-sm font-semibold text-blue-900">Randevu Oluşturuldu</p>
+                <p className="text-xs sm:text-sm text-blue-800">
+                  <strong>{phone}</strong> numarasına 6 haneli bir doğrulama kodu gönderildi.
+                  Hastadan kodu alarak aşağıya girin veya hastanın kendi telefonundan girmesini bekleyin.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border-2 border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3 sm:p-4">
+                <p className="text-xs sm:text-sm">
+                  <strong>{phone}</strong> numarasına bir doğrulama kodu gönderdik.
+                </p>
+              </div>
+            )}
 
             {devCode && (
               <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-4 space-y-2">
@@ -1094,22 +1305,24 @@ export default function AppointmentWizardModal({
             )}
 
             <div className="flex flex-col sm:flex-row gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full sm:flex-1 bg-transparent min-h-[44px]"
-                onClick={() => goToStep(5)}
-                disabled={isVerifying}
-              >
-                Geri
-              </Button>
+              {!isAdmin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:flex-1 bg-transparent min-h-[44px]"
+                  onClick={() => goToStep(5)}
+                  disabled={isVerifying}
+                >
+                  Geri
+                </Button>
+              )}
               <Button
                 type="button"
                 className="w-full sm:flex-1 min-h-[44px]"
                 onClick={handleVerifyCode}
                 disabled={smsCode.length !== 6 || isVerifying}
               >
-                {isVerifying ? "Doğrulanıyor..." : "Doğrula"}
+                {isVerifying ? "Doğrulanıyor..." : "Doğrula ve Tamamla"}
               </Button>
             </div>
           </div>
@@ -1412,10 +1625,14 @@ export default function AppointmentWizardModal({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-    <Button variant="outline" onClick={() => goToStep(7)} className="w-full sm:flex-1 min-h-[44px]">
-    Geri
+              <Button variant="outline" onClick={() => goToStep(6)} className="w-full sm:flex-1 min-h-[44px]">
+                Geri
               </Button>
-              <Button onClick={() => goToStep(8)} className="w-full sm:flex-1 min-h-[44px]">
+              <Button 
+                onClick={() => goToStep(8)} 
+                className="w-full sm:flex-1 min-h-[44px]"
+                disabled={!appointmentId}
+              >
                 İleri
               </Button>
             </div>
@@ -1430,9 +1647,9 @@ export default function AppointmentWizardModal({
             </div>
 
             <div className="px-4">
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">Randevunuz Oluşturuldu!</h3>
+              <h3 className="text-lg sm:text-xl font-semibold mb-2">Randevunuz Onaylandi!</h3>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Randevu bilgileriniz telefon numaranıza SMS olarak gönderildi.
+                SMS dogrulama tamamlandi. Randevu bilgileriniz telefon numaraniza gonderildi.
               </p>
             </div>
 
@@ -1458,13 +1675,32 @@ export default function AppointmentWizardModal({
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
                 <span className="text-muted-foreground font-medium">Randevu Tipi:</span>
-                <span className="font-medium text-xs sm:text-sm">{selectedType}</span>
+                <span className="font-medium text-xs sm:text-sm">
+                  {selectedType === "ilk-randevu" ? "Ilk Randevu"
+                    : selectedType === "kontrol-takip" ? "Kontrol / Takip"
+                    : selectedType === "ayrintili-fetal-ultrason" ? "Ayrintili (2. Duzey) Fetal Ultrason"
+                    : selectedType === "genetik-danismanlik" ? "Genetik Danismanlik"
+                    : selectedType === "gebelik-takibi" ? "Gebelik Takibi"
+                    : selectedType === "gebelik-istemi-infertilite" ? "Gebelik Istemi / Infertilite"
+                    : selectedType === "asilama-tup-bebek" ? "Asilama / Tup Bebek"
+                    : selectedType}
+                </span>
               </div>
+              {selectedType === "ayrintili-fetal-ultrason" && localFetalBebekSayisi && (
+                <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
+                  <span className="text-muted-foreground font-medium">Bebek Sayisi:</span>
+                  <span className="font-medium">
+                    {localFetalBebekSayisi === "tek" ? "Tek Bebek"
+                      : localFetalBebekSayisi === "ikiz" ? "Ikiz Bebek"
+                      : "Ucuz Bebek"}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="rounded-lg border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 dark:from-green-950/30 to-green-100 dark:to-green-950/50 p-4">
               <div className="text-center">
-                <p className="text-lg sm:text-xl font-bold text-green-700 dark:text-green-400">✓ Onaylandı</p>
+                <p className="text-lg sm:text-xl font-bold text-green-700 dark:text-green-400">✓ SMS Dogrulama Tamamlandi</p>
               </div>
             </div>
 

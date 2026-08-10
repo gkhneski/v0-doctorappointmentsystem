@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { MessageSquare, User, Edit, ClipboardCheck, Calendar, Phone, FileText, Printer, AlertCircle, CheckCircle2, XCircle, Ban, RefreshCw } from "lucide-react"
+import { MessageSquare, User, Edit, ClipboardCheck, Calendar, Phone, FileText, Printer, AlertCircle, CheckCircle2, XCircle, Ban, RefreshCw, Droplets, MapPin, Briefcase, Users, ExternalLink } from "lucide-react"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -32,6 +33,7 @@ export interface Appointment {
   appointment_time: string | null
   notes: string | null
   appointment_type: string | null
+  fetal_bebek_sayisi?: string | null
   print_type?: string | null
   confirmation_status: string | null
   confirmed_at: string | null
@@ -110,7 +112,7 @@ export function AppointmentDetailPanel({
     const fetchFresh = async () => {
       const { data } = await supabase
         .from("appointments")
-        .select(`*, patients (id, full_name, phone, tc_no, date_of_birth, email), doctors (id, full_name)`)
+        .select(`*, patients (id, full_name, phone, tc_no, date_of_birth, email, blood_group, city, district, country, occupation, mother_name, father_name, spouse_name, spouse_phone, spouse_blood_group), doctors (id, full_name)`)
         .eq("id", appointment.id)
         .single()
       if (data) {
@@ -122,6 +124,26 @@ export function AppointmentDetailPanel({
     fetchFresh()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointment.id])
+
+  const [sendingDocs, setSendingDocs] = useState(false)
+
+  const handleSendDocuments = async () => {
+    setSendingDocs(true)
+    try {
+      const res = await fetch(`/api/appointments/${appointment.id}/send-documents`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Gönderilemedi")
+      toast({ title: "Evrak listesi gönderildi", description: "Hastaya evrak listesi SMS'i başarıyla gönderildi." })
+    } catch (err) {
+      toast({
+        title: "Hata",
+        description: err instanceof Error ? err.message : "Evrak SMS'i gönderilemedi.",
+        variant: "destructive",
+      })
+    } finally {
+      setSendingDocs(false)
+    }
+  }
 
   const handleCancelAppointment = async () => {
     setIsLoading(true)
@@ -240,6 +262,17 @@ export function AppointmentDetailPanel({
             SMS
           </Button>
 
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs h-8 border-blue-300 text-blue-700 hover:bg-blue-50"
+            disabled={!appointment.patients?.phone || !appointment.appointment_type || sendingDocs}
+            onClick={handleSendDocuments}
+          >
+            <FileText className="h-3 w-3 mr-1" />
+            {sendingDocs ? "Gönderiliyor..." : "Evrak Gönder"}
+          </Button>
+
           <Button variant="outline" size="sm" className="text-xs h-8" onClick={onPatientClick}>
             <User className="h-3 w-3 mr-1" />
             Hasta
@@ -325,6 +358,75 @@ export function AppointmentDetailPanel({
             </div>
           </div>
 
+          {/* Ek Hasta Bilgileri: kan grubu, adres, meslek, eş */}
+          {(() => {
+            const pt = liveData.patients || appointment.patients || {}
+            const address = [pt.district, pt.city, pt.country].filter(Boolean).join(", ")
+            return (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-muted-foreground">Hasta Bilgileri</p>
+                  {pt.id && (
+                    <Link
+                      href={`/admin/patients/${pt.id}`}
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                    >
+                      Tam Profil
+                      <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  )}
+                </div>
+
+                {/* Kan Grubu */}
+                <div className="flex items-start gap-2">
+                  <Droplets className="h-4 w-4 mt-0.5 text-red-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Kan Grubu</p>
+                    <p className="font-medium">{pt.blood_group || "Girilmedi"}</p>
+                  </div>
+                </div>
+
+                {/* Adres */}
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Adres</p>
+                    <p className="font-medium">{address || "Girilmedi"}</p>
+                  </div>
+                </div>
+
+                {/* Meslek */}
+                {pt.occupation && (
+                  <div className="flex items-start gap-2">
+                    <Briefcase className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Meslek</p>
+                      <p className="font-medium">{pt.occupation}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Eş Bilgisi */}
+                {(pt.spouse_name || pt.spouse_phone || pt.spouse_blood_group) && (
+                  <div className="flex items-start gap-2">
+                    <Users className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Eş</p>
+                      <p className="font-medium">{pt.spouse_name || "—"}</p>
+                      {(pt.spouse_phone || pt.spouse_blood_group) && (
+                        <p className="text-xs text-muted-foreground">
+                          {[pt.spouse_phone, pt.spouse_blood_group && `Kan: ${pt.spouse_blood_group}`]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
           {/* Randevu Tipi */}
           <div className="flex items-start gap-2">
             <FileText className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
@@ -333,6 +435,20 @@ export function AppointmentDetailPanel({
               <Badge className={APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.color || "bg-gray-100"} variant="outline">
                 {APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.label || "Diğer"}
               </Badge>
+              {appointment.appointment_type === "ayrintili-fetal-ultrason" && (
+                <p className="text-sm font-medium mt-1">
+                  Bebek Sayisi:{" "}
+                  <span className="text-orange-600">
+                    {appointment.fetal_bebek_sayisi
+                      ? (appointment.fetal_bebek_sayisi === "tek"
+                          ? "Tek Bebek"
+                          : appointment.fetal_bebek_sayisi === "ikiz"
+                          ? "Ikiz Bebek"
+                          : "Ucuz Bebek")
+                      : "(Belirtilmemis)"}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -349,15 +465,32 @@ export function AppointmentDetailPanel({
                 <option value="">— Seç —</option>
                 <option value="IVF kontrol">1. IVF kontrol</option>
                 <option value="IUI kontrol">2. IUI kontrol</option>
-                <option value="det kontrol">3. det kontrol</option>
-                <option value="op sonrasi kontrol">4. op sonrası kontrol</option>
-                <option value="serklaj sonrasi kontrol">5. serklaj sonrası kontrol</option>
-                <option value="G.M">6. G.M</option>
-                <option value="DTY">7. DTY</option>
-                <option value="gebelik istemi">8. gebelik istemi</option>
-                <option value="mens">9. mens</option>
-                <option value="gebe kontrol">10. gebe kontrol</option>
-                <option value="gebe muayene">11. gebe muayene</option>
+                <option value="DET kontrol">3. DET kontrol</option>
+                <option value="Endom kontrol">4. Endom kontrol</option>
+                <option value="Klomen takip">5. Klomen takip</option>
+                <option value="OP sonrasi kontrol">6. OP sonrasi kontrol</option>
+                <option value="Serklaj sonrasi kontrol">7. Serklaj sonrasi kontrol</option>
+                <option value="Sonuc">8. Sonuc</option>
+                <option value="G.M">9. G.M</option>
+                <option value="DTY">10. DTY</option>
+                <option value="Gebelik istemi">11. Gebelik istemi</option>
+                <option value="Mens">12. Mens</option>
+                <option value="Mens IUI">13. Mens IUI</option>
+                <option value="Mens IVF">14. Mens IVF</option>
+                <option value="Mens DET">15. Mens DET</option>
+                <option value="Gebe kontrol">16. Gebe kontrol</option>
+                <option value="Gebe muayene">17. Gebe muayene</option>
+                <option value="Negatif IVF">18. Negatif IVF</option>
+                <option value="Negatif IUI">19. Negatif IUI</option>
+                <option value="D21">20. D21</option>
+                <option value="Kontrol">21. Kontrol</option>
+                <option value="Amniosentez sonrasi k.">22. Amniosentez sonrasi k.</option>
+                <option value="Kurtaj sonrasi k.">23. Kurtaj sonrasi k.</option>
+                <option value="OHSS kontrol">24. OHSS kontrol</option>
+                <option value="Kese kontrol">25. Kese kontrol</option>
+                <option value="C/S sonrasi kontrol">26. C/S sonrasi kontrol</option>
+                <option value="Kist kontrol">27. Kist kontrol</option>
+                <option value="Akinti kontrol">28. Akinti kontrol</option>
               </select>
             </div>
           </div>
@@ -446,71 +579,109 @@ export function AppointmentDetailPanel({
               </div>
 
               {/* Hatırlatma SMS */}
-              <div className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${liveData.reminder_sent_at ? "bg-green-500" : "bg-gray-300"}`} />
-                  <div className="w-0.5 h-12 bg-gray-200 mt-1" />
-                </div>
-                <div className="flex-1 pb-2">
-                  <p className={`text-xs font-semibold ${liveData.reminder_sent_at ? "text-green-600" : "text-gray-500"}`}>
-                    Hatırlatma SMS
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {liveData.reminder_sent_at 
-                      ? `Gönderildi: ${new Date(liveData.reminder_sent_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
-                      : "Gönderilmedi"
-                    }
-                  </p>
-                </div>
-              </div>
+              {(() => {
+                const phone = liveData.patients?.phone
+                const hasValidPhone = !!phone && phone !== "0000000000"
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+                const apptDate = liveData.appointment_date ? new Date(liveData.appointment_date + "T00:00:00") : null
+                const isFuture = apptDate ? apptDate > today : false
+                const sent = !!liveData.reminder_sent_at
+
+                let dotColor = "bg-gray-300"
+                let textColor = "text-gray-500"
+                let label: string
+                if (sent) {
+                  dotColor = "bg-green-500"
+                  textColor = "text-green-600"
+                  label = `Gönderildi: ${new Date(liveData.reminder_sent_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
+                } else if (!hasValidPhone) {
+                  dotColor = "bg-amber-400"
+                  textColor = "text-amber-600"
+                  label = "Telefon numarası yok - gönderilemiyor"
+                } else if (isFuture) {
+                  label = "Randevudan 1 gün önce otomatik gönderilecek"
+                } else {
+                  dotColor = "bg-amber-400"
+                  textColor = "text-amber-600"
+                  label = "Gönderilmedi"
+                }
+
+                return (
+                  <div className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${dotColor}`} />
+                      <div className="w-0.5 h-12 bg-gray-200 mt-1" />
+                    </div>
+                    <div className="flex-1 pb-2">
+                      <p className={`text-xs font-semibold ${textColor}`}>Hatırlatma SMS</p>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* Onay Linki */}
               <div className="flex gap-3">
                 <div className="flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${liveData.link_clicked_at ? "bg-blue-500" : "bg-orange-400"}`} />
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                    liveData.link_clicked_at ? "bg-blue-500" : "bg-gray-300"
+                  }`} />
                   <div className="w-0.5 h-12 bg-gray-200 mt-1" />
                 </div>
                 <div className="flex-1 pb-2">
-                  <p className={`text-xs font-semibold ${liveData.link_clicked_at ? "text-blue-600" : "text-orange-600"}`}>
+                  <p className={`text-xs font-semibold ${liveData.link_clicked_at ? "text-blue-600" : "text-gray-500"}`}>
                     Onay Linki
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {liveData.link_clicked_at 
-                      ? `Hasta tıkladı: ${new Date(liveData.link_clicked_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
-                      : "Tıklanmadı"
+                    {liveData.link_clicked_at
+                      ? `Hasta açtı: ${new Date(liveData.link_clicked_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
+                      : liveData.reminder_sent_at
+                      ? "Gönderildi, hasta henüz açmadı"
+                      : "Hatırlatma gönderilince aktif olur"
                     }
                   </p>
                 </div>
               </div>
 
-              {/* Hasta Cevabı - Gelecek/Gelmeyecek */}
-              <div className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                    liveData.status === "attended" ? "bg-green-500" : 
-                    liveData.status === "no_show" ? "bg-red-500" : 
-                    liveData.status === "cancelled" ? "bg-red-400" :
-                    "bg-gray-300"
-                  }`} />
-                </div>
-                <div className="flex-1">
-                  <p className={`text-xs font-semibold ${
-                    liveData.status === "attended" ? "text-green-600" : 
-                    liveData.status === "no_show" ? "text-red-600" :
-                    liveData.status === "cancelled" ? "text-red-500" :
-                    "text-gray-500"
-                  }`}>
-                    Hasta Cevabı
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {liveData.status === "attended" && "GELECEK"}
-                    {liveData.status === "no_show" && "GELMEYECEK"}
-                    {liveData.status === "confirmed" && "Cevap Bekleniyor"}
-                    {liveData.status === "cancelled" && "Randevu İptal Edildi"}
-                    {!["attended", "no_show", "confirmed", "cancelled"].includes(liveData.status || "") && "-"}
-                  </p>
-                </div>
-              </div>
+              {/* Hasta Cevabı - hastanın onay linkinden verdiği cevap */}
+              {(() => {
+                const cs = liveData.confirmation_status
+                const respondedAt = liveData.confirmed_at
+                  ? new Date(liveData.confirmed_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                  : null
+
+                let dotColor = "bg-gray-300"
+                let textColor = "text-gray-500"
+                let label: string
+                if (cs === "confirmed") {
+                  dotColor = "bg-green-500"
+                  textColor = "text-green-600"
+                  label = respondedAt ? `GELECEK - Hasta onayladı (${respondedAt})` : "GELECEK - Hasta onayladı"
+                } else if (cs === "cancelled") {
+                  dotColor = "bg-red-500"
+                  textColor = "text-red-600"
+                  label = respondedAt ? `GELMEYECEK - Hasta iptal etti (${respondedAt})` : "GELMEYECEK - Hasta iptal etti"
+                } else if (liveData.link_clicked_at) {
+                  dotColor = "bg-blue-400"
+                  textColor = "text-blue-600"
+                  label = "Linke tıkladı, henüz cevap vermedi"
+                } else {
+                  label = "Cevap Bekleniyor"
+                }
+
+                return (
+                  <div className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${dotColor}`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-xs font-semibold ${textColor}`}>Hasta Cevabı</p>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div>

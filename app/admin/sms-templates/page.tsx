@@ -1,25 +1,15 @@
 import { createClient } from "@/lib/supabase/server"
+import { getAdminAuth } from "@/lib/admin-auth"
 import { redirect } from "next/navigation"
 import { SmsTemplatesManager } from "@/components/admin/sms-templates-manager"
 
 export default async function SmsTemplatesPage() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Cache'li helper: layout ile ayni istekte paylasilir (ekstra auth gidis-donusu yok)
+  const { user, adminUser } = await getAdminAuth()
 
-  if (!user) {
-    redirect("/auth/admin/login")
-  }
-
-  const { data: adminUser, error: adminError } = await supabase
-    .from("admin_users")
-    .select("*")
-    .eq("id", user.id)
-    .single()
-
-  if (adminError || !adminUser) {
+  if (!user || !adminUser) {
     redirect("/auth/admin/login")
   }
 

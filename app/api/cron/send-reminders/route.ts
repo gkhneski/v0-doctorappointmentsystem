@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
+import { recordAppointmentAudit } from "@/lib/appointment-audit"
 
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
@@ -116,6 +117,19 @@ export async function GET(request: Request) {
           channel: "sms",
           status: "sent",
           phone_number: appointment.patients?.phone,
+        })
+
+        await recordAppointmentAudit({
+          patientId: appointment.patient_id,
+          appointmentId: appointment.id,
+          eventType: "reminder_sent",
+          patientName: appointment.patients?.full_name || "Bilinmeyen Hasta",
+          patientPhone: appointment.patients?.phone,
+          appointmentDate: appointment.appointment_date,
+          appointmentTime: appointment.appointment_time,
+          messageText: message,
+          channel: "sms",
+          deliveryStatus: "sent",
         })
 
         successCount++

@@ -338,13 +338,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <head>
+      <body className={`font-sans antialiased`}>
         <script
           type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-      </head>
-      <body className={`font-sans antialiased`}>
         {children}
         <AiStickyWidget />
         <Analytics />

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Sparkles, X, Bot } from "lucide-react"
 import dynamic from "next/dynamic"
+import { usePathname } from "next/navigation"
 
 const AiRandevuChat = dynamic(() => import("./ai-randevu-chat"), { ssr: false })
 
@@ -47,12 +48,18 @@ function RotatingText() {
 export default function AiStickyWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   if (!mounted) return null
+
+  // Yönetim paneli sayfalarında (admin) asistan gösterilmez — sadece hasta tarafında görünür
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/auth/admin") || pathname === "/admin-panel-giris") {
+    return null
+  }
 
   return (
     <>

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { getAdminAuth } from "@/lib/admin-auth"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, Calendar, Shield } from "lucide-react"
@@ -10,23 +11,10 @@ import ScheduleManager from "@/components/admin/schedule-manager" // Import Sche
 export default async function SchedulesPage() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+  // Cache'li helper: layout ile ayni istekte paylasilir (ekstra auth gidis-donusu yok)
+  const { user, adminUser } = await getAdminAuth()
 
-  if (userError || !user) {
-    redirect("/auth/admin/login")
-  }
-
-  // Verify admin access
-  const { data: adminUser, error: adminError } = await supabase
-    .from("admin_users")
-    .select("*")
-    .eq("id", user.id)
-    .single()
-
-  if (adminError || !adminUser) {
+  if (!user || !adminUser) {
     redirect("/auth/admin/login")
   }
 

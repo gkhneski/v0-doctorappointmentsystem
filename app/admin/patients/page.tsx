@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { getAdminAuth } from "@/lib/admin-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
@@ -9,29 +10,17 @@ import PatientsList from "@/components/admin/patients-list"
 export default async function PatientsPage() {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/admin/login")
-  }
-
-  // Layout'ta zaten kontrol edildi, sadece gerekli alanlar
-  const [{ data: adminUser }, { data: patients }] = await Promise.all([
-    supabase
-      .from("admin_users")
-      .select("full_name, role")
-      .eq("id", user.id)
-      .maybeSingle(),
+  // Cache'li auth (layout ile paylasilir) + hasta listesi PARALEL cekilir
+  const [{ user, adminUser }, { data: patients, error: patientsError, count: patientsCount }] = await Promise.all([
+    getAdminAuth(),
     supabase
       .from("patients")
-      .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
+      .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(200), // İlk 200 hasta
+      .range(0, 9999),
   ])
 
-  if (!adminUser) {
+  if (!user || !adminUser) {
     redirect("/auth/admin/login")
   }
 
