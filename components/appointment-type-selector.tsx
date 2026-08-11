@@ -118,7 +118,6 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [showCalendar, setShowCalendar] = useState(false)
   const [showEmergencyModal, setShowEmergencyModal] = useState(false)
-  const [emergencyStep, setEmergencyStep] = useState<"sekreter" | "hemsire1" | "hemsire2">("sekreter")
   const [showAiChat, setShowAiChat] = useState(false)
   const [aiPreselectedDate, setAiPreselectedDate] = useState<string | null>(null)
   const [aiPreselectedTime, setAiPreselectedTime] = useState<string | null>(null)
@@ -133,7 +132,6 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
     if (typeId === "acil-durum") {
       setSelectedType(typeId)
       setShowEmergencyModal(true)
-      setEmergencyStep("sekreter")
     } else if (typeId === "ayrintili-fetal-ultrason") {
       setSelectedType(typeId)
       setShowFetalDialog(true)
@@ -322,103 +320,20 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
               ACİL DURUM
             </DialogTitle>
             <DialogDescription>
-              Acil durumlar için lütfen aşağıdaki numaralardan biri ile iletişime geçin
+              Acil durumlar için lütfen sekreterimiz ile iletişime geçin.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            {emergencyStep === "sekreter" && (
-              <div className="space-y-4 text-center">
-                <div className="rounded-lg border-2 border-red-200 bg-red-50 p-6">
-                  <p className="text-sm text-muted-foreground mb-2">Öncelikle Sekreteri Arayınız:</p>
-                  <a
-                    href="tel:05310804720"
-                    className="text-4xl font-bold text-red-600 hover:text-red-700 block"
-                  >
-                    0531 080 47 20
-                  </a>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowEmergencyModal(false)}
-                  >
-                    Kapat
-                  </Button>
-                  <Button
-                    variant="default"
-                    className="flex-1 bg-red-600 hover:bg-red-700"
-                    onClick={() => setEmergencyStep("hemsire1")}
-                  >
-                    Ulaşılamadı
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {emergencyStep === "hemsire1" && (
-              <div className="space-y-4 text-center">
-                <div className="rounded-lg border-2 border-red-200 bg-red-50 p-6">
-                  <p className="text-sm text-muted-foreground mb-2">Hemşire 1'i Arayınız:</p>
-                  <a
-                    href="tel:05331427261"
-                    className="text-4xl font-bold text-red-600 hover:text-red-700 block"
-                  >
-                    0533 142 72 61
-                  </a>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setEmergencyStep("sekreter")}
-                  >
-                    Geri
-                  </Button>
-                  <Button
-                    variant="default"
-                    className="flex-1 bg-red-600 hover:bg-red-700"
-                    onClick={() => setEmergencyStep("hemsire2")}
-                  >
-                    Ulaşılamadı
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {emergencyStep === "hemsire2" && (
-              <div className="space-y-4 text-center">
-                <div className="rounded-lg border-2 border-red-200 bg-red-50 p-6">
-                  <p className="text-sm text-muted-foreground mb-2">Hemşire 2'yi Arayınız:</p>
-                  <a
-                    href="tel:05377881331"
-                    className="text-4xl font-bold text-red-600 hover:text-red-700 block"
-                  >
-                    0537 788 13 31
-                  </a>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setEmergencyStep("hemsire1")}
-                  >
-                    Geri
-                  </Button>
-                  <Button
-                    variant="default"
-                    className="flex-1 bg-red-600 hover:bg-red-700"
-                    onClick={() => {
-                      setShowEmergencyModal(false)
-                      setEmergencyStep("sekreter")
-                    }}
-                  >
-                    Kapat
-                  </Button>
-                </div>
-              </div>
-            )}
+          <div className="space-y-4 py-4 text-center">
+            <div className="rounded-lg border-2 border-red-200 bg-red-50 p-6">
+              <p className="mb-2 text-sm text-muted-foreground">Sekreteri Arayınız:</p>
+              <a href="tel:05310804720" className="block text-4xl font-bold text-red-600 hover:text-red-700">
+                0531 080 47 20
+              </a>
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => setShowEmergencyModal(false)}>
+              Kapat
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

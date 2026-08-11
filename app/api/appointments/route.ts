@@ -122,7 +122,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "duplicate_appointment",
-          message: `Bu hasta ${existingDate} tarihinde zaten randevusu var. Acil durum için lütfen aşağıdaki numaralardan iletişime geçin:\n\nSekreter: 0531 080 4720\nHemşire: 0533 142 7261`,
+          message: `Bu hasta ${existingDate} tarihinde zaten randevusu var. Acil durum için lütfen sekreterimizle iletişime geçin:\n\nSekreter: 0531 080 47 20`,
           existing_appointment: { date: existingDate, time: existing.appointment_time },
         },
         { status: 409 }

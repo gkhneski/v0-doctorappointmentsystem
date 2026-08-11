@@ -88,7 +88,6 @@ BULGARISTAN HASTALARI:
 
 ACİL İLETİŞİM:
 - Sekreter: 0531 080 47 20
-- Hemşire: 0533 142 72 61
 
 --- KURALLAR ---
 - Asla tıbbi teşhis veya tedavi tavsiyesi verme
