@@ -230,7 +230,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     const monday = getMondayOf(target)
     setCurrentWeekStart(monday)
 
-    // Yeni haftanın gün listesinde hedef günün index'ini bul
+    // Yeni haftan��n gün listesinde hedef günün index'ini bul
     const days = buildWeekDays(monday, viewMode)
     const targetStr = formatDateForDB(target)
     const idx = days.findIndex((d) => formatDateForDB(d) === targetStr)
@@ -586,7 +586,9 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     const solidColor = isAra ? "bg-amber-500" : "bg-red-600"
 
     const colorClass = isCancelled
-      ? "bg-gray-400 text-white opacity-70 cursor-default"
+      ? isAdmin
+        ? "bg-gray-900 text-white cursor-default" // admin: iptal kaydı siyah kalır (isim vs. görünür)
+        : `${solidColor} text-white opacity-100 cursor-default` // public: normal "Dolu" gibi görünür
       : isDragging
         ? `${solidColor} text-white opacity-40 scale-95 cursor-grabbing`
         : isAdmin
@@ -992,7 +994,9 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                             }}
                             className={`relative w-full min-h-[52px] rounded-xl border-2 px-4 py-2 text-left transition-all ${
                               isCancelled
-                                ? "border-gray-300 bg-gray-100 text-gray-500"
+                                ? isAdmin
+                                  ? "border-gray-900 bg-gray-900 text-white"
+                                  : "border-red-200 bg-red-50 text-red-700"
                                 : entry.ara
                                   ? "border-amber-300 bg-amber-50 text-amber-800 cursor-pointer"
                                   : "border-red-200 bg-red-50 text-red-700 cursor-pointer"
@@ -1001,7 +1005,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                             <div className="flex items-center gap-2 text-xs font-bold opacity-70">
                               {time}
                               {entry.ara && <span className="rounded bg-amber-500 px-1 text-[9px] text-white">ARA</span>}
-                              {isCancelled && <span className="rounded bg-gray-400 px-1 text-[9px] text-white">İPTAL</span>}
+                              {isCancelled && isAdmin && <span className="rounded bg-white/30 px-1 text-[9px] text-white">İPTAL</span>}
                             </div>
                             {isAdmin ? (
                               <>
@@ -1067,10 +1071,12 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
               <div className="h-4 w-4 rounded border bg-amber-500" />
               <span>Ara Randevu</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="h-4 w-4 rounded border bg-gray-400" />
-              <span>İptal</span>
-            </div>
+            {isAdmin && (
+              <div className="flex items-center gap-1">
+                <div className="h-4 w-4 rounded border bg-gray-900" />
+                <span>İptal (yeni hasta atanabilir)</span>
+              </div>
+            )}
             <div className="flex items-center gap-1">
               <div className="h-4 w-4 rounded border bg-muted opacity-50" />
               <span>Geçmiş</span>

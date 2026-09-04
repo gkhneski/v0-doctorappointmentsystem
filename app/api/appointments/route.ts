@@ -71,10 +71,12 @@ export async function POST(request: Request) {
       // 1. Slot conflict
       supabase
         .from("appointments")
-        .select("id")
+        .select("id, status")
         .eq("doctor_id", doctor_id)
         .eq("appointment_date", appointment_date)
         .eq("appointment_time", appointment_time)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle(),
 
       // 2. Same week duplicate
@@ -113,7 +115,14 @@ export async function POST(request: Request) {
     }
 
     if (existingAppointment) {
-      return NextResponse.json({ error: "Bu randevu saati dolu. Lütfen başka bir saat seçin." }, { status: 409 })
+      // İptal edilmiş bir randevu slotu doldurmuş olabilir. Bu slotu SADECE admin
+      // yeniden atayabilir (public tarafta dolu kalır ki hasta kendi kafasına göre alamasın).
+      // Audit kanıtı zaten kalıcı olduğu için iptal kaydını silip yeni randevuyu üzerine açıyoruz.
+      if (existingAppointment.status === "cancelled" && isVerifiedAdmin) {
+        await supabase.from("appointments").delete().eq("id", existingAppointment.id)
+      } else {
+        return NextResponse.json({ error: "Bu randevu saati dolu. Lütfen başka bir saat seçin." }, { status: 409 })
+      }
     }
 
     if (!isVerifiedAdmin && sameWeekAppointments && sameWeekAppointments.length > 0) {
@@ -122,7 +131,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "duplicate_appointment",
-          message: `Bu hasta ${existingDate} tarihinde zaten randevusu var. Acil durum için lütfen aşağıdaki numaralardan iletişime geçin:\n\nSekreter: 0531 080 4720\nHemşire: 0533 142 7261`,
+          message: `Bu hasta ${existingDate} tarihinde zaten randevusu var. Acil durum için lütfen sekreterimizle iletişime geçin:\n\nSekreter: 0531 080 47 20`,
           existing_appointment: { date: existingDate, time: existing.appointment_time },
         },
         { status: 409 }

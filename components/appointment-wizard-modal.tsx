@@ -109,7 +109,6 @@ export default function AppointmentWizardModal({
 
   // Acil Randevu states
   const [showEmergencyFlow, setShowEmergencyFlow] = useState(false)
-  const [emergencyStep, setEmergencyStep] = useState<"sekreter" | "hemsiresatır1" | "hemsiresatır2" | null>("sekreter")
   const emergencyRef = useRef<HTMLDivElement>(null)
 
   // Kontrol / Takip seçildiğinde otomatik scroll et
@@ -318,9 +317,8 @@ export default function AppointmentWizardModal({
     
     // Acil Randevu seçilirse özel flow başlat
     if (selectedType === "acil-durum") {
-      setShowEmergencyFlow(true)
-      setEmergencyStep("sekreter")
-      return
+    setShowEmergencyFlow(true)
+    return
     }
     
     if (selectedType === "kontrol-takip" && !kontrollTakipSubType) {
@@ -518,7 +516,7 @@ export default function AppointmentWizardModal({
         // Handle duplicate appointment with friendly message
         if (errorData.error === "duplicate_appointment" && errorData.existing_appointment) {
           setError(
-            `Zaten ${errorData.existing_appointment.date} tarihinde randevunuz var.\n\nAcil durum için lütfen aşağıdaki kişilerden iletişime geçin:\n\nSekreter: Armagan Ayverdi - aa@dreraycaliskan.com\nHemşire: Büsra Sever - bs@dreraycaliskan.com`
+            `Zaten ${errorData.existing_appointment.date} tarihinde randevunuz var.\n\nAcil durum için lütfen sekreterimizle iletişime geçin:\n\nSekreter: 0531 080 47 20`
           )
         } else {
           setError(errorData.error || "Randevu oluşturulurken bir hata oluştu")
@@ -1717,41 +1715,20 @@ export default function AppointmentWizardModal({
                 <div className="bg-destructive/10 border-2 border-destructive/20 rounded-lg p-6">
                   <h2 className="text-2xl sm:text-4xl font-bold text-destructive mb-4">ACİL DURUMDA</h2>
 
-                  {emergencyStep === "sekreter" && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <p className="text-lg font-semibold text-muted-foreground mb-4">Sekreteri Arayınız:</p>
-                        <p className="text-5xl sm:text-6xl font-bold text-destructive break-words">0531 080 47 20</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground italic mt-4">
-                        Sakin olunuz. Hemen size yardımcı olacağız.
-                      </p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="mb-4 text-lg font-semibold text-muted-foreground">Sekreteri Arayınız:</p>
+                      <a
+                        href="tel:05310804720"
+                        className="block break-words text-5xl font-bold text-destructive sm:text-6xl"
+                      >
+                        0531 080 47 20
+                      </a>
                     </div>
-                  )}
-
-                  {emergencyStep === "hemsiresatır1" && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <p className="text-lg font-semibold text-muted-foreground mb-4">Hemşire 1'i Arayınız:</p>
-                        <p className="text-5xl sm:text-6xl font-bold text-destructive break-words">0533 142 72 61</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground italic mt-4">
-                        Sakin olunuz. Ulaşamadığımız durumlarda sizin aradığımız numaraya geri dönüş yapacağız.
-                      </p>
-                    </div>
-                  )}
-
-                  {emergencyStep === "hemsiresatır2" && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <p className="text-lg font-semibold text-muted-foreground mb-4">Hemşire 2'yi Arayınız:</p>
-                        <p className="text-5xl sm:text-6xl font-bold text-destructive break-words">0537 788 13 31</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground italic mt-4">
-                        Sakin olunuz. Ulaşamadığımız durumlarda sizin aradığımız numaraya geri dönüş yapacağız.
-                      </p>
-                    </div>
-                  )}
+                    <p className="mt-4 text-sm italic text-muted-foreground">
+                      Sakin olunuz. Hemen size yardımcı olacağız.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Buttons */}
@@ -1768,26 +1745,8 @@ export default function AppointmentWizardModal({
 
                   <Button
                     onClick={() => {
-                      if (emergencyStep === "sekreter") {
-                        setEmergencyStep("hemsiresatır1")
-                      } else if (emergencyStep === "hemsiresatır1") {
-                        setEmergencyStep("hemsiresatır2")
-                      } else if (emergencyStep === "hemsiresatır2") {
-                        onSuccess?.()
-                        onClose()
-                      }
-                    }}
-                    variant="outline"
-                    className="w-full min-h-[44px]"
-                  >
-                    Ulaşamadım - Yeni Numara
-                  </Button>
-
-                  <Button
-                    onClick={() => {
                       setShowEmergencyFlow(false)
                       setSelectedType(null)
-                      setEmergencyStep("sekreter")
                     }}
                     variant="ghost"
                     className="w-full min-h-[44px]"
