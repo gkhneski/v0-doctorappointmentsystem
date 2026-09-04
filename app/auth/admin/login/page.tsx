@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-import { Suspense } from "react"
 
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -9,35 +8,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
-import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { Calendar, Shield } from "lucide-react"
 
-function AdminLoginForm() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [authorized, setAuthorized] = useState(false)
-  const searchParams = useSearchParams()
-
-  // Sadece gizli linkten gelenler erisebilir
-  useEffect(() => {
-    const ref = searchParams.get("ref")
-    if (ref === "ec25") {
-      setAuthorized(true)
-    } else {
-      // router henüz hazır olmayabilir, window.location kullan
-      if (typeof window !== "undefined") {
-        window.location.replace("/")
-      }
-    }
-  }, [searchParams])
-  
-  // Use singleton client - do NOT create new client on each render/submit
-  const supabase = useMemo(() => createClient(), [])
+  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
+    const supabase = createClient()
     e.preventDefault()
     setIsLoading(true)
     setError(null)
@@ -47,7 +30,6 @@ function AdminLoginForm() {
         email,
         password,
       })
-      
       if (signInError) throw signInError
 
       const { data: adminUser, error: adminError } = await supabase
@@ -61,7 +43,7 @@ function AdminLoginForm() {
         throw new Error("Yönetici erişiminiz bulunmamaktadır")
       }
 
-      // Full page reload ensures session cookie is recognized server-side
+      // Tam sayfa yenilemesi ile session cookie sunucu tarafinda tanınır
       window.location.href = "/admin"
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Bir hata oluştu")
@@ -70,11 +52,8 @@ function AdminLoginForm() {
     }
   }
 
-  if (!authorized) return null
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-secondary to-background p-6">
-
       <Link href="/" className="mb-8 flex items-center gap-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
           <Calendar className="h-6 w-6 text-primary-foreground" />
@@ -123,18 +102,15 @@ function AdminLoginForm() {
               </Button>
             </div>
 
-
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              Hesabınız yok mu?{" "}
+              <Link href="/auth/admin/signup" className="text-primary underline underline-offset-4">
+                Kayıt olun
+              </Link>
+            </div>
           </form>
         </CardContent>
       </Card>
     </div>
-  )
-}
-
-export default function AdminLoginPage() {
-  return (
-    <Suspense fallback={null}>
-      <AdminLoginForm />
-    </Suspense>
   )
 }

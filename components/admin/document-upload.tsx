@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Upload, Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@supabase/ssr"
 import { toast } from "sonner"
 
 interface DocumentUploadProps {
@@ -29,8 +29,10 @@ export function DocumentUpload({ patientId, appointmentId, onDocumentUploaded }:
   const [uploading, setUploading] = useState(false)
   const [category, setCategory] = useState<string>("diger")
 
-  // Use singleton client
-  const supabase = createClient()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

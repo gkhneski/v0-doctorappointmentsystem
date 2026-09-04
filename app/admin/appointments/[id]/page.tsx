@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
@@ -115,13 +114,7 @@ export default async function AppointmentDetailPage({
     try {
       const serviceSupabase = createServiceRoleClient()
 
-      await sendAppointmentLinkSMS(
-        patient.phone, 
-        patient.full_name,
-        appointment.appointment_date,
-        appointment.appointment_time,
-        appointment.appointment_type
-      )
+      await sendAppointmentLinkSMS(patient.phone, patient.full_name)
 
       redirect(`/admin/appointments/${id}?sent=true`)
     } catch (err) {

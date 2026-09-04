@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { getAdminAuth } from "@/lib/admin-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import WeeklyCalendar from "@/components/weekly-calendar"
@@ -9,19 +8,31 @@ import { QuickBlockAppointment } from "@/components/admin/quick-block-appointmen
 export default async function CreateAppointmentPage() {
   const supabase = await createClient()
 
-  // Cache'li helper: layout ile ayni istekte paylasilir (ekstra auth gidis-donusu yok)
-  const { user, adminUser } = await getAdminAuth()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!user || !adminUser) {
+  if (userError || !user) {
+    redirect("/auth/admin/login")
+  }
+
+  const { data: adminUser, error: adminError } = await supabase
+    .from("admin_users")
+    .select("*")
+    .eq("id", user.id)
+    .single()
+
+  if (adminError || !adminUser) {
     redirect("/auth/admin/login")
   }
 
   const { data: doctors } = await supabase.from("doctors").select("id, name, specialization, working_hours").order("name").limit(1)
 
   const today = new Date().toISOString().split("T")[0]
-  const oneYearLater = new Date()
-  oneYearLater.setFullYear(oneYearLater.getFullYear() + 1)
-  const endDate = oneYearLater.toISOString().split("T")[0]
+  const twoMonthsLater = new Date()
+  twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2)
+  const endDate = twoMonthsLater.toISOString().split("T")[0]
 
   const { data: schedules } = await supabase
     .from("doctor_schedules")
@@ -44,21 +55,17 @@ export default async function CreateAppointmentPage() {
   const { data: existingAppointments } = await supabase
     .from("appointments")
     .select(`
-      id,
       doctor_id,
-      patient_id,
       appointment_date,
       appointment_time,
       appointment_type,
-      notes,
-      status,
       patients (
         full_name,
         phone
       )
     `)
     .gte("appointment_date", today)
-    // İptal edilenler de dahil - admin görüntüler
+    .neq("status", "cancelled")
 
   const handleSignOut = async () => {
     "use server"
@@ -100,7 +107,6 @@ export default async function CreateAppointmentPage() {
               doctor={doctors?.[0] || null}
               schedules={schedules || []}
               existingAppointments={existingAppointments || []}
-              isAdmin={true}
             />
           </CardContent>
         </Card>

@@ -2,45 +2,13 @@
 
 import AppointmentWizardModal from "@/components/appointment-wizard-modal"
 import { formatDateForDB } from "@/lib/date-utils"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
-import { ChevronLeft, ChevronRight, Lock, Check, StickyNote, GripVertical, Loader2, Trash2 } from "lucide-react"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { useToast } from "@/hooks/use-toast"
+import { ChevronLeft, ChevronRight, Lock, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
-
-// Randevu tipi kısa etiketleri (kartlarda göstermek için)
-const TYPE_SHORT_LABELS: Record<string, string> = {
-  "ilk-muayene": "İlk Muayene",
-  "kontrol-takip": "Kontrol",
-  "gebelik-istemi-infertilite": "Gebelik İstemi",
-  "jinekolojik-muayene": "Jinekolojik",
-  "ayrintili-fetal-ultrason": "Fetal USG",
-  "gebelik-takibi": "Gebe Takip",
-  "asilik-tup-bebek": "Aşılama/Tüp Bebek",
-  "iui-kontrol": "IUI Kontrol",
-  "op-sonrasi-kontrol": "Op Sonrası",
-  "serklaj-sonrasi-kontrol": "Serklaj Sonrası",
-  "gebe-muayene": "Gebe Muayene",
-  "acil-durum": "Acil",
-  "dty": "DTY",
-  "mens": "Mens",
-  "diger": "Diğer",
-}
-
-function getTypeLabel(appointment: { appointment_type?: string; print_type?: string | null }): string | null {
-  if (appointment.print_type && appointment.print_type !== "") return appointment.print_type
-  if (!appointment.appointment_type) return null
-  return TYPE_SHORT_LABELS[appointment.appointment_type] || appointment.appointment_type.replace(/-/g, " ")
-}
 
 type WorkingHours = {
   enabled: boolean
@@ -76,61 +44,14 @@ type Schedule = {
 }
 
 type ExistingAppointment = {
-  id: string
   doctor_id: string
-  patient_id?: string
   appointment_date: string
   appointment_time: string
   appointment_type?: string
-  print_type?: string | null
-  fetal_bebek_sayisi?: string | null
-  payment_status?: string | null
-  payment_amount?: number | null
-  confirmation_status?: string | null
-  notes?: string | null
-  status?: string
   patients?: {
     full_name: string
     phone: string
   }
-}
-
-type PrefilledPatient = {
-  id?: string
-  full_name: string
-  phone: string
-  tc_no: string
-  date_of_birth?: string | null
-}
-
-// Bir hafta başlangıcından görünecek günleri üretir (hafta sonu atlanır, geçmiş günler gizlenir)
-function buildWeekDays(weekStart: Date, viewMode: "day" | "week" | "2week") {
-  const days: Date[] = []
-  // 2 hafta görünümü: 1. hafta Pzt-Cum (0-4) + 2. hafta Pzt-Cum (hafta sonu atlanır)
-  const count = viewMode === "2week" ? 10 : 5
-  for (let i = 0; i < count; i++) {
-    const date = new Date(weekStart)
-    const offset = i >= 5 ? i + 2 : i // ikinci haftaya geçerken Cmt+Pzr atla
-    date.setDate(weekStart.getDate() + offset)
-    days.push(date)
-  }
-  // Geçmiş günleri gizle (bugünden önceki günler ekranda yer kaplamasın)
-  const startOfToday = new Date()
-  startOfToday.setHours(0, 0, 0, 0)
-  const upcoming = days.filter((d) => d >= startOfToday)
-  // Tüm günler geçmişteyse (geçmiş bir haftaya gidilmişse) hepsini göster
-  return upcoming.length > 0 ? upcoming : days
-}
-
-// Verilen tarihin haftasının Pazartesi'sini döndürür (hafta sonu ise sonraki Pazartesi)
-function getMondayOf(date: Date) {
-  const dayOfWeek = date.getDay()
-  const monday = new Date(date)
-  if (dayOfWeek === 0) monday.setDate(date.getDate() + 1)
-  else if (dayOfWeek === 6) monday.setDate(date.getDate() + 2)
-  else monday.setDate(date.getDate() - (dayOfWeek - 1))
-  monday.setHours(0, 0, 0, 0)
-  return monday
 }
 
 type Props = {
@@ -138,33 +59,10 @@ type Props = {
   schedules: Schedule[]
   existingAppointments: ExistingAppointment[]
   preselectedType?: string
-  preselectedDate?: string | null
-  preselectedTime?: string | null
-  isAdmin?: boolean
-  fetalBebekSayisi?: string | null
-  prefilledPatient?: PrefilledPatient | null
-  embedded?: boolean
-  onAppointmentClick?: (appointment: ExistingAppointment) => void
-  viewMode?: "day" | "week" | "2week"
-  viewControls?: React.ReactNode
-  /** Dışarıdan belirli bir güne atlama isteği (YYYY-MM-DD + benzersiz nonce) */
-  jumpToDate?: { date: string; nonce: number } | null
 }
 
-export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType, preselectedDate, preselectedTime, isAdmin = false, fetalBebekSayisi = null, prefilledPatient = null, embedded = false, onAppointmentClick, viewMode = "week", viewControls = null, jumpToDate = null }: Props) {
+export default function WeeklyCalendar({ doctor, schedules, existingAppointments, preselectedType }: Props) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    // If AI preselected a date, show that week
-    if (preselectedDate) {
-      const date = new Date(preselectedDate)
-      const dayOfWeek = date.getDay()
-      const monday = new Date(date)
-      if (dayOfWeek === 0) monday.setDate(date.getDate() + 1)
-      else if (dayOfWeek === 6) monday.setDate(date.getDate() + 2)
-      else monday.setDate(date.getDate() - (dayOfWeek - 1))
-      monday.setHours(0, 0, 0, 0)
-      return monday
-    }
-
     const today = new Date()
     const dayOfWeek = today.getDay()
 
@@ -183,6 +81,8 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     }
 
     monday.setHours(0, 0, 0, 0)
+
+    console.log("[v0] Initial Monday (current/next week):", monday.toLocaleDateString("tr-TR"))
     return monday
   })
 
@@ -190,59 +90,23 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     date: string
     time: string
     doctorId: string
-  } | null>(() => {
-    // If AI preselected a slot, auto-open wizard
-    if (preselectedDate && preselectedTime && doctor) {
-      return { date: preselectedDate, time: preselectedTime, doctorId: doctor.id }
-    }
-    return null
-  })
+  } | null>(null)
 
-  const [isWizardOpen, setIsWizardOpen] = useState(() => !!(preselectedDate && preselectedTime && doctor))
+  const [isWizardOpen, setIsWizardOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState(0) // 0-4 arası index (Pazartesi-Cuma)
   const router = useRouter()
-  const { toast } = useToast()
-
-  // Drag & drop state
-  const [draggingAppt, setDraggingAppt] = useState<ExistingAppointment | null>(null)
-  const [dragOverSlot, setDragOverSlot] = useState<{ date: string; time: string } | null>(null)
-  const [movingId, setMovingId] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [localAppointments, setLocalAppointments] = useState(existingAppointments)
-  const [localSchedules, setLocalSchedules] = useState(schedules)
-  const [togglingDate, setTogglingDate] = useState<string | null>(null)
-
-  // Props değişince local state'i güncelle
-  useEffect(() => {
-    setLocalAppointments(existingAppointments)
-  }, [existingAppointments])
-
-  useEffect(() => {
-    setLocalSchedules(schedules)
-  }, [schedules])
-
-  // Dışarıdan gelen "şu güne git" isteği: o haftaya geç ve ilgili günü seç
-  useEffect(() => {
-    if (!jumpToDate?.date) return
-    const target = new Date(`${jumpToDate.date}T00:00:00`)
-    if (isNaN(target.getTime())) return
-
-    const monday = getMondayOf(target)
-    setCurrentWeekStart(monday)
-
-    // Yeni haftanın gün listesinde hedef günün index'ini bul
-    const days = buildWeekDays(monday, viewMode)
-    const targetStr = formatDateForDB(target)
-    const idx = days.findIndex((d) => formatDateForDB(d) === targetStr)
-    setSelectedDay(idx >= 0 ? idx : 0)
-  }, [jumpToDate, viewMode])
 
   const daysOfWeek = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma"]
 
-  const getWeekDays = () => buildWeekDays(currentWeekStart, viewMode)
-
-  // Tarihten Türkçe gün adı (dizi indeksine güvenmeden, filtrelenmiş günlerde doğru etiket için)
-  const getDayName = (date: Date) => date.toLocaleDateString("tr-TR", { weekday: "long" })
+  const getWeekDays = () => {
+    const days = []
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(currentWeekStart)
+      date.setDate(currentWeekStart.getDate() + i)
+      days.push(date)
+    }
+    return days
+  }
 
   const goToPreviousWeek = () => {
     const newStart = new Date(currentWeekStart)
@@ -260,17 +124,6 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     const newStart = new Date(currentWeekStart)
     newStart.setDate(newStart.getDate() + 7)
     setCurrentWeekStart(newStart)
-  }
-
-  const goToCurrentWeek = () => {
-    const today = new Date()
-    const monday = getMondayOf(today)
-    const days = buildWeekDays(monday, viewMode)
-    const todayStr = formatDateForDB(today)
-    const todayIndex = days.findIndex((date) => formatDateForDB(date) === todayStr)
-
-    setCurrentWeekStart(monday)
-    setSelectedDay(todayIndex >= 0 ? todayIndex : 0)
   }
 
   const getWorkingHoursForDay = (date: Date): { start: string; end: string } | null => {
@@ -299,40 +152,13 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     return { start: dayHours.start, end: dayHours.end }
   }
 
-  const generateTimeSlots = (startTime: string, endTime: string, appointmentType?: string) => {
+  const generateTimeSlots = (startTime: string, endTime: string) => {
     const slots = []
     const start = new Date(`2000-01-01T${startTime}`)
     const end = new Date(`2000-01-01T${endTime}`)
 
-    // Başlangıcı en yakın 15 dakikaya yukarı yuvarla (00/15/30/45)
-    const startMins = start.getMinutes()
-    const startRemainder = startMins % 15
-    if (startRemainder !== 0) {
-      start.setMinutes(startMins + (15 - startRemainder))
-      start.setSeconds(0)
-    }
-
-    // Bitişi en yakın 15 dakikaya aşağı yuvarla
-    const endMins = end.getMinutes()
-    const endRemainder = endMins % 15
-    if (endRemainder !== 0) {
-      end.setMinutes(endMins - endRemainder)
-      end.setSeconds(0)
-    }
-
-    // Admin: tüm slotları göster (15 dakikalık)
-    // Hasta + Ayrintili Fetal USG: sadece :00 ve :30
-    // Hasta + diğer tipler: tüm 15 dakikalık slotlar
-    const onlyHalfHour = !isAdmin && appointmentType === "ayrintili-fetal-ultrason"
-
     while (start <= end) {
-      const timeStr = start.toTimeString().slice(0, 5)
-      const mins = start.getMinutes()
-
-      if (isAdmin || !onlyHalfHour || mins === 0 || mins === 30) {
-        slots.push(timeStr)
-      }
-
+      slots.push(start.toTimeString().slice(0, 5))
       start.setMinutes(start.getMinutes() + 15)
     }
 
@@ -341,7 +167,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
 
   const isSlotBooked = (doctorId: string, date: Date, time: string) => {
     const dateStr = formatDateForDB(date)
-    return localAppointments.some((apt) => {
+    return existingAppointments.some((apt) => {
       const aptTime = apt.appointment_time.slice(0, 5)
       return apt.doctor_id === doctorId && apt.appointment_date === dateStr && aptTime === time
     })
@@ -349,71 +175,10 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
 
   const getBookedAppointment = (doctorId: string, date: Date, time: string) => {
     const dateStr = formatDateForDB(date)
-    return localAppointments.find((apt) => {
+    return existingAppointments.find((apt) => {
       const aptTime = apt.appointment_time.slice(0, 5)
       return apt.doctor_id === doctorId && apt.appointment_date === dateStr && aptTime === time
     })
-  }
-
-  // Drag handlers
-  const handleDragStart = (appt: ExistingAppointment) => {
-    setDraggingAppt(appt)
-  }
-
-  const handleDragEnd = () => {
-    setDraggingAppt(null)
-    setDragOverSlot(null)
-  }
-
-  const handleDrop = async (targetDate: string, targetTime: string) => {
-    if (!draggingAppt) return
-    const appt = draggingAppt
-    setDraggingAppt(null)
-    setDragOverSlot(null)
-
-    // Aynı slot'a bırakıldıysa bir şey yapma
-    if (appt.appointment_date === targetDate && appt.appointment_time.slice(0, 5) === targetTime) return
-
-    // Hedef slot dolu mu kontrol et
-    const targetBooked = localAppointments.some(
-      (a) => a.id !== appt.id && a.appointment_date === targetDate && a.appointment_time.slice(0, 5) === targetTime
-    )
-    if (targetBooked) {
-      toast({ title: "Hata", description: "Bu slot zaten dolu", variant: "destructive" })
-      return
-    }
-
-    // Optimistic update
-    const origDate = appt.appointment_date
-    const origTime = appt.appointment_time
-    setLocalAppointments((prev) =>
-      prev.map((a) => (a.id === appt.id ? { ...a, appointment_date: targetDate, appointment_time: targetTime } : a))
-    )
-    setMovingId(appt.id)
-
-    try {
-      const res = await fetch(`/api/appointments/${appt.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointment_date: targetDate, appointment_time: targetTime }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Güncelleme başarısız")
-
-      toast({
-        title: "Randevu taşındı",
-        description: `${appt.patients?.full_name} → ${new Date(targetDate + "T12:00:00").toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" })} ${targetTime}`,
-      })
-      router.refresh()
-    } catch (err: any) {
-      // Rollback
-      setLocalAppointments((prev) =>
-        prev.map((a) => (a.id === appt.id ? { ...a, appointment_date: origDate, appointment_time: origTime } : a))
-      )
-      toast({ title: "Hata", description: err.message, variant: "destructive" })
-    } finally {
-      setMovingId(null)
-    }
   }
 
   const getAppointmentTypeLabel = (type?: string) => {
@@ -435,52 +200,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     return slotDate < now
   }
 
-  // Ayrıntılı fetal ultrason: sadece :00 ve :30 slotlar
-  const isFetalRestrictedSlot = (time: string) => {
-    if (preselectedType !== "ayrintili-fetal-ultrason") return false
-    const minutes = time.split(":")[1]
-    return minutes !== "00" && minutes !== "30"
-  }
-
-  // En yakın boş tam/bucukluk saati bul
-  const findNearestFetalSlot = (date: Date, time: string, doctorId: string): string | null => {
-    const dateStr = formatDateForDB(date)
-    const [h, m] = time.split(":").map(Number)
-    const timeInMin = h * 60 + m
-    const candidates = [
-      Math.floor(timeInMin / 30) * 30,
-      Math.ceil(timeInMin / 30) * 30,
-    ]
-    for (const t of candidates) {
-      const hh = Math.floor(t / 60).toString().padStart(2, "0")
-      const mm = (t % 60).toString().padStart(2, "0")
-      const candidate = `${hh}:${mm}`
-      const isBooked = localAppointments.some(
-        (a) => a.doctor_id === doctorId && a.appointment_date === dateStr && a.appointment_time.slice(0, 5) === candidate
-      )
-      if (!isBooked) return candidate
-    }
-    return null
-  }
-
   const handleSlotClick = (date: Date, time: string, doctorId: string) => {
-    if (isFetalRestrictedSlot(time)) {
-      const suggested = findNearestFetalSlot(date, time, doctorId)
-      if (suggested) {
-        toast({
-          title: "Ayrintili Fetal Ultrason",
-          description: `Bu randevu tipi sadece tam ve bucuklu saatlerde verilebilir. En yakin musait saat: ${suggested}`,
-          variant: "default",
-        })
-      } else {
-        toast({
-          title: "Musait Slot Yok",
-          description: "Bu saate yakin musait tam/bucuk saatli slot bulunamadi. Lutfen baska bir zaman deneyin.",
-          variant: "destructive",
-        })
-      }
-      return
-    }
     const dateStr = formatDateForDB(date)
     setSelectedSlot({ date: dateStr, time, doctorId })
     setIsWizardOpen(true)
@@ -490,206 +210,6 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
     setIsWizardOpen(false)
     setSelectedSlot(null)
     router.refresh()
-  }
-
-  const isDayClosed = (dateStr: string) => {
-    const daySchedules = localSchedules.filter(
-      (schedule) => schedule.doctor_id === doctor?.id && schedule.schedule_date === dateStr,
-    )
-    return daySchedules.length > 0 && daySchedules.every((schedule) => schedule.is_available === false)
-  }
-
-  const handleToggleDay = async (date: Date) => {
-    if (!isAdmin || !doctor || togglingDate) return
-
-    const dateStr = formatDateForDB(date)
-    const daySchedules = localSchedules.filter(
-      (schedule) => schedule.doctor_id === doctor.id && schedule.schedule_date === dateStr,
-    )
-    if (!daySchedules.length) {
-      toast({ title: "Program bulunamadı", description: "Bu gün için tanımlı doktor programı yok.", variant: "destructive" })
-      return
-    }
-
-    const currentlyClosed = daySchedules.every((schedule) => schedule.is_available === false)
-    const nextAvailable = currentlyClosed
-    const formattedDate = date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "long" })
-    const confirmed = window.confirm(
-      currentlyClosed
-        ? `${formattedDate} gününü yeniden randevu alımına açmak istiyor musunuz?`
-        : `${formattedDate} gününü yeni randevulara kapatmak istiyor musunuz? Mevcut randevular korunacaktır.`,
-    )
-    if (!confirmed) return
-
-    setTogglingDate(dateStr)
-    try {
-      const response = await fetch("/api/admin/schedules/toggle-availability", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doctor_id: doctor.id, schedule_date: dateStr, is_available: nextAvailable }),
-      })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error || "Gün durumu güncellenemedi")
-
-      setLocalSchedules((current) =>
-        current.map((schedule) =>
-          schedule.doctor_id === doctor.id && schedule.schedule_date === dateStr
-            ? { ...schedule, is_available: nextAvailable }
-            : schedule,
-        ),
-      )
-      toast({
-        title: nextAvailable ? "Gün yeniden açıldı" : "Gün kapatıldı",
-        description: nextAvailable
-          ? "Bu gün yeniden randevu alabilir."
-          : "Yeni randevular engellendi; mevcut randevular korunuyor.",
-      })
-      router.refresh()
-    } catch (error) {
-      toast({
-        title: "İşlem başarısız",
-        description: error instanceof Error ? error.message : "Gün durumu güncellenemedi",
-        variant: "destructive",
-      })
-    } finally {
-      setTogglingDate(null)
-    }
-  }
-
-  // İptal edilmiş (gelmeyeceğini bildiren) randevuyu sil ve saati boşalt
-  const handleFreeSlot = async (appt: ExistingAppointment) => {
-    const label = appt.patients?.full_name || "Hasta"
-    const t = appt.appointment_time.slice(0, 5)
-    if (typeof window !== "undefined" && !window.confirm(`${label} adlı iptal edilmiş randevu silinecek ve ${t} saati boşaltılacak. Onaylıyor musunuz?`)) return
-    setDeletingId(appt.id)
-    try {
-      const res = await fetch(`/api/appointments/${appt.id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Randevu silinemedi")
-      setLocalAppointments((prev) => prev.filter((a) => a.id !== appt.id))
-      toast({ title: "Slot boşaltıldı", description: `${t} artık müsait — yeni hasta ekleyebilirsiniz.` })
-      router.refresh()
-    } catch (err: any) {
-      toast({ title: "Hata", description: err?.message || "Randevu silinemedi", variant: "destructive" })
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
-  // Randevu kartı (grid içi normal + grid dışı "ara" randevular için ortak render)
-  const renderApptCard = (appointment: ExistingAppointment, time: string, isAra: boolean) => {
-    const phone = appointment.patients?.phone
-    const showPhone = phone && phone !== "0000000000"
-    const isDragging = draggingAppt?.id === appointment.id
-    const isMoving = movingId === appointment.id
-    const isDeleting = deletingId === appointment.id
-    const isCancelled = appointment.status === "cancelled"
-    const solidColor = isAra ? "bg-amber-500" : "bg-red-600"
-
-    const colorClass = isCancelled
-      ? "bg-gray-400 text-white opacity-70 cursor-default"
-      : isDragging
-        ? `${solidColor} text-white opacity-40 scale-95 cursor-grabbing`
-        : isAdmin
-          ? `${solidColor} text-white opacity-100 hover:shadow-lg hover:scale-[1.02] cursor-pointer`
-          : `${solidColor} text-white opacity-100 cursor-grab active:cursor-grabbing`
-
-    const card = (
-      <div
-        key={appointment.id}
-        draggable={!isCancelled}
-        onDragStart={() => !isCancelled && handleDragStart(appointment)}
-        onDragEnd={handleDragEnd}
-        onClick={(e) => {
-          if (isCancelled) return
-          if (onAppointmentClick) {
-            e.stopPropagation()
-            onAppointmentClick(appointment)
-          } else if (isAdmin && appointment.patient_id) {
-            e.stopPropagation()
-            router.push(`/admin/patients/${appointment.patient_id}`)
-          }
-        }}
-        className={`group relative w-full rounded-md text-xs transition-all ${isAdmin ? "px-1.5 py-0.5 leading-tight" : "px-1.5 py-1"} ${colorClass}`}
-      >
-        {(isMoving || isDeleting) && (
-          <div className="absolute inset-0 rounded-md bg-white/50 flex items-center justify-center z-10">
-            <Loader2 className="h-3 w-3 animate-spin text-red-600" />
-          </div>
-        )}
-        <div className="flex items-start gap-1">
-          {!isCancelled && <GripVertical className="h-3 w-3 mt-0.5 shrink-0 opacity-50 group-hover:opacity-100" />}
-          <div className="min-w-0 flex-1">
-            <div className={`font-bold text-[11px] opacity-90 flex items-center gap-1 ${isAdmin ? "mb-0" : "mb-0.5"}`}>
-              {time}
-              {isAra && <span className="text-[8px] font-bold bg-white/25 rounded px-1 py-0.5 leading-none">ARA</span>}
-            </div>
-            {isAdmin ? (
-              <>
-                <div className="font-semibold truncate hover:underline">
-                  {appointment.patients?.full_name || "Hasta"}
-                  {isCancelled && <span className="ml-1 text-[9px] bg-white/30 px-1 rounded">İPTAL</span>}
-                </div>
-                {showPhone && <div className="truncate text-[12px] font-semibold leading-tight opacity-95">{phone}</div>}
-                {getTypeLabel(appointment) && (
-                  <div className="text-[9px] font-medium bg-white/20 rounded px-1 mt-0.5 inline-block truncate max-w-full">
-                    {getTypeLabel(appointment)}
-                    {appointment.appointment_type === "ayrintili-fetal-ultrason" && appointment.fetal_bebek_sayisi && (
-                      <span className="ml-1">
-                        ({appointment.fetal_bebek_sayisi === "tek" ? "Tek" : appointment.fetal_bebek_sayisi === "ikiz" ? "İkiz" : "Üçüz"})
-                      </span>
-                    )}
-                  </div>
-                )}
-                {!isCancelled && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {appointment.payment_status === "paid" && (
-                      <span className="text-[9px] font-semibold bg-green-500/90 rounded px-1">
-                        {appointment.payment_amount ? `₺${appointment.payment_amount}` : "Ödendi"}
-                      </span>
-                    )}
-                    {appointment.confirmation_status === "confirmed" && (
-                      <Check className="h-3 w-3 opacity-90" />
-                    )}
-                  </div>
-                )}
-                {isCancelled && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleFreeSlot(appointment) }}
-                    disabled={isDeleting}
-                    className="mt-1 inline-flex items-center gap-1 rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-gray-800 hover:bg-white/90 disabled:opacity-60"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    Sil &amp; Boşalt
-                  </button>
-                )}
-              </>
-            ) : (
-              <div className="font-semibold">Dolu</div>
-            )}
-          </div>
-          {appointment.notes && (
-            <StickyNote className="h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" />
-          )}
-        </div>
-      </div>
-    )
-
-    if (appointment.notes) {
-      return (
-        <TooltipProvider key={appointment.id} delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>{card}</TooltipTrigger>
-            <TooltipContent side="right" className="max-w-[220px] text-xs whitespace-pre-wrap z-[100]">
-              <p className="font-semibold mb-1">Not:</p>
-              <p>{appointment.notes}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )
-    }
-
-    return card
   }
 
   const weekDays = getWeekDays()
@@ -707,52 +227,47 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
   const selectedDate = weekDays[selectedDay]
   const selectedDateStr = formatDateForDB(selectedDate)
   const selectedDayWorkingHours = getWorkingHoursForDay(selectedDate)
-  const selectedDaySchedules = localSchedules.filter((s) => s.schedule_date === selectedDateStr && s.doctor_id === doctor.id)
+  const selectedDaySchedules = schedules.filter((s) => s.schedule_date === selectedDateStr && s.doctor_id === doctor.id)
 
   return (
-    <div className={embedded ? "space-y-4" : "space-y-6"}>
-      {!embedded && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Doktor Bilgileri</CardTitle>
-            <CardDescription>
-              {doctor.name} - {doctor.specialization}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Doktor Bilgileri</CardTitle>
+          <CardDescription>
+            {doctor.name} - {doctor.specialization}
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
-      <Card className={embedded ? "border-0 shadow-none" : ""}>
-        <div className={embedded ? "px-1 py-1" : "p-4"}>
-          <div className="flex flex-wrap items-center gap-1 rounded-lg border bg-muted/20 p-1 shadow-sm">
-            {viewControls}
-            <div className="hidden h-5 w-px bg-border lg:block" />
-            <div className="ml-auto flex items-center gap-1">
-            {isAdmin && (
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs font-semibold" onClick={goToCurrentWeek}>
-                Bu Hafta
-              </Button>
-            )}
-            <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToPreviousWeek}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="text-sm font-semibold whitespace-nowrap px-1">
-              {weekDays[0].toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} -{" "}
-              {weekDays[weekDays.length - 1].toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Tarih ve Saat Seçin</CardTitle>
+              <CardDescription>Müsait bir saat seçin</CardDescription>
             </div>
-              <Button variant="outline" size="icon" className="h-7 w-7" onClick={goToNextWeek}>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="text-sm font-medium whitespace-nowrap">
+                {weekDays[0].toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} -{" "}
+                {weekDays[4].toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+              </div>
+              <Button variant="outline" size="icon" onClick={goToNextWeek}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </div>
-        <CardContent className={embedded ? "space-y-2 p-1" : "space-y-3 p-4 pt-0"}>
-          <div className={viewMode === "day" ? "block" : "md:hidden"}>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="md:hidden">
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {weekDays.map((date, index) => {
                 const isSelected = index === selectedDay
                 const dateStr = formatDateForDB(date)
-                const hasSlotsAvailable = localSchedules.some(
+                const hasSlotsAvailable = schedules.some(
                   (s) => s.schedule_date === dateStr && s.doctor_id === doctor.id,
                 )
 
@@ -768,7 +283,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                           : "border-border bg-muted opacity-60"
                     }`}
                   >
-                    <div className="text-xs font-medium">{getDayName(date)}</div>
+                    <div className="text-xs font-medium">{daysOfWeek[index]}</div>
                     <div className="text-sm font-semibold">{date.toLocaleDateString("tr-TR", { day: "numeric" })}</div>
                     <div className="text-xs opacity-80">{date.toLocaleDateString("tr-TR", { month: "short" })}</div>
                   </button>
@@ -777,64 +292,26 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
             </div>
           </div>
 
-          {/* Haftalık uyarı — bu haftada hiç program yoksa */}
-          {(() => {
-            const hasAnySchedule = weekDays.some((date) => {
-              const dateStr = formatDateForDB(date)
-              return localSchedules.some((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
-            })
-            if (!hasAnySchedule) {
-              return (
-                <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                  Bu hafta için randevu programı henüz girilmemiş. Ok tuşlarıyla başka bir haftaya geçebilirsiniz.
-                </div>
-              )
-            }
-            return null
-          })()}
-
           <div className="hidden md:block overflow-x-auto">
-            <div className={`grid ${isAdmin ? "gap-0.5" : "gap-1"} ${viewMode === "day" ? "grid-cols-1 max-w-md" : viewMode === "2week" ? "min-w-[1200px] grid-cols-10" : "min-w-[640px] grid-cols-5"}`}>
-              {(viewMode === "day" ? [weekDays[selectedDay]] : weekDays).map((date, idx) => {
-                const index = viewMode === "day" ? selectedDay : idx
+            <div className="grid min-w-[800px] grid-cols-5 gap-2">
+              {weekDays.map((date, index) => {
                 const dateStr = formatDateForDB(date)
                 const workingHours = getWorkingHoursForDay(date)
-                const daySchedules = localSchedules.filter((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
-                const isToday = dateStr === formatDateForDB(new Date())
-                const closed = isDayClosed(dateStr)
-                const isToggling = togglingDate === dateStr
+                const daySchedules = schedules.filter((s) => s.schedule_date === dateStr && s.doctor_id === doctor.id)
 
                 return (
-                  <div key={index} className={isAdmin ? "space-y-0.5" : "space-y-1"}>
-                    <button
-                      type="button"
-                      disabled={!isAdmin || daySchedules.length === 0 || isToggling}
-                      onClick={() => handleToggleDay(date)}
-                      aria-label={closed ? `${getDayName(date)} gününü randevu alımına aç` : `${getDayName(date)} gününü randevu alımına kapat`}
-                      title={isAdmin ? (closed ? "Günü yeniden aç" : "Yeni randevulara kapat") : undefined}
-                      className={`sticky top-0 z-10 w-full rounded-md p-1 text-center transition-colors ${
-                        closed
-                          ? "border border-dashed border-amber-500 bg-amber-50 text-amber-900"
-                          : isToday
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground"
-                      } ${isAdmin && daySchedules.length > 0 ? "cursor-pointer hover:ring-2 hover:ring-primary/30" : "cursor-default"}`}
-                    >
-                      <div className="text-[10px] font-medium leading-tight">{getDayName(date)}</div>
-                      <div className="text-xs font-semibold leading-tight">
+                  <div key={index} className="space-y-2">
+                    <div className="rounded-lg bg-muted p-2 text-center">
+                      <div className="text-xs font-medium">{daysOfWeek[index]}</div>
+                      <div className="text-sm">
                         {date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
                       </div>
-                      {closed ? (
-                        <div className="flex items-center justify-center gap-1 text-[9px] font-bold leading-tight">
-                          {isToggling ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Lock className="h-2.5 w-2.5" />}
-                          Kapalı
+                      {workingHours && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {workingHours.start}-{workingHours.end}
                         </div>
-                      ) : daySchedules.length > 0 ? (
-                        <div className={`text-[9px] leading-tight ${isToday ? "opacity-90" : "text-muted-foreground"}`}>
-                          {daySchedules[0].start_time.slice(0,5)}-{daySchedules[0].end_time.slice(0,5)}
-                        </div>
-                      ) : null}
-                    </button>
+                      )}
+                    </div>
 
                     <div className="space-y-1">
                       {!workingHours ? (
@@ -847,81 +324,43 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                         </div>
                       ) : (
                         daySchedules.map((schedule) => {
-                          const gridTimes = generateTimeSlots(
-                            schedule.start_time,
-                            schedule.end_time,
-                            preselectedType,
+                          const timeSlots = generateTimeSlots(
+                            workingHours?.start || schedule.start_time,
+                            workingHours?.end || schedule.end_time,
                           )
-                          const dayStr = formatDateForDB(date)
-                          // Ara randevular (grid dışı saatler) sadece adminlere gösterilir.
-                          // Hastalar ara slot alamadığı için onlara göstermek gereksiz.
-                          const araAppts = isAdmin
-                            ? localAppointments.filter((a) => {
-                                const t = a.appointment_time.slice(0, 5)
-                                return (
-                                  a.doctor_id === schedule.doctor_id &&
-                                  a.appointment_date === dayStr &&
-                                  !gridTimes.includes(t)
-                                )
-                              })
-                            : []
-                          const visibleGridTimes = schedule.is_available === false
-                            ? gridTimes.filter((time) => isSlotBooked(schedule.doctor_id, date, time))
-                            : gridTimes
-                          const entries = [
-                            ...visibleGridTimes.map((t) => ({ time: t, ara: false })),
-                            ...araAppts.map((a) => ({ time: a.appointment_time.slice(0, 5), ara: true })),
-                          ].sort((x, y) => x.time.localeCompare(y.time))
                           return (
-                            <div key={schedule.id} className={isAdmin ? "space-y-0.5" : "space-y-1"}>
-                              {entries.map((entry) => {
-                                const time = entry.time
-                                if (entry.ara) {
-                                  const araAppt = getBookedAppointment(schedule.doctor_id, date, time)
-                                  return araAppt ? renderApptCard(araAppt, time, true) : null
-                                }
+                            <div key={schedule.id} className="space-y-1">
+                              {timeSlots.map((time) => {
                                 const isBooked = isSlotBooked(schedule.doctor_id, date, time)
                                 const isPast = isSlotPast(date, time)
                                 const appointment = isBooked ? getBookedAppointment(schedule.doctor_id, date, time) : null
 
                                 if (isBooked && appointment) {
-                                  return renderApptCard(appointment, time, false)
+                                  const phone = appointment.patients?.phone
+                                  const showPhone = phone && phone !== "0000000000"
+                                  return (
+                                    <div
+                                      key={time}
+                                      className="w-full rounded-md bg-red-600 text-white px-2 py-1.5 text-xs cursor-default"
+                                    >
+                                      <div className="font-bold text-[11px] opacity-80 mb-0.5">{time}</div>
+                                      <div className="font-semibold truncate">{appointment.patients?.full_name || "Hasta"}</div>
+                                      {showPhone && <div className="opacity-80 truncate">{phone}</div>}
+                                    </div>
+                                  )
                                 }
 
-                                const slotDateStr = formatDateForDB(date)
-                                const isDropTarget = dragOverSlot?.date === slotDateStr && dragOverSlot?.time === time
-                                const isFetalBlocked = isFetalRestrictedSlot(time)
-
                                 return (
-                                  <div
+                                  <Button
                                     key={time}
-                                    onDragOver={(e) => {
-                                      e.preventDefault()
-                                      e.dataTransfer.dropEffect = "move"
-                                      if (!isPast && !isFetalBlocked) setDragOverSlot({ date: slotDateStr, time })
-                                    }}
-                                    onDragLeave={() => setDragOverSlot(null)}
-                                    onDrop={(e) => {
-                                      e.preventDefault()
-                                      if (!isPast && !isFetalBlocked) handleDrop(slotDateStr, time)
-                                    }}
+                                    variant="outline"
+                                    size="sm"
+                                    className={`w-full text-xs ${isPast ? "opacity-50 cursor-not-allowed" : ""}`}
+                                    disabled={isPast}
+                                    onClick={() => handleSlotClick(date, time, schedule.doctor_id)}
                                   >
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      title={isFetalBlocked ? "Fetal ultrason sadece tam ve bucuklu saatlerde" : undefined}
-                                      className={`w-full min-h-0 px-1 text-[11px] transition-all ${isAdmin ? "h-6" : "h-7"} ${
-                                        isPast ? "opacity-50 cursor-not-allowed" :
-                                        isFetalBlocked ? "opacity-30 cursor-not-allowed bg-gray-50 border-dashed" :
-                                        isDropTarget ? "border-primary bg-primary/10 ring-2 ring-primary/30 scale-105" :
-                                        draggingAppt ? "border-dashed border-primary/40" : ""
-                                      }`}
-                                      disabled={isPast}
-                                      onClick={() => handleSlotClick(date, time, schedule.doctor_id)}
-                                    >
-                                      {isDropTarget && draggingAppt ? "Birak" : time}
-                                    </Button>
-                                  </div>
+                                    {time}
+                                  </Button>
                                 )
                               })}
                             </div>
@@ -946,107 +385,51 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
               </div>
             ) : (
               selectedDaySchedules.map((schedule) => {
-                const gridTimes = generateTimeSlots(
-                  schedule.start_time,
-                  schedule.end_time,
-                  preselectedType,
+                const timeSlots = generateTimeSlots(
+                  selectedDayWorkingHours?.start || schedule.start_time,
+                  selectedDayWorkingHours?.end || schedule.end_time,
                 )
-                const dayStr = formatDateForDB(selectedDate)
-                // Ara randevular (grid dışı saatler) sadece adminlere gösterilir.
-                // Hastalar ara slot alamadığı için onlara göstermek gereksiz.
-                const araAppts = isAdmin
-                  ? localAppointments.filter((a) => {
-                      const t = a.appointment_time.slice(0, 5)
-                      return (
-                        a.doctor_id === schedule.doctor_id &&
-                        a.appointment_date === dayStr &&
-                        !gridTimes.includes(t)
-                      )
-                    })
-                  : []
-                const visibleGridTimes = schedule.is_available === false
-                  ? gridTimes.filter((time) => isSlotBooked(schedule.doctor_id, selectedDate, time))
-                  : gridTimes
-                const entries = [
-                  ...visibleGridTimes.map((t) => ({ time: t, ara: false })),
-                  ...araAppts.map((a) => ({ time: a.appointment_time.slice(0, 5), ara: true })),
-                ].sort((x, y) => x.time.localeCompare(y.time))
                 return (
                   <div key={schedule.id} className="space-y-2">
-                    {entries.map((entry) => {
-                      const time = entry.time
+                    {timeSlots.map((time) => {
                       const isBooked = isSlotBooked(schedule.doctor_id, selectedDate, time)
                       const isPast = isSlotPast(selectedDate, time)
                       const isSelectedSlot = selectedSlot?.date === selectedDateStr && selectedSlot?.time === time
-                      const appointment = (entry.ara || isBooked) ? getBookedAppointment(schedule.doctor_id, selectedDate, time) : null
-                      const isCancelled = appointment?.status === "cancelled"
-                      const isDeleting = deletingId === appointment?.id
+                      const appointment = isBooked ? getBookedAppointment(schedule.doctor_id, selectedDate, time) : null
 
-                      if (appointment) {
-                        return (
-                          <div
-                            key={appointment.id}
-                            onClick={() => {
-                              if (isCancelled) return
-                              if (onAppointmentClick) onAppointmentClick(appointment)
-                            }}
-                            className={`relative w-full min-h-[52px] rounded-xl border-2 px-4 py-2 text-left transition-all ${
-                              isCancelled
-                                ? "border-gray-300 bg-gray-100 text-gray-500"
-                                : entry.ara
-                                  ? "border-amber-300 bg-amber-50 text-amber-800 cursor-pointer"
-                                  : "border-red-200 bg-red-50 text-red-700 cursor-pointer"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 text-xs font-bold opacity-70">
-                              {time}
-                              {entry.ara && <span className="rounded bg-amber-500 px-1 text-[9px] text-white">ARA</span>}
-                              {isCancelled && <span className="rounded bg-gray-400 px-1 text-[9px] text-white">İPTAL</span>}
-                            </div>
-                            {isAdmin ? (
-                              <>
-                                <div className="font-semibold text-sm">{appointment.patients?.full_name || "Hasta"}</div>
-                                {appointment.patients?.phone && appointment.patients.phone !== "0000000000" && (
-                                  <div className="text-xs opacity-80">{appointment.patients.phone}</div>
-                                )}
-                                {isCancelled && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); handleFreeSlot(appointment) }}
-                                    disabled={isDeleting}
-                                    className="mt-1 inline-flex items-center gap-1 rounded bg-gray-700 px-2 py-1 text-[11px] font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                    Sil &amp; Boşalt
-                                  </button>
-                                )}
-                              </>
-                            ) : (
-                              <div className="font-semibold text-sm">Dolu</div>
-                            )}
-                          </div>
-                        )
-                      }
-
-                      return (
+                      const button = (
                         <button
                           key={time}
-                          disabled={isPast}
-                          onClick={() => handleSlotClick(selectedDate, time, schedule.doctor_id)}
-                          className={`w-full min-h-[44px] rounded-xl border-2 px-4 py-2 font-medium transition-all duration-200 ${
-                            isPast
-                              ? "border-muted bg-muted/50 text-muted-foreground/50 cursor-not-allowed"
-                              : isSelectedSlot
-                                ? "border-primary bg-primary text-primary-foreground shadow-lg scale-[1.02]"
-                                : "border-border bg-background hover:border-primary/50 hover:shadow-md active:scale-[0.98]"
+                          disabled={isPast && !isBooked}
+                          onClick={() => !isBooked && handleSlotClick(selectedDate, time, schedule.doctor_id)}
+                          className={`w-full min-h-[52px] rounded-xl border-2 px-6 py-3 font-medium transition-all duration-200 ${
+                            isBooked
+                              ? "border-red-200 bg-red-50 text-red-700 cursor-pointer"
+                              : isPast
+                                ? "border-muted bg-muted/50 text-muted-foreground/50 cursor-not-allowed"
+                                : isSelectedSlot
+                                  ? "border-primary bg-primary text-primary-foreground shadow-lg scale-[1.02]"
+                                  : "border-border bg-background hover:border-primary/50 hover:shadow-md active:scale-[0.98]"
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-base">{time}</span>
-                            {isSelectedSlot && <Check className="h-5 w-5" />}
-                          </div>
+                          {isBooked ? (
+                            <div className="flex flex-col items-start gap-0.5 w-full">
+                              <div className="text-xs font-bold opacity-70">{time}</div>
+                              <div className="font-semibold text-sm">{appointment?.patients?.full_name || "Hasta"}</div>
+                              {appointment?.patients?.phone && appointment.patients.phone !== "0000000000" && (
+                                <div className="text-xs opacity-80">{appointment.patients.phone}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className="text-base">{time}</span>
+                              {isSelectedSlot && <Check className="h-5 w-5" />}
+                            </div>
+                          )}
                         </button>
                       )
+
+                      return button
                     })}
                   </div>
                 )
@@ -1064,14 +447,6 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
               <span>Dolu</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="h-4 w-4 rounded border bg-amber-500" />
-              <span>Ara Randevu</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-4 w-4 rounded border bg-gray-400" />
-              <span>İptal</span>
-            </div>
-            <div className="flex items-center gap-1">
               <div className="h-4 w-4 rounded border bg-muted opacity-50" />
               <span>Geçmiş</span>
             </div>
@@ -1079,7 +454,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         </CardContent>
       </Card>
 
-      {selectedSlot && !embedded && (
+      {selectedSlot && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background p-4 shadow-lg animate-in slide-in-from-bottom-5 duration-300">
           <div className="max-w-md mx-auto space-y-3">
             <div className="flex items-center justify-between text-sm">
@@ -1113,9 +488,6 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         doctorName={doctor?.name || ""}
         onSuccess={handleWizardSuccess}
         preselectedType={preselectedType}
-        fetalBebekSayisi={fetalBebekSayisi}
-        isAdmin={isAdmin}
-        prefilledPatient={prefilledPatient}
       />
     </div>
   )

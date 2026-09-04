@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { getAdminAuth } from "@/lib/admin-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
@@ -10,19 +9,30 @@ import PatientsList from "@/components/admin/patients-list"
 export default async function PatientsPage() {
   const supabase = await createClient()
 
-  // Cache'li auth (layout ile paylasilir) + hasta listesi PARALEL cekilir
-  const [{ user, adminUser }, { data: patients, error: patientsError, count: patientsCount }] = await Promise.all([
-    getAdminAuth(),
-    supabase
-      .from("patients")
-      .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(0, 9999),
-  ])
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!user || !adminUser) {
+  if (userError || !user) {
     redirect("/auth/admin/login")
   }
+
+  // Verify admin access
+  const { data: adminUser, error: adminError } = await supabase
+    .from("admin_users")
+    .select("*")
+    .eq("id", user.id)
+    .single()
+
+  if (adminError || !adminUser) {
+    redirect("/auth/admin/login")
+  }
+
+  const { data: patients } = await supabase
+    .from("patients")
+    .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
+    .order("created_at", { ascending: false })
 
   const handleSignOut = async () => {
     "use server"

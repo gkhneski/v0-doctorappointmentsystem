@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 import { validateAppointmentToken, markTokenAsUsed } from "@/lib/generate-appointment-token"
 
 export async function POST(request: NextRequest) {

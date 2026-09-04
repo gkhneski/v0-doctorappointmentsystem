@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function PUT(request: Request) {

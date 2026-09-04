@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
 type Props = {
@@ -37,7 +37,6 @@ export default function KvkkConsentDialog({ isOpen, onClose, onAccept }: Props) 
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>KVKK Aydınlatma Metni</DialogTitle>
-          <DialogDescription className="sr-only">Kişisel verilerin korunması hakkında aydınlatma metni</DialogDescription>
         </DialogHeader>
 
         <div

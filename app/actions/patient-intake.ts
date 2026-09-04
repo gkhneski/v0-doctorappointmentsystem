@@ -1,6 +1,6 @@
 "use server"
 
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 
 type IntakeFlowAction =
   | { action: "verify_sms"; phone: string; smsCode: string; appointmentData: any }

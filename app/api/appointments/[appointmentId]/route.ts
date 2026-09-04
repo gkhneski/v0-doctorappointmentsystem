@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 import { sendRescheduleSMS } from "@/lib/send-reschedule-sms"
 
 export async function PATCH(
@@ -9,7 +9,9 @@ export async function PATCH(
   try {
     const { appointmentId } = await params
     const body = await request.json()
-    const { appointment_date, appointment_time, appointment_type, notes, status } = body
+    const { appointment_date, appointment_time, appointment_type, notes } = body
+
+    console.log("[v0] Updating appointment:", appointmentId, body)
 
     const supabase = createServiceRoleClient()
 
@@ -18,7 +20,6 @@ export async function PATCH(
     if (appointment_time) updateData.appointment_time = appointment_time
     if (appointment_type) updateData.appointment_type = appointment_type
     if (notes !== undefined) updateData.notes = notes
-    if (status) updateData.status = status
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(

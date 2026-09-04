@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -13,17 +13,7 @@ import { Clock, Edit, Save, X, ChevronDown, ChevronUp, Plus, Trash2, RotateCcw }
 import { useRouter } from "next/navigation"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { resetSchedulesForMonth } from "@/app/actions/reset-schedules"
-
-// Sadece 00/15/30/45 dakika seçenekleri - 08:00'dan 20:00'a kadar
-const TIME_SLOTS: string[] = []
-for (let h = 8; h <= 20; h++) {
-  for (const m of [0, 15, 30, 45]) {
-    if (h === 20 && m > 0) break
-    TIME_SLOTS.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`)
-  }
-}
 
 type Doctor = {
   id: string
@@ -99,10 +89,6 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
   const [editMode, setEditMode] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isDeletingAll, setIsDeletingAll] = useState(false)
-
-  // Alert Dialog state
-  const [alertType, setAlertType] = useState<"generate" | "reset" | "delete" | null>(null)
-  const [showAlert, setShowAlert] = useState(false)
   
   // Weekly Pattern states
   const [showPatternTab, setShowPatternTab] = useState(false)
@@ -173,20 +159,24 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
     : null
 
   const handleGenerateMonth = async () => {
-    setAlertType("generate")
-    setShowAlert(true)
-  }
+    if (
+      !confirm(
+        `${MONTHS[selectedMonth].label} ${selectedYear} için tüm iş günlerine program oluşturulacak. Devam edilsin mi?`,
+      )
+    ) {
+      return
+    }
 
-  const confirmGenerateMonth = async () => {
-    setShowAlert(false)
     setIsGenerating(true)
     setError(null)
     const supabase = createClient()
 
     try {
+      // Pazartesi=1,Salı=2,Çarşamba=3,Perşembe=4,Cuma=5
+      // JS getDay(): Paz=0,Pzt=1,Sal=2,Çar=3,Per=4,Cum=5
       const getPatternForDate = (dateStr: string) => {
-        const jsDay = new Date(dateStr).getDay()
-        const dayOfWeek = jsDay === 0 ? 7 : jsDay
+        const jsDay = new Date(dateStr).getDay() // 0=Pazar,1=Pzt,...
+        const dayOfWeek = jsDay === 0 ? 7 : jsDay // convert to 1=Pzt...7=Pazar
         return weeklyPatterns.find((p) => p.day_of_week === dayOfWeek)
       }
 
@@ -203,7 +193,7 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
 
       const { error: insertError } = await supabase.from("doctor_schedules").upsert(weekdaysToGenerate, {
         onConflict: "doctor_id,schedule_date",
-        ignoreDuplicates: false,
+        ignoreDuplicates: false, // Update if exists
       })
 
       if (insertError) throw insertError
@@ -346,12 +336,14 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
   }
 
   const handleDeleteMonth = async () => {
-    setAlertType("delete")
-    setShowAlert(true)
-  }
+    if (
+      !confirm(
+        `${MONTHS[selectedMonth].label} ${selectedYear} ayındaki TÜM programlar silinecek. Bu işlem geri alınamaz. Devam edilsin mi?`,
+      )
+    ) {
+      return
+    }
 
-  const confirmDeleteMonth = async () => {
-    setShowAlert(false)
     setIsDeletingAll(true)
     setError(null)
     const supabase = createClient()
@@ -387,12 +379,14 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
   }
 
   const handleResetMonth = async () => {
-    setAlertType("reset")
-    setShowAlert(true)
-  }
+    if (
+      !confirm(
+        `${MONTHS[selectedMonth].label} ${selectedYear} ayındaki TÜM programlar ve randevular silinip sadece iş günleri için yeniden oluşturulacak. Devam edilsin mi?`,
+      )
+    ) {
+      return
+    }
 
-  const confirmResetMonth = async () => {
-    setShowAlert(false)
     setIsGenerating(true)
     setError(null)
 
@@ -549,6 +543,8 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
         </div>
       </div>
 
+      {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
       <Card>
         <CardHeader>
           <CardTitle>
@@ -568,8 +564,9 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
             </TableHeader>
             <TableBody>
               {schedulesByDate.map(({ date, schedule }) => (
-                <React.Fragment key={date}>
+                <>
                   <TableRow
+                    key={date}
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => handleRowClick(date)}
                   >
@@ -642,30 +639,16 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
                                   <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="space-y-2">
                                       <Label>Başlangıç Saati</Label>
-                                      <Select value={startTime} onValueChange={setStartTime}>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Saat seçin" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {TIME_SLOTS.map((t) => (
-                                            <SelectItem key={t} value={t}>{t}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                      <Input
+                                        type="time"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                      />
                                     </div>
 
                                     <div className="space-y-2">
                                       <Label>Bitiş Saati</Label>
-                                      <Select value={endTime} onValueChange={setEndTime}>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Saat seçin" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {TIME_SLOTS.map((t) => (
-                                            <SelectItem key={t} value={t}>{t}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                      <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
                                     </div>
                                   </div>
 
@@ -707,30 +690,12 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
                               <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
                                   <Label>Başlangıç Saati</Label>
-                                  <Select value={startTime} onValueChange={setStartTime}>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Saat seçin" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {TIME_SLOTS.map((t) => (
-                                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
                                 </div>
 
                                 <div className="space-y-2">
                                   <Label>Bitiş Saati</Label>
-                                  <Select value={endTime} onValueChange={setEndTime}>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Saat seçin" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {TIME_SLOTS.map((t) => (
-                                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
                                 </div>
                               </div>
 
@@ -757,68 +722,12 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
                       </TableCell>
                     </TableRow>
                   )}
-                </React.Fragment>
+                </>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      {/* Confirmation AlertDialog */}
-      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-        <AlertDialogContent>
-          {alertType === "generate" && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-lg">Program Oluştur?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  <strong>{MONTHS[selectedMonth].label} {selectedYear}</strong> icin tum is gunlerine ({monthWeekdays.length} gun) program olusturulacak. Bu islem mevcut programlari uzerine yazacaktir.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>İptal</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmGenerateMonth} className="bg-blue-600 hover:bg-blue-700">
-                  Oluştur
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-
-          {alertType === "reset" && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-lg text-orange-600">Programlari Sifirla?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  <strong>{MONTHS[selectedMonth].label} {selectedYear}</strong> ayindaki TUM programlar ve buna bagli randevular silinip, sadece hafta sonu haric is gunleri icin yeniden olusturulacak. Bu islem geri alinamaz!
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>İptal</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmResetMonth} className="bg-orange-600 hover:bg-orange-700">
-                  Sıfırla
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-
-          {alertType === "delete" && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-lg text-red-600">TUM Programlari Sil?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  <strong>{MONTHS[selectedMonth].label} {selectedYear}</strong> ayindaki TUM programlar ve bagli randevular silinecek. <strong className="text-red-700">Bu islem geri alinamaz!</strong>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>İptal Et</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDeleteMonth} className="bg-red-600 hover:bg-red-700">
-                  Tümünü Sil
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

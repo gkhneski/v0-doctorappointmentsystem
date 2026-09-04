@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Camera, X, Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@supabase/ssr"
 import { toast } from "sonner"
 
 interface PatientPhotoUploadProps {
@@ -30,8 +30,10 @@ export function PatientPhotoUpload({
   const [photoUrl, setPhotoUrl] = useState(currentPhotoUrl)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-  // Use singleton client
-  const supabase = createClient()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]

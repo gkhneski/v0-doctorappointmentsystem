@@ -1,7 +1,6 @@
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
-import { recordAppointmentAudit } from "@/lib/appointment-audit"
 
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
@@ -33,14 +32,13 @@ async function sendSMS(phone: string, message: string) {
 
 export async function GET(request: Request) {
   try {
-    // CRON_SECRET opsiyoneldir - Vercel Cron Jobs kullanildiginda otomatik eklenir
-    // Manuel test icin veya CRON_SECRET yoksa dogrudan calisir
+    // Verify cron secret (Vercel otomatik olarak CRON_SECRET olusturur ve gonderir)
     const cronSecret = process.env.CRON_SECRET
-    const authHeader = request.headers.get("authorization")
-    
-    // Sadece CRON_SECRET varsa ve authorization header varsa kontrol et
-    if (cronSecret && authHeader && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (cronSecret) {
+      const authHeader = request.headers.get("authorization")
+      if (authHeader !== `Bearer ${cronSecret}`) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
     }
 
     const supabase = await createServiceRoleClient()
@@ -117,19 +115,6 @@ export async function GET(request: Request) {
           channel: "sms",
           status: "sent",
           phone_number: appointment.patients?.phone,
-        })
-
-        await recordAppointmentAudit({
-          patientId: appointment.patient_id,
-          appointmentId: appointment.id,
-          eventType: "reminder_sent",
-          patientName: appointment.patients?.full_name || "Bilinmeyen Hasta",
-          patientPhone: appointment.patients?.phone,
-          appointmentDate: appointment.appointment_date,
-          appointmentTime: appointment.appointment_time,
-          messageText: message,
-          channel: "sms",
-          deliveryStatus: "sent",
         })
 
         successCount++

@@ -1,761 +1,729 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-import { Spinner } from "@/components/ui/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar, Trash2, Search, X, CalendarDays, LayoutGrid, Printer } from "lucide-react"
+import { Calendar, Clock, User, Phone, Check, X, ExternalLink, FileText, Trash2, Pencil, Printer } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
-import WeeklyCalendar from "@/components/weekly-calendar"
+import DocumentStatusBadge from "@/components/admin/document-status-badge"
+import Link from "next/link"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
-// Hooks
-import { useAppointmentActions } from "@/components/admin/appointments/hooks/use-appointment-actions"
-import { usePatientVerification } from "@/components/admin/appointments/hooks/use-patient-verification"
-import type { Appointment } from "@/components/admin/appointments/hooks/use-appointment-actions"
-
-// Dialogs
-import { DeleteDialog } from "@/components/admin/appointments/dialogs/delete-dialog"
-import { SmsDialog } from "@/components/admin/appointments/dialogs/sms-dialog"
-import { PatientDialog } from "@/components/admin/appointments/dialogs/patient-dialog"
-import { EditDialog } from "@/components/admin/appointments/dialogs/edit-dialog"
-
-// Components
-const DetailPanel = lazy(() => import("./appointment-detail-panel").then(m => ({ default: m.AppointmentDetailPanel })))
-
-const APPOINTMENT_TYPES: Record<string, { label: string; color: string }> = {
-  "ilk-muayene": { label: "İlk Muayene", color: "bg-blue-100 text-blue-800" },
-  "kontrol-takip": { label: "Kontrol / Takip", color: "bg-green-100 text-green-800" },
-  "gebelik-istemi-infertilite": { label: "Gebelik İstemi", color: "bg-purple-100 text-purple-800" },
-  "jinekolojik-muayene": { label: "Jinekolojik Muayene", color: "bg-pink-100 text-pink-800" },
-  "ayrintili-fetal-ultrason": { label: "Ayrıntılı Fetal Ultrason", color: "bg-indigo-100 text-indigo-800" },
-  "gebelik-takibi": { label: "Gebelik Takibi", color: "bg-teal-100 text-teal-800" },
-  "asilik-tup-bebek": { label: "Aşılama / Tüp Bebek", color: "bg-rose-100 text-rose-800" },
-  diger: { label: "Diğer", color: "bg-gray-100 text-gray-800" },
+type MedicalAlert = {
+  type: string
+  severity: "low" | "moderate" | "high" | "critical"
+  notes?: string
 }
 
-type CalendarDoctor = {
+type Appointment = {
   id: string
-  name: string
-  specialization: string
-  working_hours?: any
+  appointment_date: string
+  appointment_time: string
+  status: string
+  confirmation_status?: string | null
+  notes: string | null
+  appointment_type: string | null
+  doctors: {
+    name: string
+    specialization: string
+    email: string
+  } | null
+  patients: {
+    id: string
+    full_name: string
+    phone: string
+    tc_no: string
+    date_of_birth: string | null
+    kvkk_approved?: boolean
+    kvkk_approved_at?: string | null
+    kvkk_approved_via?: string | null
+    medical_alerts?: MedicalAlert[]
+  } | null
 }
 
-type Props = {
-  appointments: Appointment[]
-  doctor?: CalendarDoctor | null
-  schedules?: any[]
-}
-
-export default function AppointmentsList({ appointments: initialAppointments, doctor = null, schedules = [] }: Props) {
+export default function AppointmentsList({ appointments }: { appointments: Appointment[] }) {
+  const [isUpdating, setIsUpdating] = useState<string | null>(null)
+  const [appointmentTypeFilter, setAppointmentTypeFilter] = useState<string>("all")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | null>(null)
+  const [editDate, setEditDate] = useState("")
+  const [editTime, setEditTime] = useState("")
+  const [editTcNo, setEditTcNo] = useState("")
+  const [editPhone, setEditPhone] = useState("")
+  const [editBirthDate, setEditBirthDate] = useState("")
+  const [editAppointmentType, setEditAppointmentType] = useState("")
+  const [editFullName, setEditFullName] = useState("")
+  const [editNotes, setEditNotes] = useState("")
+  const [selectedDateFilter, setSelectedDateFilter] = useState<string>("")
+  const [isEditing, setIsEditing] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
 
-  // Görünüm modu: takvim (varsayilan, doktor+program varsa) veya liste
-  const calendarAvailable = !!doctor
-  const [viewMode, setViewMode] = useState<"calendar" | "list">(calendarAvailable ? "calendar" : "list")
-  const [calendarView, setCalendarView] = useState<"day" | "week" | "2week">("week")
-  // Hasta aramasından "randevu gününe git" isteği
-  const [jumpToDate, setJumpToDate] = useState<{ date: string; nonce: number } | null>(null)
+  // Get unique appointment types for filter - memoized to avoid re-render loop
+  const appointmentTypes = useMemo(
+    () => Array.from(new Set(appointments.map((a) => a.appointment_type).filter(Boolean))),
+    [appointments]
+  )
 
-  // Hasta hızlı aramasında bir randevuya tıklanınca takvimi o günün görünümüne getir
-  useEffect(() => {
-    function handleJump(e: Event) {
-      const date = (e as CustomEvent<{ date?: string }>).detail?.date
-      if (!date) return
-      if (calendarAvailable) setViewMode("calendar")
-      setCalendarView("day")
-      setJumpToDate({ date, nonce: Date.now() })
+  const getAppointmentTypeLabel = (type: string | null) => {
+    if (!type) return "Belirtilmemiş"
+    
+    // Map slug to display label
+    const typeMap: Record<string, string> = {
+      "asilama-tup-bebek": "Aşılama / Tüp Bebek",
+      "gebelik-takibi": "Gebelik Takibi",
+      "gebelik-istemi-infertilite": "Gebelik İstemi / İnfertilite",
+      "jinekolojik-muayene": "Jinekolojik Muayene",
+      "kontrol-takip": "Kontrol / Takip",
+      "ayrintili-fetal-ultrason": "Ayrıntılı Fetal Ultrason",
     }
-    window.addEventListener("admin:calendar-jump", handleJump)
-    return () => window.removeEventListener("admin:calendar-jump", handleJump)
-  }, [calendarAvailable])
+    
+    return typeMap[type] || type
+  }
 
-  // Appointment actions hook
-  const { isUpdating, deleteId, setDeleteId, handleDelete } = useAppointmentActions(setAppointments, setSelectedAppointment)
+  const getAppointmentTypeColor = (type: string | null) => {
+    if (!type) return "bg-gray-100 text-gray-800"
+    
+    // Color coding based on appointment type
+    if (type.includes("Tüp Bebek") || type.includes("Aşılama")) return "bg-purple-100 text-purple-800"
+    if (type.includes("Gebelik")) return "bg-pink-100 text-pink-800"
+    if (type.includes("Ultrason") || type.includes("Fetal")) return "bg-blue-100 text-blue-800"
+    if (type.includes("Muayene") || type.includes("Jinekolojik")) return "bg-teal-100 text-teal-800"
+    if (type.includes("Kontrol") || type.includes("Takip")) return "bg-green-100 text-green-800"
+    if (type.includes("Acil")) return "bg-red-100 text-red-800"
+    return "bg-indigo-100 text-indigo-800"
+  }
 
-  // Patient verification hook
-  const {
-    verificationStep,
-    setVerificationStep,
-    verificationCode,
-    setVerificationCode,
-    verifyingCode,
-    completingInfo,
-    sendVerificationCode: sendVerificationCodeFn,
-    verifyCode: verifyCodeFn,
-  } = usePatientVerification(setAppointments, setSelectedAppointment)
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((appointment) => {
+      const typeMatch =
+        appointmentTypeFilter === "all" || appointment.appointment_type === appointmentTypeFilter
+      const dateMatch =
+        !selectedDateFilter || appointment.appointment_date === selectedDateFilter
+      return typeMatch && dateMatch
+    })
+  }, [appointments, appointmentTypeFilter, selectedDateFilter])
 
-  // SMS dialog state
-  const [smsDialogOpen, setSmsDialogOpen] = useState(false)
-  const [smsPhone, setSmsPhone] = useState("")
-  const [smsMessage, setSmsMessage] = useState("")
-  const [smsSending, setSmsSending] = useState(false)
-
-  // Patient dialog state
-  const [patientDialogOpen, setPatientDialogOpen] = useState(false)
-  const [completeFormData, setCompleteFormData] = useState({ tc_no: "", phone: "", date_of_birth: "" })
-
-  // Edit dialog state
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-
-  // Delete dialog state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("")
-
-  // Filters
-  const [selectedDateFilter, setSelectedDateFilter] = useState<string>("")
-  const [appointmentTypeFilter, setAppointmentTypeFilter] = useState<string>("all")
-  // Takvimden günlük yazdırma için seçilen tarih (varsayılan bugün)
-  const [printDate, setPrintDate] = useState<string>(() => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-  })
-
-  // Supabase realtime subscription — appointments tablosu degisince listeyi ve secili randevuyu guncelle
-  useEffect(() => {
+  const updateStatus = async (appointmentId: string, newStatus: string) => {
+    setIsUpdating(appointmentId)
     const supabase = createClient()
 
-    const channel = supabase
-      .channel(`appointments-realtime-${Math.random().toString(36).slice(2)}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "appointments" },
-        async (payload) => {
-          if (payload.eventType === "UPDATE" || payload.eventType === "INSERT") {
-            // Degisen/yeni randevuyu Supabase'den tam veriyle cek (patient bilgisi dahil)
-            const { data: fresh } = await supabase
-              .from("appointments")
-              .select(`
-                *,
-                patients (id, full_name, phone, tc_no, date_of_birth, email),
-                doctors (id, full_name)
-              `)
-              .eq("id", payload.new.id)
-              .single()
-
-            if (fresh) {
-              setAppointments(prev => {
-                const exists = prev.some(a => a.id === fresh.id)
-                // Yeni randevu ise listeye ekle, mevcutsa guncelle
-                return exists
-                  ? prev.map(a => (a.id === fresh.id ? { ...a, ...fresh } : a))
-                  : [...prev, fresh as any]
-              })
-              // Eger bu secili randevuysa onu da guncelle
-              setSelectedAppointment(prev =>
-                prev?.id === fresh.id ? { ...prev, ...fresh } : prev
-              )
-            }
-          } else if (payload.eventType === "DELETE") {
-            // Silinen randevuyu listeden cikar
-            const removedId = (payload.old as { id?: string })?.id
-            if (removedId) {
-              setAppointments(prev => prev.filter(a => a.id !== removedId))
-              setSelectedAppointment(prev => (prev?.id === removedId ? null : prev))
-            }
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
-
-  // router.refresh() sonrasi server'dan gelen taze veriyi state'e yansit
-  // (realtime kacirilan durumlar icin guvenlik agi)
-  useEffect(() => {
-    setAppointments(initialAppointments)
-  }, [initialAppointments])
-
-  // Sync selectedAppointment with appointments list
-  useEffect(() => {
-    if (selectedAppointment) {
-      const updated = appointments.find(a => a.id === selectedAppointment.id)
-      if (updated) {
-        setSelectedAppointment(prev =>
-          prev && JSON.stringify(prev) !== JSON.stringify(updated) ? updated : prev
-        )
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appointments])
-
-  // Filtered appointments - tarih, tur ve arama filtresi
-  const filteredAppointments = appointments.filter((a) => {
-    const matchesDate = !selectedDateFilter || a.appointment_date === selectedDateFilter
-    const matchesType = appointmentTypeFilter === "all" || a.appointment_type === appointmentTypeFilter
-    
-    // Search filter - hasta adi, telefon, TC ile arama
-    const query = searchQuery.toLowerCase().trim()
-    const matchesSearch = !query || 
-      a.patients?.full_name?.toLowerCase().includes(query) ||
-      a.patients?.phone?.includes(query) ||
-      a.patients?.tc_no?.toLowerCase().includes(query) ||
-      a.notes?.toLowerCase().includes(query)
-    
-    return matchesDate && matchesType && matchesSearch
-  })
-
-  // SMS gönder
-  const sendSms = async () => {
-    if (!smsPhone || !smsMessage) return
-    setSmsSending(true)
     try {
-      const response = await fetch("/api/sms/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: smsPhone, message: smsMessage }),
-      })
-      if (response.ok) {
-        setSmsDialogOpen(false)
-        setSmsMessage("")
-        toast({ title: "SMS Gönderildi", description: "Mesaj başarıyla gönderildi" })
-      } else {
-        toast({ title: "Hata", description: "SMS gönderilemedi", variant: "destructive" })
-      }
-    } catch (error: any) {
-      toast({ title: "Hata", description: error.message || "SMS gönderilemedi", variant: "destructive" })
+      const { error } = await supabase
+        .from("appointments")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", appointmentId)
+
+      if (error) throw error
+
+      router.refresh()
+    } catch (error) {
+      console.error("[v0] Randevu güncellenirken hata:", error)
     } finally {
-      setSmsSending(false)
+      setIsUpdating(null)
     }
   }
 
-  // Send verification code wrapper
-  const sendVerificationCode = async () => {
-    if (!selectedAppointment) return
-    await sendVerificationCodeFn(selectedAppointment, completeFormData)
+  const handleEditClick = (appointment: Appointment) => {
+  setAppointmentToEdit(appointment)
+  setEditDate(appointment.appointment_date)
+  setEditTime(appointment.appointment_time)
+  setEditTcNo(appointment.patients?.tc_no?.startsWith("TEMP_") ? "" : appointment.patients?.tc_no || "")
+  setEditPhone(appointment.patients?.phone === "0000000000" ? "" : appointment.patients?.phone || "")
+  const dob = appointment.patients?.date_of_birth
+  setEditBirthDate(dob && dob !== "1900-01-01" ? dob : "")
+  setEditAppointmentType(appointment.appointment_type || "kontrol-takip")
+  setEditFullName(appointment.patients?.full_name || "")
+  setEditNotes(appointment.notes || "")
+  setEditDialogOpen(true)
   }
 
-  // Verify code wrapper
-  const verifyCode = async () => {
-    if (!selectedAppointment) return
-    await verifyCodeFn(selectedAppointment, verificationCode, completeFormData, appointments)
+  const handleEditConfirm = async () => {
+    if (!appointmentToEdit) return
+
+    setIsEditing(true)
+
+    try {
+      // Hasta bilgilerini güncelle (TC veya telefon değiştiyse)
+      const nameChanged = editFullName && editFullName !== appointmentToEdit.patients?.full_name
+      const patientNeedsUpdate = editTcNo || editPhone || editBirthDate || nameChanged
+      if (patientNeedsUpdate && appointmentToEdit.patients) {
+        const patientUpdate: any = {}
+        if (editTcNo) patientUpdate.tc_no = editTcNo
+        if (editPhone) patientUpdate.phone = editPhone
+        if (editBirthDate) patientUpdate.date_of_birth = editBirthDate
+        if (nameChanged) patientUpdate.full_name = editFullName
+
+        await fetch(`/api/patients/${appointmentToEdit.patients?.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patientUpdate),
+        })
+      }
+
+      // Randevu tarih/saat güncelle
+      const response = await fetch(`/api/appointments/${appointmentToEdit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+  appointment_date: editDate,
+  appointment_time: editTime,
+  appointment_type: editAppointmentType,
+  notes: editNotes,
+  }),
+      })
+
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Sunucu hatasi")
+      }
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Randevu guncellenemedi")
+      }
+
+      router.refresh()
+      setEditDialogOpen(false)
+      setAppointmentToEdit(null)
+      const hadPatientUpdate = !!(editTcNo || editPhone || editBirthDate)
+      toast({
+        title: "Kaydedildi",
+        description: hadPatientUpdate
+          ? "Hasta bilgileri ve randevu guncellendi."
+          : "Randevu guncellendi.",
+      })
+    } catch (error) {
+      console.error("[v0] Randevu guncellenirken hata:", error)
+      toast({ title: "Hata", description: "Randevu guncellenirken bir hata olustu.", variant: "destructive" })
+    } finally {
+      setIsEditing(false)
+    }
   }
 
-  const handlePrint = (printDateOverride?: string) => {
-    // printDateOverride verilirse o güne ait randevuları yazdır (takvimden günlük yazdırma),
-    // verilmezse liste görünümündeki filtrelenmiş randevuları yazdır
-    const listToPrint = printDateOverride
-      ? appointments
-          .filter((a) => a.appointment_date === printDateOverride)
-          .sort((a, b) => (a.appointment_time || "").localeCompare(b.appointment_time || ""))
-      : filteredAppointments
-    // Sadece liste tablosunu yazdır
-    const shortTypeNames: Record<string, string> = {
-      "asilama-tup-bebek": "IVF kontrol",
-      "ayrintili-fetal-ultrason": "det kontrol",
-      "gebelik-takibi": "gebe kontrol",
-      "gebelik-istemi-infertilite": "gebelik istemi",
-      "jinekolojik-muayene": "G.M",
-      "kontrol-takip": "kontrol",
-      "acil-durum": "acil",
-      "iui-kontrol": "IUI kontrol",
-      "op-sonrasi-kontrol": "op sonrasi kontrol",
-      "serklaj-sonrasi-kontrol": "serklaj sonrasi kontrol",
-      "dty": "DTY",
-      "mens": "mens",
-      "gebe-muayene": "gebe muayene",
-    }
+ const handleDeleteClick = (appointment: Appointment) => {
+  setAppointmentToDelete(appointment)
+  setDeleteDialogOpen(true)
+  }
 
-    const getShortTypeName = (appointment: Appointment): string => {
-      if (appointment.print_type) return appointment.print_type
-      if (!appointment.appointment_type) return "-"
-      return shortTypeNames[appointment.appointment_type] || appointment.appointment_type.replace(/-/g, " ")
-    }
+  const handleDeleteConfirm = async () => {
+    if (!appointmentToDelete) return
 
-    const labelDate = printDateOverride || selectedDateFilter
-    const dateLabel = labelDate
-      ? " - " + new Date(labelDate).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+    setIsDeleting(true)
+
+    try {
+      const response = await fetch(`/api/appointments/${appointmentToDelete.id}`, {
+        method: "DELETE",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Randevu silinemedi")
+      }
+
+      router.refresh()
+      setDeleteDialogOpen(false)
+      setAppointmentToDelete(null)
+    } catch (error) {
+      console.error("[v0] Randevu silinirken hata:", error)
+      alert("Randevu silinirken bir hata oluştu")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      confirmed: "Onaylandı",
+      pending: "Beklemede",
+      cancelled: "İptal Edildi",
+      completed: "Tamamlandı",
+    }
+    return statusMap[status] || status
+  }
+
+  const handleDocumentClick = (appointmentId: string) => {
+    router.push(`/admin/appointments/${appointmentId}`)
+  }
+
+  const handlePrint = () => {
+    const filteredAppts = selectedDateFilter
+      ? appointments.filter((a) => a.appointment_date === selectedDateFilter)
+      : appointments
+
+    const dateLabel = selectedDateFilter
+      ? " - " + new Date(selectedDateFilter).toLocaleDateString("tr-TR")
       : ""
 
-    const rows = listToPrint
-      .map((a, index) => {
-        const no = index + 1
+    const rows = filteredAppts
+      .map((a) => {
         const time = a.appointment_time || "-"
         const name = a.patients?.full_name || "-"
-        // Yazdırma tipi seçildiyse onu göster, seçilmediyse direkt appointment_type göster (kısaltma yok)
-        const type = (a.print_type && a.print_type !== "") ? a.print_type : (a.appointment_type || "-")
-        const paymentDisplay = a.payment_status === "paid" && a.payment_amount 
-          ? a.payment_amount + " TL" 
-          : "Kontrol"
-        // Tüm randevularda notları göster (varsa)
-        const notes = a.notes || ""
-        return `<tr>
-          <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold; width: 30px;">${no}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; width: 70px;">${time}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${name}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; width: 100px;">${type}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; width: 70px;">${paymentDisplay}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; min-width: 200px;">${notes}</td>
-        </tr>`
+        const type = (a.appointment_type || "-").replace(/-/g, " ")
+        return "<tr><td>" + time + "</td><td>" + name + "</td><td>" + type + "</td></tr>"
       })
       .join("")
 
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Randevu Listesi</title>
-        <style>
-          * { margin: 0; padding: 0; }
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            color: #333;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-          }
-          .header h1 {
-            font-size: 18px;
-            margin-bottom: 5px;
-            font-weight: 600;
-          }
-          .header p {
-            font-size: 12px;
-            color: #666;
-            margin: 3px 0;
-          }
-          .count {
-            font-size: 12px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 15px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-          }
-          th {
-            background-color: #f5f5f5;
-            border: 1px solid #ddd;
-            padding: 10px 8px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-          }
-          td {
-            border: 1px solid #ddd;
-            padding: 8px;
-          }
-          tr:nth-child(even) {
-            background-color: #fafafa;
-          }
-          @media print {
-            body { padding: 10px; }
-            .header { margin-bottom: 15px; }
-            table { font-size: 10px; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>Randevu Listesi${dateLabel}</h1>
-          <p>Prof. Dr. Eray Çalışkan - Kadın Hastalıkları ve Doğum</p>
-          <div class="count">Toplam: ${listToPrint.length} hasta</div>
-        </div>
-        
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 30px;">No</th>
-              <th style="width: 70px;">Saat</th>
-              <th>Hasta</th>
-              <th style="width: 100px;">Tür</th>
-              <th style="width: 70px;">Ödeme</th>
-              <th style="min-width: 200px;">Not</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `
+    const noteLines = Array.from({ length: 6 })
+      .map(() => "<tr><td style='height:28px;border:1px solid #ccc;padding:4px 8px;'>&nbsp;</td></tr>")
+      .join("")
 
-    const printWindow = window.open("", "", "width=1200,height=800")
+    const printContent =
+      "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Randevu Listesi</title>" +
+      "<style>body{font-family:Arial,sans-serif;margin:20px}" +
+      "h1{text-align:center;margin-bottom:4px;font-size:18px}" +
+      "p.subtitle{text-align:center;color:#666;margin-bottom:16px;font-size:13px}" +
+      "table{width:100%;border-collapse:collapse;margin-bottom:32px}" +
+      "th,td{border:1px solid #ddd;padding:10px 12px;text-align:left;font-size:13px}" +
+      "th{background-color:#f2f2f2;font-weight:bold}" +
+      "tr:nth-child(even){background-color:#f9f9f9}" +
+      "h2{font-size:14px;margin-bottom:8px;margin-top:0}" +
+      ".notes-table td{height:28px}" +
+      "@media print{button{display:none}}" +
+      "</style></head><body>" +
+      "<h1>Randevu Listesi" + dateLabel + "</h1>" +
+      "<p class='subtitle'>Prof. Dr. Eray Calıskan - Kadin Hastaliklari ve Dogum</p>" +
+      "<table><thead><tr><th>Saat</th><th>Isim Soyisim</th><th>Randevu Tipi</th></tr></thead>" +
+      "<tbody>" + rows + "</tbody></table>" +
+      "<h2>Notlar</h2>" +
+      "<table class='notes-table'><tbody>" + noteLines + "</tbody></table>" +
+      "</body></html>"
+
+    const printWindow = window.open("", "_blank")
     if (printWindow) {
       printWindow.document.write(printContent)
       printWindow.document.close()
-      setTimeout(() => {
-        printWindow.print()
-      }, 250)
+      printWindow.print()
     }
   }
 
-  const detailPanelInner = selectedAppointment ? (
-    <Suspense fallback={<div className="rounded-lg border border-gray-200 p-4 flex items-center justify-center h-96"><Spinner className="h-8 w-8" /></div>}>
-      <DetailPanel
-        appointment={selectedAppointment}
-        onSmsClick={(phone) => {
-          setSmsPhone(phone)
-          setSmsDialogOpen(true)
-        }}
-        onPatientClick={() => {
-          const p = selectedAppointment?.patients as any
-          setCompleteFormData({
-            tc_no: p?.tc_no?.startsWith("TEMP_") ? "" : (p?.tc_no || ""),
-            phone: p?.phone === "0000000000" ? "" : (p?.phone || ""),
-            date_of_birth: p?.date_of_birth || "",
-          })
-          setVerificationStep("form")
-          setVerificationCode("")
-          setPatientDialogOpen(true)
-        }}
-        onEditClick={() => setEditDialogOpen(true)}
-        onUpdatePrintType={(id, type) => {
-          setAppointments(prev => prev.map(a => a.id === id ? { ...a, print_type: type } : a))
-          if (selectedAppointment?.id === id) {
-            setSelectedAppointment({ ...selectedAppointment, print_type: type })
-          }
-        }}
-        onUpdatePaymentStatus={(id, status) => {
-          setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_status: status } : a))
-          if (selectedAppointment?.id === id) {
-            setSelectedAppointment({ ...selectedAppointment, payment_status: status })
-          }
-        }}
-        onUpdatePaymentAmount={(id, amount) => {
-          setAppointments(prev => prev.map(a => a.id === id ? { ...a, payment_amount: amount } : a))
-          if (selectedAppointment?.id === id) {
-            setSelectedAppointment({ ...selectedAppointment, payment_amount: amount })
-          }
-        }}
-        onCancelAppointment={(id) => {
-          setAppointments(prev => prev.map(a =>
-            a.id === id ? { ...a, status: "cancelled" } : a
-          ))
-          if (selectedAppointment?.id === id) {
-            setSelectedAppointment({ ...selectedAppointment, status: "cancelled" })
-          }
-        }}
-        onRescheduleAppointment={(id, newDate, newTime) => {
-          setAppointments(prev => prev.map(a =>
-            a.id === id
-              ? { ...a, appointment_date: newDate, appointment_time: newTime }
-              : a
-          ))
-          if (selectedAppointment?.id === id) {
-            setSelectedAppointment({
-              ...selectedAppointment,
-              appointment_date: newDate,
-              appointment_time: newTime,
-            })
-          }
-        }}
-      />
-    </Suspense>
-  ) : (
-    <div className="rounded-lg border border-dashed border-muted p-4 flex flex-col items-center justify-center h-64 text-muted-foreground">
-      <Calendar className="h-8 w-8 mb-2 opacity-50" />
-      <p className="text-sm">Detaylar için bir randevuya tıklayın</p>
-    </div>
-  )
+  if (!appointments || appointments.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <Calendar className="mb-4 h-12 w-12" />
+        <p>Randevu bulunamadı</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-3">
-      {/* Filtreler - sadece liste görünümünde */}
-      {viewMode === "list" && (
-      <Card className="p-4">
-        <div className="flex flex-col gap-4">
-          {/* Arama */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Hasta ara (isim, telefon, TC, not)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-8"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          
-          {/* Diger Filtreler */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Tarih Filtrele</label>
-              <Input
-                type="date"
-                value={selectedDateFilter}
-                onChange={(e) => setSelectedDateFilter(e.target.value)}
-                placeholder="Tarih seçin"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Tur Filtrele</label>
-              <select className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" value={appointmentTypeFilter} onChange={(e) => setAppointmentTypeFilter(e.target.value)}>
-                <option value="all">Tumu</option>
-                {Object.entries(APPOINTMENT_TYPES).map(([key, { label }]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2 items-end">
-              <Button variant="outline" size="sm" onClick={handlePrint}>Yazdir</Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                setSelectedDateFilter("")
-                setAppointmentTypeFilter("all")
-                setSearchQuery("")
-              }}>Temizle</Button>
-            </div>
-          </div>
-          
-          {/* Sonuc sayisi */}
-          <div className="text-sm text-muted-foreground">
-            {searchQuery || selectedDateFilter || appointmentTypeFilter !== "all" 
-              ? `${filteredAppointments.length} sonuc bulundu` 
-              : `Toplam ${appointments.length} randevu`}
-          </div>
-        </div>
-      </Card>
-      )}
-
-      {viewMode === "calendar" ? (
-        /* TAKVİM — tam genişlik + sağdan açılan detay drawer */
-        <>
-          <WeeklyCalendar
-            doctor={doctor as any}
-            schedules={schedules}
-            existingAppointments={appointments as any}
-            isAdmin={true}
-            embedded={true}
-              viewMode={calendarView}
-              jumpToDate={jumpToDate}
-              onAppointmentClick={(appt) => setSelectedAppointment(appt as unknown as Appointment)}
-            viewControls={
-              <div className="flex flex-wrap items-center gap-1">
-                <div className="inline-flex rounded-md bg-background p-0.5">
-                  <Button
-                    variant={calendarView === "day" ? "default" : "ghost"}
-                    size="sm"
-                    className="gap-1 h-7 px-2.5 text-xs"
-                    onClick={() => setCalendarView("day")}
-                  >
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    Gün
-                  </Button>
-                  <Button
-                    variant={calendarView === "week" ? "default" : "ghost"}
-                    size="sm"
-                    className="gap-1 h-7 px-2.5 text-xs"
-                    onClick={() => setCalendarView("week")}
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                    1 Hafta
-                  </Button>
-                  <Button
-                    variant={calendarView === "2week" ? "default" : "ghost"}
-                    size="sm"
-                    className="gap-1 h-7 px-2.5 text-xs"
-                    onClick={() => setCalendarView("2week")}
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                    2 Hafta
-                  </Button>
-                </div>
-                {/* Günlük randevu listesi yazdırma */}
-                <div className="inline-flex items-center gap-1 rounded-md bg-background p-0.5">
-                  <Input
-                    type="date"
-                    value={printDate}
-                    onChange={(e) => setPrintDate(e.target.value)}
-                    className="h-7 w-[140px] border-0 bg-transparent text-xs shadow-none focus-visible:ring-0"
-                  />
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="gap-1 h-7 px-2.5 text-xs"
-                    onClick={() => handlePrint(printDate)}
-                  >
-                    <Printer className="h-3.5 w-3.5" />
-                    Yazdır
-                  </Button>
-                </div>
+    <>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Randevuyu Sil</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                Bu randevuyu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                {appointmentToDelete && (
+                  <div className="mt-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <div className="font-semibold text-sm">Randevu Detayları:</div>
+                    <div className="text-sm">
+                      <strong>Hasta:</strong> {appointmentToDelete.patients?.full_name}
+                    </div>
+                    <div className="text-sm">
+                      <strong>Tarih:</strong>{" "}
+                      {new Date(appointmentToDelete.appointment_date).toLocaleDateString("tr-TR")}
+                    </div>
+                    <div className="text-sm">
+                      <strong>Saat:</strong> {appointmentToDelete.appointment_time}
+                    </div>
+                    <div className="text-sm">
+                      <strong>Doktor:</strong> {appointmentToDelete.doctors?.name}
+                    </div>
+                  </div>
+                )}
               </div>
-            }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Siliniyor..." : "Sil"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <Select value={appointmentTypeFilter} onValueChange={setAppointmentTypeFilter}>
+          <SelectTrigger className="w-48 h-9 text-sm">
+            <SelectValue placeholder="Tüm Randevular" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm Randevular</SelectItem>
+            {appointmentTypes.map((type) => (
+              <SelectItem key={type} value={type || ""}>
+                {getAppointmentTypeLabel(type)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="flex items-center gap-1">
+          <Input
+            type="date"
+            value={selectedDateFilter}
+            onChange={(e) => setSelectedDateFilter(e.target.value)}
+            className="w-40 h-9 text-sm"
           />
-
-          {selectedAppointment && (
-            <>
-              <div
-                className="fixed inset-0 z-40 bg-black/30 animate-in fade-in duration-200"
-                onClick={() => setSelectedAppointment(null)}
-              />
-              <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-md flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-200">
-                <div className="flex items-center justify-between border-b p-4">
-                  <h2 className="text-base font-semibold text-gray-900">Randevu Detayı</h2>
-                  <Button variant="ghost" size="icon" onClick={() => setSelectedAppointment(null)} aria-label="Kapat">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                  {detailPanelInner}
-                </div>
-              </div>
-            </>
+          {selectedDateFilter && (
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground shrink-0" onClick={() => setSelectedDateFilter("")}>
+              <X className="h-4 w-4" />
+            </Button>
           )}
-        </>
-      ) : (
-        /* LİSTE — tablo + yandan sabit panel (Geçmiş / İptal sekmeleri) */
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-          <Card className="overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tarih</TableHead>
-                    <TableHead>Saat</TableHead>
-                    <TableHead>Hasta</TableHead>
-                    <TableHead>Tür</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAppointments.map((appointment) => (
-                    <TableRow
-                      key={appointment.id}
-                      className={`transition-colors cursor-pointer ${
-                        appointment.status === "cancelled"
-                          ? "bg-red-50 opacity-60 line-through-cells"
-                          : selectedAppointment?.id === appointment.id
-                          ? "bg-primary/10 hover:bg-primary/15"
-                          : appointment.is_intermediate
-                          ? "bg-orange-100 hover:bg-orange-200 border-l-4 border-l-orange-500"
-                          : "hover:bg-muted/30"
-                      }`}
-                      onClick={() => setSelectedAppointment(appointment)}
-                    >
-                      <TableCell className="text-sm">
-                        {new Date(appointment.appointment_date).toLocaleDateString("tr-TR")}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">{appointment.appointment_time}</TableCell>
-                      <TableCell className="text-sm">
-                        {appointment.patients?.full_name || "-"}
-                        {appointment.status === "cancelled" && (
-                          <Badge className="ml-2 bg-red-500 text-white text-[10px] px-1">IPTAL</Badge>
-                        )}
-                        {appointment.is_intermediate && appointment.status !== "cancelled" && (
-                          <Badge className="ml-2 bg-orange-500 text-white text-[10px] px-1">ARA</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        <div className="flex flex-col gap-0.5">
-                          <Badge className={APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.color || "bg-gray-100"}>
-                            {APPOINTMENT_TYPES[appointment.appointment_type || "diger"]?.label || "Diğer"}
-                          </Badge>
-                          {appointment.appointment_type === "ayrintili-fetal-ultrason" && (
-                            <span className="text-[11px] font-semibold text-orange-600">
-                              {appointment.fetal_bebek_sayisi 
-                                ? (appointment.fetal_bebek_sayisi === "tek"
-                                    ? "Tek Bebek"
-                                    : appointment.fetal_bebek_sayisi === "ikiz"
-                                    ? "Ikiz Bebek"
-                                    : "Ucuz Bebek")
-                                : "(Bebek sayisi belirtilmemis)"}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setDeleteId(appointment.id)
-                            setDeleteDialogOpen(true)
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
-          </div>
-          <div className="lg:col-span-1 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
-            {detailPanelInner}
-          </div>
         </div>
-      )}
 
-      {/* Dialogs */}
-      <DeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        deleteId={deleteId}
-        isDeleting={isUpdating === deleteId}
-        onConfirm={() => {
-          if (deleteId) {
-            handleDelete(deleteId, appointments)
-            setDeleteDialogOpen(false)
-          }
-        }}
-      />
+        <Button variant="outline" size="sm" className="h-9 gap-2 ml-auto" onClick={handlePrint}>
+          <Printer className="h-4 w-4" />
+          Yazdır
+        </Button>
+      </div>
 
-      <SmsDialog
-        open={smsDialogOpen}
-        onOpenChange={setSmsDialogOpen}
-        phone={smsPhone}
-        patientName={selectedAppointment?.patients?.full_name}
-        message={smsMessage}
-        onMessageChange={setSmsMessage}
-        onSend={sendSms}
-        isSending={smsSending}
-        appointmentDate={selectedAppointment?.appointment_date}
-        appointmentTime={selectedAppointment?.appointment_time}
-      />
+      <div className="rounded-lg border overflow-x-auto bg-card">
+        <Table className="min-w-[700px]">
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="w-[130px] font-semibold text-xs uppercase tracking-wide">Tarih & Saat</TableHead>
+              <TableHead className="font-semibold text-xs uppercase tracking-wide">Hasta</TableHead>
+              <TableHead className="w-[200px] font-semibold text-xs uppercase tracking-wide">İşlemler</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredAppointments.map((appointment) => (
+              <TableRow key={appointment.id} className="hover:bg-muted/30 transition-colors">
+                {/* Tarih & Saat sütunu */}
+                <TableCell className="align-top py-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(appointment.appointment_date).toLocaleDateString("tr-TR")}
+                    </span>
+                    <span className="text-base font-bold tabular-nums text-foreground">
+                      {appointment.appointment_time}
+                    </span>
+                    <Badge className={`mt-1 w-fit text-xs ${getAppointmentTypeColor(appointment.appointment_type)}`} variant="outline">
+                      {getAppointmentTypeLabel(appointment.appointment_type)}
+                    </Badge>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Badge
+                        variant={
+                          appointment.confirmation_status === "confirmed"
+                            ? "default"
+                            : appointment.confirmation_status === "declined"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                        className="text-xs"
+                      >
+                        {appointment.confirmation_status === "confirmed"
+                          ? "Gelecek"
+                          : appointment.confirmation_status === "declined"
+                            ? "Gelemeyecek"
+                            : "Bekliyor"}
+                      </Badge>
+                      <DocumentStatusBadge appointmentId={appointment.id} />
+                    </div>
+                  </div>
+                </TableCell>
 
-      <PatientDialog
-        open={patientDialogOpen}
-        onOpenChange={setPatientDialogOpen}
-        selectedAppointment={selectedAppointment}
-        verificationStep={verificationStep}
-        onVerificationStepChange={setVerificationStep}
-        completeFormData={completeFormData}
-        onFormDataChange={setCompleteFormData}
-        verificationCode={verificationCode}
-        onVerificationCodeChange={setVerificationCode}
-        completingInfo={completingInfo}
-        verifyingCode={verifyingCode}
-        onSendVerificationCode={sendVerificationCode}
-        onVerifyCode={verifyCode}
-      />
+                {/* Hasta sütunu */}
+                <TableCell className="align-top py-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-foreground">{appointment.patients?.full_name}</span>
+                      {appointment.patients?.tc_no?.startsWith("TEMP_") && (
+                        <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-300">
+                          Bilgiler Eksik
+                        </Badge>
+                      )}
+                    </div>
+                    {appointment.patients?.phone && appointment.patients.phone !== "0000000000" && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Phone className="h-3 w-3" />
+                        {appointment.patients.phone}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      TC: {appointment.patients?.tc_no?.startsWith("TEMP_") ? "Girilmedi" : appointment.patients?.tc_no}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {appointment.patients?.date_of_birth && appointment.patients.date_of_birth !== "1900-01-01"
+                        ? `D: ${new Date(appointment.patients.date_of_birth).toLocaleDateString("tr-TR")}`
+                        : "D.Tarihi girilmedi"}
+                    </div>
+                    {appointment.patients?.medical_alerts && appointment.patients.medical_alerts.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {appointment.patients.medical_alerts.map((alert: MedicalAlert, idx: number) => (
+                          <Badge
+                            key={idx}
+                            variant="outline"
+                            className={`text-xs ${
+                              alert.severity === "critical"
+                                ? "bg-red-100 text-red-800 border-red-300 animate-pulse"
+                                : alert.severity === "high"
+                                  ? "bg-orange-100 text-orange-800 border-orange-300"
+                                  : alert.severity === "moderate"
+                                    ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                                    : "bg-blue-100 text-blue-800 border-blue-300"
+                            }`}
+                          >
+                            {alert.type}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
 
-      <EditDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        selectedAppointment={selectedAppointment}
-        onAppointmentChange={setSelectedAppointment}
-        onAppointmentsChange={setAppointments}
-        allAppointments={appointments}
-      />
-    </div>
+                {/* İşlemler sütunu */}
+                <TableCell className="align-top py-3">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" asChild>
+                        <Link href={`/admin/appointments/${appointment.id}`}>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleEditClick(appointment)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={() => handleDocumentClick(appointment.id)}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteClick(appointment)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    {appointment.status === "pending" && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs px-2"
+                          onClick={() => updateStatus(appointment.id, "confirmed")}
+                          disabled={isUpdating === appointment.id}
+                        >
+                          <Check className="mr-1 h-3 w-3" />
+                          Onayla
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs px-2"
+                          onClick={() => updateStatus(appointment.id, "cancelled")}
+                          disabled={isUpdating === appointment.id}
+                        >
+                          <X className="mr-1 h-3 w-3" />
+                          İptal
+                        </Button>
+                      </div>
+                    )}
+                    {appointment.status === "confirmed" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => updateStatus(appointment.id, "completed")}
+                        disabled={isUpdating === appointment.id}
+                      >
+                        Tamamlandı
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+    {/* Edit Dialog */}
+    <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Randevu Duzenle</DialogTitle>
+          <DialogDescription>
+            Randevunun tarih ve saatini degistirin.
+          </DialogDescription>
+        </DialogHeader>
+        {appointmentToEdit && (
+          <div className="space-y-4 py-4 overflow-y-auto flex-1 pr-1">
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div className="space-y-1">
+                <Label htmlFor="edit-name" className="text-xs text-muted-foreground">Hasta Adı Soyadı</Label>
+                <Input
+                  id="edit-name"
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  className="font-medium"
+                />
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Doktor: {appointmentToEdit.doctors?.name}
+              </div>
+              {appointmentToEdit.patients?.tc_no?.startsWith("TEMP_") && (
+                <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-300">
+                  Hasta bilgileri tamamlanmali
+                </Badge>
+              )}
+            </div>
+            
+            {appointmentToEdit.patients?.tc_no?.startsWith("TEMP_") && (
+              <div className="space-y-3 p-3 border rounded-lg bg-blue-50/50">
+                <div className="text-sm font-medium text-blue-900">Hasta Bilgilerini Tamamla</div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-tc">TC Kimlik No</Label>
+                  <Input
+                    id="edit-tc"
+                    type="text"
+                    placeholder="11 haneli TC"
+                    value={editTcNo}
+                    onChange={(e) => setEditTcNo(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                    maxLength={11}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Telefon</Label>
+                  <Input
+                    id="edit-phone"
+                    type="tel"
+                    placeholder="05xxxxxxxxx"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                    maxLength={11}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-dob">Dogum Tarihi</Label>
+                  <Input
+                    id="edit-dob"
+                    type="date"
+                    value={editBirthDate}
+                    onChange={(e) => setEditBirthDate(e.target.value)}
+                  />
+                </div>
+
+                {/* KVKK Onay Kaniti - sadece onaylandiysa goster */}
+                {appointmentToEdit.patients?.kvkk_approved && (
+                  <div className="col-span-full rounded-lg border border-green-200 bg-green-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">KVKK Onay Kaniti</p>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-green-700">Onaylandi</p>
+                      {appointmentToEdit.patients.kvkk_approved_at && (
+                        <p className="text-xs text-green-600">
+                          Tarih: {new Date(appointmentToEdit.patients.kvkk_approved_at).toLocaleString("tr-TR")}
+                        </p>
+                      )}
+                      {appointmentToEdit.patients.kvkk_approved_via && (
+                        <p className="text-xs font-mono bg-green-100 text-green-700 rounded px-2 py-0.5 inline-block">
+                          {appointmentToEdit.patients.kvkk_approved_via}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-appt-type">Randevu Tipi</Label>
+              <Select value={editAppointmentType} onValueChange={setEditAppointmentType}>
+                <SelectTrigger id="edit-appt-type">
+                  <SelectValue placeholder="Seçiniz" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ilk-muayene">İlk Muayene</SelectItem>
+                  <SelectItem value="kontrol-takip">Kontrol / Takip</SelectItem>
+                  <SelectItem value="gebelik-istemi-infertilite">Gebelik İstemi / İnfertilite</SelectItem>
+                  <SelectItem value="jinekolojik-muayene">Jinekolojik Muayene</SelectItem>
+                  <SelectItem value="ayrintili-fetal-ultrason">Ayrıntılı Fetal Ultrason</SelectItem>
+                  <SelectItem value="diger">Diğer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-date">Tarih</Label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-time">Saat</Label>
+              <Input
+                id="edit-time"
+                type="time"
+                value={editTime}
+                onChange={(e) => setEditTime(e.target.value)}
+                step="900"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-notes">Not (Opsiyonel)</Label>
+              <Textarea
+                id="edit-notes"
+                placeholder="Randevu hakkında not ekleyin..."
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                rows={2}
+              />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={isEditing}>
+            Vazgec
+          </Button>
+          <Button onClick={handleEditConfirm} disabled={isEditing}>
+            {isEditing ? "Kaydediliyor..." : "Kaydet"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

@@ -1,4 +1,4 @@
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
@@ -14,29 +14,49 @@ export async function POST(request: Request) {
     }
 
     const supabase = createServiceRoleClient()
-    const forwardedIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    const ipAddress = forwardedIp || request.headers.get("x-real-ip") || null
-    const userAgent = request.headers.get("user-agent")?.slice(0, 1000) || null
-    const responseType = action === "confirm" ? "confirmed" : "cancelled"
 
-    const { data, error } = await supabase.rpc("record_appointment_response", {
-      p_token: token,
-      p_response: responseType,
-      p_ip_address: ipAddress,
-      p_user_agent: userAgent,
-    })
+    // Find appointment by token
+    const { data: appointment, error: fetchError } = await supabase
+      .from("appointments")
+      .select("*")
+      .eq("confirmation_token", token)
+      .single()
 
-    if (error) {
-      console.error("[v0] Confirmation audit error:", error)
-      const status = error.message.includes("not found") ? 404 : 500
-      return NextResponse.json({ error: status === 404 ? "Randevu bulunamadı" : "İşlem kaydedilemedi" }, { status })
+    if (fetchError || !appointment) {
+      return NextResponse.json({ error: "Randevu bulunamadı" }, { status: 404 })
     }
 
-    if (data?.already_responded) {
-      return NextResponse.json({ error: "Bu randevu zaten işlenmiş", status: data.status }, { status: 400 })
+    // Check if already processed
+    if (appointment.confirmation_status !== "pending") {
+      return NextResponse.json(
+        { error: "Bu randevu zaten işlenmiş", status: appointment.confirmation_status },
+        { status: 400 }
+      )
     }
 
-    return NextResponse.json({ success: true, status: responseType })
+    // Update confirmation status
+    const newStatus = action === "confirm" ? "confirmed" : "cancelled"
+    const updateData: any = {
+      confirmation_status: newStatus,
+      confirmed_at: new Date().toISOString(),
+    }
+
+    // If cancelled, also update appointment status
+    if (action === "cancel") {
+      updateData.status = "cancelled"
+    }
+
+    const { error: updateError } = await supabase
+      .from("appointments")
+      .update(updateData)
+      .eq("id", appointment.id)
+
+    if (updateError) {
+      console.error("[v0] Update error:", updateError)
+      return NextResponse.json({ error: "Güncelleme başarısız" }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, status: newStatus })
   } catch (error: any) {
     console.error("[v0] Confirmation error:", error)
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 })

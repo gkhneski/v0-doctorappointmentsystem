@@ -3,7 +3,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, Phone, Calendar, Award as IdCard, AlertTriangle, Trash2, UserPlus, Map, Globe, CheckCircle2, Loader2, Search, X } from "lucide-react"
+import { User, Phone, Calendar, Award as IdCard, AlertTriangle, Trash2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,13 +36,7 @@ type Patient = {
   blacklist_reason?: string
 }
 
-export default function PatientsList({
-  patients: initialPatients,
-  blacklistOnly = false,
-}: {
-  patients: Patient[]
-  blacklistOnly?: boolean
-}) {
+export default function PatientsList({ patients: initialPatients }: { patients: Patient[] }) {
   const router = useRouter()
   const [profilePhotos, setProfilePhotos] = useState<Record<string, string>>({})
   const [loadedPatients, setLoadedPatients] = useState<Set<string>>(new Set())
@@ -59,53 +53,8 @@ export default function PatientsList({
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [patients, setPatients] = useState(initialPatients)
-  const [searchQuery, setSearchQuery] = useState("")
   const observerRef = useRef<IntersectionObserver | null>(null)
   const supabase = createClient()
-
-  // Quick Add state
-  const [quickAddDialog, setQuickAddDialog] = useState(false)
-  const [quickAddName, setQuickAddName] = useState("")
-  const [quickAddPhone, setQuickAddPhone] = useState("")
-  const [quickAddLoading, setQuickAddLoading] = useState(false)
-  const [quickAddResult, setQuickAddResult] = useState<{ success: boolean; message: string; smsSent: boolean } | null>(null)
-
-  const handleQuickAdd = async () => {
-    if (!quickAddName.trim() || !quickAddPhone.trim()) {
-      toast({ title: "Hata", description: "Ad soyad ve telefon zorunludur", variant: "destructive" })
-      return
-    }
-    setQuickAddLoading(true)
-    setQuickAddResult(null)
-    try {
-      const res = await fetch("/api/admin/patients/quick-add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: quickAddName.trim(), phone: quickAddPhone.trim() }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Hata")
-      setQuickAddResult({ success: true, message: data.message, smsSent: data.smsSent })
-      // Listeyi yenile
-      const { data: updated } = await supabase
-        .from("patients")
-        .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-        .order("full_name")
-        .range(0, 9999)
-      if (updated) setPatients(updated)
-    } catch (err: any) {
-      toast({ title: "Hata", description: err.message, variant: "destructive" })
-    } finally {
-      setQuickAddLoading(false)
-    }
-  }
-
-  const resetQuickAdd = () => {
-    setQuickAddDialog(false)
-    setQuickAddName("")
-    setQuickAddPhone("")
-    setQuickAddResult(null)
-  }
 
   const handleAddManualBlacklist = async () => {
     if (!manualBlacklistDialog.fullName || !manualBlacklistDialog.phone || !manualBlacklistDialog.reason) {
@@ -114,6 +63,8 @@ export default function PatientsList({
     }
 
     try {
+      console.log("[v0] Adding to blacklist:", manualBlacklistDialog)
+      
       const { data, error } = await supabase
         .from("patients")
         .insert({
@@ -127,19 +78,30 @@ export default function PatientsList({
         })
         .select()
 
-      if (error) throw error
+      if (error) {
+        console.error("[v0] Insert error:", error)
+        throw error
+      }
 
+      console.log("[v0] Insert successful:", data)
+      
       toast({ title: "Başarılı", description: "Black List'e eklendi" })
       setManualBlacklistDialog({ open: false, fullName: "", phone: "", reason: "" })
-
-      const { data: updatedPatients } = await supabase
+      
+      // Refresh patients list
+      const { data: updatedPatients, error: fetchError } = await supabase
         .from("patients")
         .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-        .order("full_name")
-        .range(0, 9999)
-
-      if (updatedPatients) setPatients(updatedPatients)
+        .order("created_at", { ascending: false })
+      
+      if (fetchError) {
+        console.error("[v0] Fetch error:", fetchError)
+      } else if (updatedPatients) {
+        console.log("[v0] Updated patients:", updatedPatients.length)
+        setPatients(updatedPatients)
+      }
     } catch (error: any) {
+      console.error("[v0] Manual blacklist error:", error)
       toast({ title: "Hata", description: error.message || "Bilinmeyen hata", variant: "destructive" })
     }
   }
@@ -160,17 +122,15 @@ export default function PatientsList({
     if (error) throw error
 
     setPatients((prev) =>
-      blacklistOnly && !newBlacklistStatus
-        ? prev.filter((p) => p.id !== patientId)
-        : prev.map((p) =>
-            p.id === patientId
-              ? {
-                  ...p,
-                  is_blacklisted: newBlacklistStatus,
-                  blacklist_reason: newBlacklistStatus ? reason : undefined,
-                }
-              : p,
-          ),
+      prev.map((p) =>
+        p.id === patientId
+          ? {
+              ...p,
+              is_blacklisted: newBlacklistStatus,
+              blacklist_reason: newBlacklistStatus ? reason : null,
+            }
+          : p
+      )
     )
 
     toast({
@@ -272,29 +232,7 @@ export default function PatientsList({
     return () => observerRef.current?.disconnect()
   }, [loadProfilePhoto])
 
-  const normalizeTurkish = (value: string) =>
-    value
-      .replace(/[İIıi]/g, "i")
-      .toLocaleLowerCase("tr-TR")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/ş/g, "s")
-      .replace(/ğ/g, "g")
-      .replace(/ç/g, "c")
-      .replace(/ö/g, "o")
-      .replace(/ü/g, "u")
-
-  // Search filter - isim, TC, telefon ile Türkçe duyarsız arama
-  const filteredPatients = patients.filter((patient) => {
-    if (blacklistOnly && !patient.is_blacklisted) return false
-    if (!searchQuery.trim()) return true
-    const query = normalizeTurkish(searchQuery.trim())
-    return (
-      normalizeTurkish(patient.full_name || "").includes(query) ||
-      (patient.tc_no || "").includes(searchQuery.trim()) ||
-      (patient.phone || "").includes(searchQuery.trim())
-    )
-  })
+  const filteredPatients = patients.filter(p => p.id) // Remove demo filter completely
 
   const getInitials = (name: string) => {
     const parts = name.split(" ")
@@ -306,55 +244,20 @@ export default function PatientsList({
 
   return (
     <>
-      {/* Header */}
-      <div className="flex flex-col gap-3 border-b bg-gray-50 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Hasta ara (isim, TC, telefon)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 pl-9 pr-8"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div className="text-sm text-gray-600">
-            {searchQuery
-              ? `${filteredPatients.length} sonuç`
-              : blacklistOnly
-                ? `${filteredPatients.length} kara liste kaydı`
-                : `Toplam: ${filteredPatients.length} hasta`}
-          </div>
+      {/* Header with manual blacklist button */}
+      <div className="flex items-center justify-between border-b bg-gray-50 px-6 py-3">
+        <div className="text-sm text-gray-600">
+          Toplam: {filteredPatients.length} hasta
         </div>
-        {!blacklistOnly && (
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => setQuickAddDialog(true)}
-              className="gap-2 bg-primary hover:bg-primary/90"
-            >
-              <UserPlus className="h-4 w-4" />
-              Hizli Hasta Ekle + SMS
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setManualBlacklistDialog({ open: true })}
-              className="gap-2"
-            >
-              <AlertTriangle className="h-4 w-4" />
-              Black List
-            </Button>
-          </div>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setManualBlacklistDialog({ open: true })}
+          className="gap-2"
+        >
+          <AlertTriangle className="h-4 w-4" />
+          Black List'e Manuel Ekle
+        </Button>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -363,20 +266,13 @@ export default function PatientsList({
               <TableHead>Hasta Adı</TableHead>
               <TableHead>TC Kimlik No</TableHead>
               <TableHead>Telefon</TableHead>
-              {!blacklistOnly && <TableHead>Doğum Tarihi</TableHead>}
-              {!blacklistOnly && <TableHead>Kayıt Tarihi</TableHead>}
-              <TableHead>{blacklistOnly ? "Kara Liste Nedeni" : "Durum"}</TableHead>
+              <TableHead>Doğum Tarihi</TableHead>
+              <TableHead>Kayıt Tarihi</TableHead>
+              <TableHead>Durum</TableHead>
               <TableHead className="text-right">İşlemler</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPatients.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={blacklistOnly ? 5 : 7} className="h-32 text-center text-sm text-muted-foreground">
-                  {searchQuery ? "Aramanızla eşleşen kayıt bulunamadı." : "Kara listede hasta bulunmuyor."}
-                </TableCell>
-              </TableRow>
-            )}
             {filteredPatients.map((patient) => (
               <TableRow
                 key={patient.id}
@@ -415,32 +311,24 @@ export default function PatientsList({
                     {patient.phone}
                   </div>
                 </TableCell>
-                {!blacklistOnly && (
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Calendar className="h-3 w-3 text-muted-foreground" />
-                      {new Date(patient.date_of_birth).toLocaleDateString("tr-TR")}
-                    </div>
-                  </TableCell>
-                )}
-                {!blacklistOnly && (
-                  <TableCell>
-                    <Badge variant="outline">{new Date(patient.created_at).toLocaleDateString("tr-TR")}</Badge>
-                  </TableCell>
-                )}
                 <TableCell>
-                  {blacklistOnly ? (
-                    <span className="text-sm text-red-800">{patient.blacklist_reason || "Neden belirtilmedi"}</span>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      {patient.is_blacklisted && (
-                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-                          <AlertTriangle className="mr-1 h-3 w-3" />
-                          Black List
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1 text-sm">
+                    <Calendar className="h-3 w-3 text-muted-foreground" />
+                    {new Date(patient.date_of_birth).toLocaleDateString("tr-TR")}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{new Date(patient.created_at).toLocaleDateString("tr-TR")}</Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {patient.is_blacklisted && (
+                      <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                        <AlertTriangle className="mr-1 h-3 w-3" />
+                        Black List
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
@@ -459,19 +347,17 @@ export default function PatientsList({
                     >
                       {patient.is_blacklisted ? "Listeden Çıkar" : "Black List'e Al"}
                     </Button>
-                    {!blacklistOnly && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPatientToDelete(patient)
-                          setDeleteDialogOpen(true)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setPatientToDelete(patient)
+                        setDeleteDialogOpen(true)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -479,106 +365,6 @@ export default function PatientsList({
           </TableBody>
         </Table>
       </div>
-
-      {/* Quick Add Dialog */}
-      <Dialog open={quickAddDialog} onOpenChange={(o) => { if (!o) resetQuickAdd() }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" />
-              Hizli Hasta Ekle
-            </DialogTitle>
-            <DialogDescription>
-              Hasta kaydedilir ve otomatik olarak site linki ile konum bilgisi SMS ile gönderilir.
-            </DialogDescription>
-          </DialogHeader>
-
-          {!quickAddResult ? (
-            <div className="space-y-4 py-2">
-              <div>
-                <label className="text-sm font-medium">Ad Soyad <span className="text-red-500">*</span></label>
-                <Input
-                  placeholder="Örn: Ayse Kaya"
-                  value={quickAddName}
-                  onChange={(e) => setQuickAddName(e.target.value)}
-                  className="mt-1.5"
-                  onKeyDown={(e) => e.key === "Enter" && handleQuickAdd()}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Cep Numarasi <span className="text-red-500">*</span></label>
-                <Input
-                  placeholder="05XX XXX XX XX"
-                  value={quickAddPhone}
-                  onChange={(e) => setQuickAddPhone(e.target.value)}
-                  className="mt-1.5"
-                  onKeyDown={(e) => e.key === "Enter" && handleQuickAdd()}
-                />
-              </div>
-
-              {/* SMS önizleme */}
-              <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 space-y-2">
-                <p className="text-xs font-medium text-primary">Gönderilecek SMS önizleme:</p>
-                <div className="rounded bg-white/70 p-2.5 space-y-2 text-xs text-muted-foreground leading-relaxed font-mono">
-                  <p>Sayin <span className="text-foreground font-semibold">{quickAddName ? quickAddName.split(" ")[0] : "[Ad]"}</span> Hanim, Prof. Dr. Eray Caliskan klinigine hosgeldiniz!</p>
-                  <p className="border-t pt-2 flex items-center gap-1.5">
-                    <Globe className="h-3 w-3 text-primary flex-shrink-0" />
-                    Online randevu icin web sitemiz:<br />
-                    <span className="text-primary">www.dreraycaliskan.com</span>
-                  </p>
-                  <p className="border-t pt-2 flex items-center gap-1.5">
-                    <Map className="h-3 w-3 text-green-600 flex-shrink-0" />
-                    Klinigimizin konumu icin:<br />
-                    <span className="text-green-600">maps.google.com/...</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="py-4 space-y-3">
-              <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
-                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-green-800">{quickAddResult.message}</p>
-                  <p className="text-xs text-green-600">
-                    SMS durumu: {quickAddResult.smsSent ? "Gönderildi" : "Gönderilemedi (log kaydedildi)"}
-                  </p>
-                </div>
-              </div>
-              <div className="rounded-lg bg-muted/50 p-3 space-y-1">
-                <p className="text-xs text-muted-foreground">Gönderilen SMS içerigi:</p>
-                <p className="text-xs font-medium">{quickAddName.split(" ")[0]} Hanim — site linki + Google Maps konum</p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            {!quickAddResult ? (
-              <>
-                <Button variant="outline" onClick={resetQuickAdd} disabled={quickAddLoading}>
-                  Iptal
-                </Button>
-                <Button onClick={handleQuickAdd} disabled={quickAddLoading || !quickAddName.trim() || !quickAddPhone.trim()}>
-                  {quickAddLoading ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Kaydediliyor...</>
-                  ) : (
-                    <><UserPlus className="h-4 w-4 mr-2" />Kaydet ve SMS Gönder</>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => { setQuickAddResult(null); setQuickAddName(""); setQuickAddPhone("") }}>
-                  Yeni Hasta Ekle
-                </Button>
-                <Button onClick={resetQuickAdd}>
-                  Kapat
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Blacklist Dialog */}
       <Dialog open={blacklistDialog.open} onOpenChange={(open) => setBlacklistDialog({ open })}>

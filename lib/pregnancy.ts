@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@supabase/ssr"
 
 export type PregnancyEpisode = {
   id: string
@@ -82,9 +82,12 @@ export function formatGA(weeks: number | null, days: number | null): string {
   return `${weeks}+${days} hafta`
 }
 
-// Get Supabase client (singleton)
+// Get Supabase client
 export function getSupabaseClient() {
-  return createClient()
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 }
 
 // Fetch active pregnancy episode

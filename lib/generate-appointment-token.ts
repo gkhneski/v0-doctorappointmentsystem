@@ -1,4 +1,4 @@
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 import crypto from "crypto"
 
 export async function generateAppointmentAccessToken(appointmentId: string) {

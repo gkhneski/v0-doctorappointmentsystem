@@ -1,34 +1,30 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Calendar, Stethoscope, Award, GraduationCap, Heart, Baby, Shield, Microscope, MapPin } from "lucide-react"
-import HiddenAdminTrigger from "@/components/hidden-admin-trigger"
-
+import { Calendar, Stethoscope, Award, GraduationCap, Heart, Baby, Shield, Microscope, UserCog } from "lucide-react"
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Bar - Location only */}
-      <div className="bg-primary text-primary-foreground py-2 text-sm">
-        <div className="container mx-auto px-4 flex justify-center items-center">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span className="font-medium">Kocaeli / İzmit</span>
-          </div>
-        </div>
-      </div>
-
       <header className="border-b bg-gradient-to-r from-primary/5 to-accent/5">
         <div className="container mx-auto px-4 py-8">
+          <div className="mb-4 flex justify-end">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin-panel-giris">
+                <UserCog className="mr-2 h-4 w-4" />
+                Personel Girişi
+              </Link>
+            </Button>
+          </div>
           <div className="mx-auto max-w-4xl text-center">
             <div className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
-              Kocaeli Tüp Bebek ve Gebelik Uzmanı
+              Profesör Doktor
             </div>
             <h1 className="mb-4 text-balance text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-              Prof. Dr. Eray ÇALIŞKAN
+              Eray ÇALIŞKAN
             </h1>
             <p className="mb-2 text-xl font-semibold text-primary">Kadın Hastalıkları ve Doğum Uzmanı</p>
             <p className="mb-6 text-lg text-muted-foreground">
-              Perinatoloji Yan Dal Uzmanı | Tüp Bebek | Gebelik Takibi | Aşılama (IUI) | Kocaeli
+              Perinatoloji Yan Dal Uzmanı • Tüp Bebek Tedavisi Uzmanı
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" variant="outline" asChild>
@@ -45,38 +41,32 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* SEO Keywords Section */}
       <section className="border-b bg-accent/5 py-12">
         <div className="container mx-auto px-4">
-          <h2 className="sr-only">Kocaeli Tüp Bebek ve Gebelik Hizmetleri</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Baby className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold">TÜP BEBEK KOCAELİ</h3>
-              <p className="text-sm text-muted-foreground mt-1">IVF Tedavisi</p>
+              <h3 className="font-semibold">TÜP BEBEK TEDAVİSİ</h3>
             </div>
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Heart className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold">GEBELİK TAKİBİ</h3>
-              <p className="text-sm text-muted-foreground mt-1">Riskli Gebelik Uzmanı</p>
+              <h3 className="font-semibold">RİSKLİ GEBELİK TAKİBİ</h3>
             </div>
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Shield className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold">AŞILAMA (IUI)</h3>
-              <p className="text-sm text-muted-foreground mt-1">Gebelik İstemi</p>
+              <h3 className="font-semibold">JİNEKOLOJİK MUAYENE</h3>
             </div>
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Microscope className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold">FETAL ULTRASON</h3>
-              <p className="text-sm text-muted-foreground mt-1">Ayrıntılı Ultrason</p>
+              <h3 className="font-semibold">ESTETİK JİNEKOLOJİ</h3>
             </div>
           </div>
         </div>
@@ -210,79 +200,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SEO Text Section */}
-      <section className="py-12 bg-muted/30">
+      <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto prose prose-sm text-muted-foreground">
-            <h2 className="text-xl font-semibold text-foreground mb-4">Kocaeli Tüp Bebek ve Gebelik Merkezi</h2>
-            <p>
-              <strong>Prof. Dr. Eray Çalışkan</strong>, Kocaeli ve çevresinde <strong>tüp bebek tedavisi</strong>, 
-              <strong>gebelik takibi</strong>, <strong>aşılama (IUI)</strong> ve <strong>ayrıntılı fetal ultrason</strong> 
-              alanlarında uzmanlaşmış deneyimli bir kadın doğum uzmanıdır. İzmit, Gebze, Derince, Gölcük ve 
-              çevre ilçelerden gelen hastalarımıza modern tıbbi imkanlarla hizmet vermekteyiz.
+          <div className="mx-auto max-w-3xl rounded-2xl bg-gradient-to-r from-primary to-primary/80 p-8 text-center text-primary-foreground md:p-12">
+            <h2 className="mb-4 text-3xl font-bold md:text-4xl">Online Randevu Alın</h2>
+            <p className="mb-8 text-lg opacity-90">
+              Kolay ve hızlı randevu sistemi ile müsait saatleri görün ve anında randevunuzu oluşturun
             </p>
-            <p>
-              <strong>Gebelik istemi</strong> ve <strong>infertilite (kısırlık) tedavisi</strong> konusunda 
-              yılların deneyimiyle, çiftlerin bebek sahibi olma hayallerini gerçekleştirmelerine yardımcı 
-              oluyoruz. <strong>Riskli gebelik takibi</strong> ve <strong>perinatoloji</strong> alanındaki 
-              uzmanlığımızla anne ve bebek sağlığını en üst düzeyde koruyoruz.
-            </p>
-            <div className="flex flex-wrap gap-2 mt-4 text-xs">
-              <span className="bg-primary/10 text-primary px-2 py-1 rounded">Tüp Bebek Kocaeli</span>
-              <span className="bg-primary/10 text-primary px-2 py-1 rounded">Gebelik Takibi Kocaeli</span>
-              <span className="bg-primary/10 text-primary px-2 py-1 rounded">Aşılama IUI Kocaeli</span>
-              <span className="bg-primary/10 text-primary px-2 py-1 rounded">Fetal Ultrason Kocaeli</span>
-              <span className="bg-primary/10 text-primary px-2 py-1 rounded">İnfertilite Tedavisi İzmit</span>
-              <span className="bg-primary/10 text-primary px-2 py-1 rounded">Riskli Gebelik Kocaeli</span>
-            </div>
+            <Button size="lg" variant="secondary" asChild className="text-base">
+              <Link href="/randevu">
+                <Calendar className="mr-2 h-5 w-5" />
+                Hemen Randevu Al
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
       <footer className="border-t bg-secondary/30 py-8">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-semibold mb-3">Hızlı Linkler</h3>
-              <ul className="text-sm text-muted-foreground space-y-2">
-                <li><Link href="/randevu" className="hover:text-primary transition">Online Randevu Al</Link></li>
-                <li><Link href="/kvkk" className="hover:text-primary transition">KVKK Aydınlatma Metni</Link></li>
-                <li><Link href="/gizlilik-politikasi" className="hover:text-primary transition">Gizlilik Politikası</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3">Prof. Dr. Eray Çalışkan</h3>
-              <p className="text-sm text-muted-foreground">
-                Kadın Hastalıkları ve Doğum Uzmanı<br/>
-                Perinatoloji Yan Dal Uzmanı<br/>
-                Tüp Bebek Tedavisi Uzmanı
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3">Hizmet Bölgelerimiz</h3>
-              <p className="text-sm text-muted-foreground">
-                Kocaeli, İzmit, Gebze, Derince, Gölcük, Körfez, Kartepe, Başiskele, Çayırova, Dilovası
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3">Uzmanlık Alanları</h3>
-              <p className="text-sm text-muted-foreground">
-                <strong>Tüp Bebek (IVF)</strong>, Aşılama (IUI), Gebelik Takibi, Ayrıntılı Fetal Ultrason, 
-                Gebelik İstemi, İnfertilite Tedavisi, Riskli Gebelik
-              </p>
-            </div>
-          </div>
-          <div className="text-center text-sm text-muted-foreground border-t pt-6">
-            <p className="mb-2">
-              <HiddenAdminTrigger>© 2025 Prof. Dr. Eray Çalışkan - Kadın Hastalıkları ve Doğum Uzmanı | Kocaeli</HiddenAdminTrigger>
-            </p>
-            <p className="text-xs mb-3">Tüp Bebek Kocaeli | Gebelik Takibi İzmit | Aşılama Gebze | Fetal Ultrason Kocaeli</p>
-            <div className="flex justify-center gap-4 text-xs">
-              <Link href="/kvkk" className="hover:text-primary transition">KVKK Aydınlatma Metni</Link>
-              <span>|</span>
-              <Link href="/gizlilik-politikasi" className="hover:text-primary transition">Gizlilik Politikası</Link>
-            </div>
-          </div>
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p className="mb-2">© 2025 Prof. Dr. Eray Çalışkan - Kadın Hastalıkları ve Doğum Uzmanı</p>
+          <p>Kocaeli</p>
         </div>
       </footer>
     </div>

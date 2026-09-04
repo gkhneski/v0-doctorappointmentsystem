@@ -1,6 +1,6 @@
 "use server"
 
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 
 export async function resetSchedulesForMonth(year: number, month: number) {
   const supabase = createServiceRoleClient()

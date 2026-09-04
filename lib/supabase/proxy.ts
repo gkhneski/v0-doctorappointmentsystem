@@ -25,33 +25,9 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  // IMPORTANT: getUser() validates the JWT with Supabase servers
-  // This also refreshes the session if needed
-  let user = null
-  try {
-    const { data, error } = await supabase.auth.getUser()
-    if (error) {
-      const isTokenError =
-        error.message?.includes("Refresh Token") ||
-        error.message?.includes("refresh_token") ||
-        (error as { code?: string }).code === "refresh_token_not_found"
-
-      if (isTokenError) {
-        // Delete all Supabase auth cookies from the browser by setting them to empty with maxAge=0
-        const clearResponse = NextResponse.redirect(new URL("/auth/admin/login?ref=ec25", request.url))
-        request.cookies.getAll().forEach(({ name }) => {
-          if (name.startsWith("sb-")) {
-            clearResponse.cookies.set(name, "", { maxAge: 0, path: "/" })
-          }
-        })
-        return clearResponse
-      }
-    } else {
-      user = data.user
-    }
-  } catch {
-    // Session error — treat as unauthenticated
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Protect patient routes
   if (request.nextUrl.pathname.startsWith("/patient") && !user) {
@@ -60,11 +36,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Protect admin routes — redirect to gizli login URL
+  // Protect admin routes
   if (request.nextUrl.pathname.startsWith("/admin") && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/admin/login"
-    url.search = "?ref=ec25"
     return NextResponse.redirect(url)
   }
 

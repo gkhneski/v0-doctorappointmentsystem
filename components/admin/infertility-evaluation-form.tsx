@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Plus, Trash2, Loader2, Check, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/lib/supabase/client"
+import { createBrowserClient } from "@supabase/ssr"
 import { YesNoField } from "./infertility/YesNoField"
 import { BloodGroupSelect, BLOOD_GROUPS } from "./infertility/BloodGroupSelect"
 import { RichTextEditor } from "./infertility/RichTextEditor"
@@ -69,8 +69,10 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
     art_history: {},
   })
 
-  // Use singleton client
-  const supabase = createClient()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
 
   useEffect(() => {
     loadLatestEvaluation()

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createServiceRoleClient } from "@/lib/supabase/server"
 import { sendAppointmentLinkSMS } from "@/lib/send-appointment-link-sms"
 import { sendDocumentListSMS } from "@/lib/send-document-list-sms"
 
@@ -47,28 +47,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Geçersiz doğrulama kodu" }, { status: 400 })
     }
 
-    // Mark as verified — ATOMIC guard against duplicate sends.
-    // Only the request that actually flips verified false→true proceeds to send SMS.
-    // If two requests race (double-click / retry), the second one claims 0 rows.
-    const { data: claimedRows, error: updateError } = await supabase
+    // Mark as verified
+    const { error: updateError } = await supabase
       .from("sms_verifications")
       .update({
         verified: true,
         verified_at: new Date().toISOString(),
       })
       .eq("id", verification.id)
-      .eq("verified", false)
-      .select("id")
 
     if (updateError) {
       console.error("[v0] Error updating verification:", updateError)
       throw updateError
-    }
-
-    // Another concurrent request already verified this appointment → do NOT resend SMS.
-    if (!claimedRows || claimedRows.length === 0) {
-      console.log("[v0] Verification already claimed by another request, skipping SMS:", appointmentId)
-      return NextResponse.json({ success: true, message: "Randevunuz zaten onaylandı" })
     }
 
     // Update appointment status to confirmed
@@ -93,8 +83,6 @@ export async function POST(request: Request) {
           id,
           patient_id,
           appointment_type,
-          appointment_date,
-          appointment_time,
           patients (
             full_name,
             phone
@@ -107,14 +95,8 @@ export async function POST(request: Request) {
       if (appointmentData && appointmentData.patients) {
         const patient = appointmentData.patients as any
 
-        // 1. Onay SMS'i gonder (tarih, saat ve tip ile)
-        await sendAppointmentLinkSMS(
-          patient.phone, 
-          patient.full_name,
-          appointmentData.appointment_date,
-          appointmentData.appointment_time,
-          appointmentData.appointment_type
-        )
+        // 1. Onay SMS'i gonder
+        await sendAppointmentLinkSMS(patient.phone, patient.full_name)
 
         // 2. Evrak listesi SMS'i ayri olarak gonder
         if (appointmentData.appointment_type) {

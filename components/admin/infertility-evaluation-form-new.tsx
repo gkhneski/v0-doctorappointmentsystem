@@ -72,8 +72,11 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
 
   const loadLatestEvaluation = async () => {
     try {
-      const { createClient } = await import("@/lib/supabase/client")
-      const supabase = createClient()
+      const { createBrowserClient } = await import("@supabase/ssr")
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
 
       const { data, error } = await supabase
         .from("infertility_evaluations")
@@ -182,8 +185,11 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
   const handleSaveForm = async () => {
     try {
       setSaving(true)
-      const { createClient } = await import("@/lib/supabase/client")
-      const supabase = createClient()
+      const { createBrowserClient } = await import("@supabase/ssr")
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
 
       const evaluationData = {
         patient_id: patientId,

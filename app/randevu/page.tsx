@@ -1,10 +1,8 @@
-import { createClient } from "@/lib/supabase/server"
-import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { Stethoscope } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import AppointmentTypeSelector from "@/components/appointment-type-selector"
-import { AIAppointmentAssistant } from "@/components/ai-appointment-assistant"
 
 export default async function AppointmentPage() {
   const supabase = await createClient()
@@ -40,7 +38,7 @@ export default async function AppointmentPage() {
     const serviceSupabase = await createServiceRoleClient()
     const { data, error } = await serviceSupabase
       .from("appointments")
-      .select("id, doctor_id, appointment_date, appointment_time, status")
+      .select("doctor_id, appointment_date, appointment_time")
       .gte("appointment_date", today)
       .neq("status", "cancelled")
 
@@ -52,9 +50,10 @@ export default async function AppointmentPage() {
   } catch (serviceError) {
     console.error("[v0] Service role client failed, trying regular client:", serviceError)
 
+    // Fallback to regular client
     const { data, error } = await supabase
       .from("appointments")
-      .select("id, doctor_id, appointment_date, appointment_time, status")
+      .select("doctor_id, appointment_date, appointment_time")
       .gte("appointment_date", today)
       .neq("status", "cancelled")
 
@@ -64,6 +63,8 @@ export default async function AppointmentPage() {
       existingAppointments = data || []
     }
   }
+
+  console.log("[v0] Fetched appointments count:", existingAppointments.length)
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,9 +94,6 @@ export default async function AppointmentPage() {
           existingAppointments={existingAppointments || []}
         />
       </div>
-
-      {/* AI Appointment Assistant */}
-      <AIAppointmentAssistant />
     </div>
   )
 }

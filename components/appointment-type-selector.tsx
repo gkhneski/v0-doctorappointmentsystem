@@ -10,12 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Calendar, Heart, Baby, ChevronRight, Phone, Sparkles } from "lucide-react"
+import { Calendar, Heart, Baby, ChevronRight, Phone } from "lucide-react"
 import WeeklyCalendar from "./weekly-calendar"
-import dynamic from "next/dynamic"
-import AppointmentWizardModal from "./appointment-wizard-modal"
-
-const AiRandevuChat = dynamic(() => import("./ai-randevu-chat"), { ssr: false })
 
 type Doctor = {
   id: string
@@ -105,38 +101,17 @@ const APPOINTMENT_TYPES = [
   },
 ]
 
-type SelectedSlot = {
-  date: string
-  time: string
-  appointmentTypeId: string
-  appointmentTypeLabel: string
-  patientName: string
-  doctorId: string
-}
-
 export default function AppointmentTypeSelector({ doctor, schedules, existingAppointments }: Props) {
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [showCalendar, setShowCalendar] = useState(false)
   const [showEmergencyModal, setShowEmergencyModal] = useState(false)
   const [emergencyStep, setEmergencyStep] = useState<"sekreter" | "hemsire1" | "hemsire2">("sekreter")
-  const [showAiChat, setShowAiChat] = useState(false)
-  const [aiPreselectedDate, setAiPreselectedDate] = useState<string | null>(null)
-  const [aiPreselectedTime, setAiPreselectedTime] = useState<string | null>(null)
-  const [aiPatientName, setAiPatientName] = useState<string | null>(null)
-  const [aiWizardOpen, setAiWizardOpen] = useState(false)
-
-  // Fetal ultrason bebek sayisi
-  const [showFetalDialog, setShowFetalDialog] = useState(false)
-  const [fetalBebekSayisi, setFetalBebekSayisi] = useState<string | null>(null)
 
   const handleTypeSelect = (typeId: string) => {
     if (typeId === "acil-durum") {
       setSelectedType(typeId)
       setShowEmergencyModal(true)
       setEmergencyStep("sekreter")
-    } else if (typeId === "ayrintili-fetal-ultrason") {
-      setSelectedType(typeId)
-      setShowFetalDialog(true)
     } else {
       setSelectedType(typeId)
       setShowCalendar(true)
@@ -146,49 +121,6 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
   const handleBackToTypes = () => {
     setShowCalendar(false)
     setSelectedType(null)
-    setAiPreselectedDate(null)
-    setAiPreselectedTime(null)
-    setFetalBebekSayisi(null)
-  }
-
-  const handleAiSlotSelected = (slot: SelectedSlot) => {
-    setSelectedType(slot.appointmentTypeId)
-    setAiPreselectedDate(slot.date)
-    setAiPreselectedTime(slot.time)
-    setAiPatientName(slot.patientName)
-    setShowAiChat(false)
-    setAiWizardOpen(true)
-  }
-
-  // AI asistanından gelen slot icin direkt wizard - tip secimi ve takvimi atlar
-  if (aiWizardOpen && aiPreselectedDate && aiPreselectedTime && selectedType) {
-    return (
-      <>
-        <div className="rounded-lg border bg-muted/50 p-4 mb-4">
-          <p className="text-sm text-muted-foreground">AI Asistan tarafindan secilen randevu:</p>
-          <p className="font-semibold">
-            {APPOINTMENT_TYPES.find((t) => t.id === selectedType)?.title} —{" "}
-            {new Date(aiPreselectedDate).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" })} {aiPreselectedTime}
-          </p>
-          <button
-            className="mt-2 text-xs text-primary underline"
-            onClick={() => { setAiWizardOpen(false); setAiPreselectedDate(null); setAiPreselectedTime(null); setAiPatientName(null); setSelectedType(null) }}
-          >
-            Iptal et, baska randevu al
-          </button>
-        </div>
-        <AppointmentWizardModal
-          isOpen={true}
-          onClose={() => { setAiWizardOpen(false) }}
-          selectedSlot={doctor ? { date: aiPreselectedDate, time: aiPreselectedTime, doctorId: doctor.id } : null}
-          doctorName={doctor?.name || ""}
-          onSuccess={() => { setAiWizardOpen(false) }}
-          preselectedType={selectedType}
-          fetalBebekSayisi={fetalBebekSayisi}
-          prefilledName={aiPatientName || undefined}
-        />
-      </>
-    )
   }
 
   if (showCalendar && selectedType) {
@@ -205,19 +137,11 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
             </p>
           </div>
         </div>
-        {selectedType === "ayrintili-fetal-ultrason" && fetalBebekSayisi && (
-          <div className="mb-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-800 font-medium">
-            Bebek Sayisi: <strong>{fetalBebekSayisi === "tek" ? "Tek Bebek" : fetalBebekSayisi === "ikiz" ? "Ikiz Bebek" : "Ucuz Bebek"}</strong>
-          </div>
-        )}
         <WeeklyCalendar
           doctor={doctor}
           schedules={schedules}
           existingAppointments={existingAppointments}
           preselectedType={selectedType}
-          preselectedDate={aiPreselectedDate}
-          preselectedTime={aiPreselectedTime}
-          fetalBebekSayisi={fetalBebekSayisi}
         />
       </div>
     )
@@ -225,68 +149,12 @@ export default function AppointmentTypeSelector({ doctor, schedules, existingApp
 
   return (
     <div className="space-y-6">
-      {/* Fetal Ultrason Bebek Sayisi Dialog */}
-      <Dialog open={showFetalDialog} onOpenChange={(open) => { if (!open) { setShowFetalDialog(false); setSelectedType(null) } }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Bebek Sayisi</DialogTitle>
-            <DialogDescription>Ayrıntılı fetal ultrason için bebek sayisini secin</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3 py-4">
-            {[
-              { id: "tek", label: "Tek Bebek", desc: "Tekil gebelik" },
-              { id: "ikiz", label: "Ikiz Bebek", desc: "Ikiz gebelik" },
-              { id: "ucuz", label: "Ucuz Bebek", desc: "Ucuz gebelik (Triplet)" },
-            ].map((opt) => (
-              <button
-                key={opt.id}
-                onClick={() => {
-                  setFetalBebekSayisi(opt.id)
-                  setShowFetalDialog(false)
-                  setShowCalendar(true)
-                }}
-                className="flex items-center justify-between rounded-lg border-2 border-indigo-200 bg-indigo-50 p-4 text-left hover:border-indigo-400 hover:bg-indigo-100 transition-all"
-              >
-                <div>
-                  <p className="font-semibold text-indigo-900">{opt.label}</p>
-                  <p className="text-xs text-indigo-600">{opt.desc}</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-indigo-400" />
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* AI Chat Panel */}
-      {showAiChat && (
-        <AiRandevuChat
-          onSlotSelected={handleAiSlotSelected}
-          onClose={() => setShowAiChat(false)}
-        />
-      )}
-
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle>Randevu Tipi Seçin</CardTitle>
-              <CardDescription>
-                Lütfen önce randevu tipini seçin, ardından müsait tarih ve saatleri görebilirsiniz
-              </CardDescription>
-            </div>
-            {!showAiChat && (
-              <Button
-                variant="outline"
-                className="flex-shrink-0 gap-2 border-primary/40 text-primary hover:bg-primary/5"
-                onClick={() => setShowAiChat(true)}
-              >
-                <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">AI ile Randevu Al</span>
-                <span className="sm:hidden">AI</span>
-              </Button>
-            )}
-          </div>
+          <CardTitle>Randevu Tipi Seçin</CardTitle>
+          <CardDescription>
+            Lütfen önce randevu tipini seçin, ardından müsait tarih ve saatleri görebilirsiniz
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

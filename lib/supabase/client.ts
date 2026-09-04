@@ -1,19 +1,30 @@
-import { createBrowserClient } from "@supabase/ssr"
-import type { SupabaseClient } from "@supabase/supabase-js"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
-// Singleton pattern: Only ONE browser client instance across the entire app
-// This prevents "Multiple GoTrueClient instances" errors
-let browserClient: SupabaseClient | null = null
+// Use globalThis to persist client across HMR in development
+const globalForSupabase = globalThis as unknown as {
+  supabaseClient: ReturnType<typeof createSupabaseClient> | undefined
+}
 
-export function createClient(): SupabaseClient {
-  if (browserClient) {
-    return browserClient
+export function createClient() {
+  if (globalForSupabase.supabaseClient) {
+    return globalForSupabase.supabaseClient
   }
 
-  browserClient = createBrowserClient(
+  const client = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    }
   )
 
-  return browserClient
+  if (typeof window !== "undefined") {
+    globalForSupabase.supabaseClient = client
+  }
+
+  return client
 }
