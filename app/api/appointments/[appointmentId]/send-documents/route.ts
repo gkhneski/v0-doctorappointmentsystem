@@ -1,9 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { sendDocumentListSMS } from "@/lib/send-document-list-sms"
+import { getAdminAuth } from "@/lib/admin-auth"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ appointmentId: string }> }) {
   try {
+    // Hastaya SMS tetikleyen bu uc SADECE admin tarafindan cagrilabilir
+    // (aksi halde randevu ID'sini bilen biri SMS spam'i yaptirabilir).
+    const { user, adminUser } = await getAdminAuth()
+    if (!user || !adminUser) {
+      return NextResponse.json({ error: "Bu islem icin yetkiniz yok" }, { status: 403 })
+    }
+
     const { appointmentId } = await params
     const supabase = createServiceRoleClient()
 

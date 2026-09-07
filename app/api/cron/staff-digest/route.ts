@@ -5,9 +5,10 @@ import { sendDueDigests } from "@/lib/staff-reminder"
 // sectikleri icerigi (bugun/yarin/onaylanmamis/iptal) Telegram ile gonderir.
 export async function GET(request: Request) {
   try {
+    // CRON_SECRET tanimliysa gecerli Bearer header ZORUNLUDUR.
     const cronSecret = process.env.CRON_SECRET
     const authHeader = request.headers.get("authorization")
-    if (cronSecret && authHeader && authHeader !== `Bearer ${cronSecret}`) {
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

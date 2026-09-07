@@ -54,13 +54,12 @@ async function sendSMS(phone: string, message: string) {
 
 export async function GET(request: Request) {
   try {
-    // CRON_SECRET opsiyoneldir - Vercel Cron Jobs kullanildiginda otomatik eklenir
-    // Manuel test icin veya CRON_SECRET yoksa dogrudan calisir
+    // CRON_SECRET tanimliysa gecerli Bearer header ZORUNLUDUR.
+    // (Eski kod header yoksa geciyordu; boylece internetten herkes cron'u tetikleyebiliyordu.)
     const cronSecret = process.env.CRON_SECRET
     const authHeader = request.headers.get("authorization")
-    
-    // Sadece CRON_SECRET varsa ve authorization header varsa kontrol et
-    if (cronSecret && authHeader && authHeader !== `Bearer ${cronSecret}`) {
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
