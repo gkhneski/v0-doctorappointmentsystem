@@ -1,17 +1,71 @@
 import { NextResponse } from "next/server"
+import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { sendRescheduleSMS } from "@/lib/send-reschedule-sms"
+
+// Randevu degistirme/silme SADECE giris yapmis admin tarafindan yapilabilir.
+// Aksi halde randevu ID'sini ele geciren biri baskasinin randevusunu tasiyabilir.
+async function requireAdmin(): Promise<boolean> {
+  const authClient = await createClient()
+  const {
+    data: { user },
+  } = await authClient.auth.getUser()
+  if (!user) return false
+
+  const { data: adminUser } = await authClient
+    .from("admin_users")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle()
+
+  return Boolean(adminUser)
+}
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ appointmentId: string }> }
 ) {
   try {
+    if (!(await requireAdmin())) {
+      return NextResponse.json({ error: "Bu islem icin yetkiniz yok" }, { status: 403 })
+    }
+
     const { appointmentId } = await params
     const body = await request.json()
     const { appointment_date, appointment_time, appointment_type, notes, status } = body
 
     const supabase = createServiceRoleClient()
+
+    // Tarih veya saat degisiyorsa hedef slotun bos oldugunu dogrula (cift rezervasyonu engelle)
+    if (appointment_date || appointment_time) {
+      const { data: current } = await supabase
+        .from("appointments")
+        .select("doctor_id, appointment_date, appointment_time")
+        .eq("id", appointmentId)
+        .single()
+
+      if (current) {
+        const targetDate = appointment_date || current.appointment_date
+        const targetTime = appointment_time || current.appointment_time
+
+        const { data: clash } = await supabase
+          .from("appointments")
+          .select("id")
+          .eq("doctor_id", current.doctor_id)
+          .eq("appointment_date", targetDate)
+          .eq("appointment_time", targetTime)
+          .neq("id", appointmentId)
+          .neq("status", "cancelled")
+          .limit(1)
+
+        if (clash && clash.length > 0) {
+          return NextResponse.json(
+            { error: "Bu saatte baska bir randevu var. Lutfen once o slotu bosaltin." },
+            { status: 409 },
+          )
+        }
+      }
+    }
 
     const updateData: Record<string, string | null> = {}
     if (appointment_date) updateData.appointment_date = appointment_date
@@ -91,6 +145,10 @@ export async function DELETE(
   { params }: { params: Promise<{ appointmentId: string }> }
 ) {
   try {
+    if (!(await requireAdmin())) {
+      return NextResponse.json({ error: "Bu islem icin yetkiniz yok" }, { status: 403 })
+    }
+
     const { appointmentId } = await params
 
     console.log("[v0] Deleting appointment:", appointmentId)
