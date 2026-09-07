@@ -1,6 +1,7 @@
 import { convertToModelMessages, streamText, tool, UIMessage } from "ai"
 import { z } from "zod"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export const maxDuration = 30
 
@@ -96,9 +97,17 @@ ACİL İLETİŞİM:
 - Her zaman randevuya yönlendirmeyi ihmal etme`
 
 export async function POST(req: Request) {
+  // AI maliyet korumasi: her IP icin dakikada 20 mesaj. Sinirsiz cagri Gemini
+  // faturasini sisirmesin diye.
+  const ip = getClientIp(req)
+  const allowed = await checkRateLimit(`ai:ip:${ip}`, 20, 60)
+  if (!allowed) {
+    return new Response("Cok fazla istek. Lutfen biraz bekleyin.", { status: 429 })
+  }
+
   const body = await req.json()
   const messages: UIMessage[] = body.messages ?? []
-
+  
   const supabase = createServiceRoleClient()
 
   const { data: doctors } = await supabase.from("doctors").select("id").limit(1)

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { resolvePatientId } from "@/lib/resolve-patient"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   try {
@@ -46,6 +47,19 @@ export async function POST(request: Request) {
       }
 
       isVerifiedAdmin = true
+    }
+
+    // Public (admin olmayan) randevu isteklerine spam korumasi: her IP icin
+    // saatte en fazla 10 randevu denemesi. Admin panelini etkilemez.
+    if (!isVerifiedAdmin) {
+      const ip = getClientIp(request)
+      const allowed = await checkRateLimit(`appt:ip:${ip}`, 10, 3600)
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "Cok fazla randevu istegi. Lutfen bir sure sonra tekrar deneyin." },
+          { status: 429 },
+        )
+      }
     }
 
     const supabase = createServiceRoleClient()
