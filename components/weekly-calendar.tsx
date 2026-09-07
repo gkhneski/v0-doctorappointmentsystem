@@ -593,13 +593,17 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
         ? `${solidColor} text-white opacity-40 scale-95 cursor-grabbing`
         : isAdmin
           ? `${solidColor} text-white opacity-100 hover:shadow-lg hover:scale-[1.02] cursor-pointer`
-          : `${solidColor} text-white opacity-100 cursor-grab active:cursor-grabbing`
+          : `${solidColor} text-white opacity-100 cursor-default` // public: dolu slot, taşınamaz
+
+    // Randevu taşıma (sürükle-bırak) SADECE admin için. Public tarafta hasta
+    // baskasinin randevusunu suruklemesin diye tamamen kapali.
+    const canDrag = isAdmin && !isCancelled
 
     const card = (
       <div
         key={appointment.id}
-        draggable={!isCancelled}
-        onDragStart={() => !isCancelled && handleDragStart(appointment)}
+        draggable={canDrag}
+        onDragStart={() => canDrag && handleDragStart(appointment)}
         onDragEnd={handleDragEnd}
         onClick={(e) => {
           if (isCancelled) return
@@ -619,7 +623,7 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
           </div>
         )}
         <div className="flex items-start gap-1">
-          {!isCancelled && <GripVertical className="h-3 w-3 mt-0.5 shrink-0 opacity-50 group-hover:opacity-100" />}
+          {canDrag && <GripVertical className="h-3 w-3 mt-0.5 shrink-0 opacity-50 group-hover:opacity-100" />}
           <div className="min-w-0 flex-1">
             <div className={`font-bold text-[11px] opacity-90 flex items-center gap-1 ${isAdmin ? "mb-0" : "mb-0.5"}`}>
               {time}
@@ -898,12 +902,14 @@ export default function WeeklyCalendar({ doctor, schedules, existingAppointments
                                   <div
                                     key={time}
                                     onDragOver={(e) => {
+                                      if (!isAdmin) return
                                       e.preventDefault()
                                       e.dataTransfer.dropEffect = "move"
                                       if (!isPast && !isFetalBlocked) setDragOverSlot({ date: slotDateStr, time })
                                     }}
-                                    onDragLeave={() => setDragOverSlot(null)}
+                                    onDragLeave={() => isAdmin && setDragOverSlot(null)}
                                     onDrop={(e) => {
+                                      if (!isAdmin) return
                                       e.preventDefault()
                                       if (!isPast && !isFetalBlocked) handleDrop(slotDateStr, time)
                                     }}
