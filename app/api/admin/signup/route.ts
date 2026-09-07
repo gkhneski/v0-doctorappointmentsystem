@@ -1,8 +1,16 @@
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
+import { getAdminAuth } from "@/lib/admin-auth"
 
 export async function POST(request: Request) {
   try {
+    // Yeni admin/personel hesabi SADECE giris yapmis mevcut bir admin tarafindan
+    // olusturulabilir. Aksi halde herkes kendini admin yapabilirdi.
+    const { user, adminUser } = await getAdminAuth()
+    if (!user || !adminUser) {
+      return NextResponse.json({ error: "Bu islem icin yetkiniz yok" }, { status: 403 })
+    }
+
     const { email, password, fullName, role } = await request.json()
 
     const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {

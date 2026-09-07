@@ -53,6 +53,23 @@ export async function updateSession(request: NextRequest) {
     // Session error — treat as unauthenticated
   }
 
+  // Yonetimsel API uclarini merkezi olarak koru. Bu uclar servis rolu ile
+  // hassas veri degistirdigi icin SADECE giris yapmis admin cagirabilmeli.
+  // (Aksi halde randevu/hasta/takvim/admin-hesabi uclari internete acik kalir.)
+  const path = request.nextUrl.pathname
+  const adminApiPrefixes = ["/api/admin", "/api/patients", "/api/weekly-patterns"]
+  const needsAdminApi = adminApiPrefixes.some((p) => path === p || path.startsWith(p + "/"))
+
+  if (needsAdminApi) {
+    if (!user) {
+      return NextResponse.json({ error: "Yetkisiz" }, { status: 401 })
+    }
+    const { data: adminRow } = await supabase.from("admin_users").select("id").eq("id", user.id).maybeSingle()
+    if (!adminRow) {
+      return NextResponse.json({ error: "Bu islem icin yetkiniz yok" }, { status: 403 })
+    }
+  }
+
   // Protect patient routes
   if (request.nextUrl.pathname.startsWith("/patient") && !user) {
     const url = request.nextUrl.clone()
