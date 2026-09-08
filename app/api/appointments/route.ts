@@ -184,7 +184,9 @@ export async function POST(request: Request) {
         confirmation_token: confirmationToken,
         appointment_type: appointment_type,
         fetal_bebek_sayisi: fetal_bebek_sayisi || null,
-        notes: `Randevu Tipi: ${appointment_type}${fetal_bebek_sayisi ? ` (${fetal_bebek_sayisi === "tek" ? "Tek Bebek" : fetal_bebek_sayisi === "ikiz" ? "Ikiz Bebek" : "Ucuz Bebek"})` : ""}`,
+        // Not alani bos birakilir; randevu tipi zaten appointment_type kolonunda tutuluyor.
+        // Boylece adminler kendi notlarini yazarken onceden dolu metni silmek zorunda kalmaz.
+        notes: null,
       })
       .select("id")
       .single()
