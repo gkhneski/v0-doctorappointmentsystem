@@ -1,9 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: NextRequest) {
   try {
     const { phone, appointmentId } = await request.json()
+
+    // SMS maliyet/spam korumasi: her telefon icin saatte en fazla 5, her IP icin
+    // saatte en fazla 15 dogrulama SMS'i. Boylece bir bot binlerce SMS attiramaz.
+    const cleanPhone = String(phone || "").replace(/\D/g, "")
+    const ip = getClientIp(request)
+    const [phoneOk, ipOk] = await Promise.all([
+      checkRateLimit(`sms:phone:${cleanPhone}`, 5, 3600),
+      checkRateLimit(`sms:ip:${ip}`, 15, 3600),
+    ])
+    if (!phoneOk || !ipOk) {
+      return NextResponse.json(
+        { success: false, message: "Cok fazla SMS istegi. Lutfen bir sure sonra tekrar deneyin." },
+        { status: 429 },
+      )
+    }
 
     // 6 haneli rastgele kod oluştur
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()

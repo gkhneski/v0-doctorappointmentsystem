@@ -1,8 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { getAdminAuth } from "@/lib/admin-auth"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ appointmentId: string }> }) {
   try {
+    // Randevuya ait evrak/form varligini sizdirmamak icin sadece admin gorebilir.
+    const { user, adminUser } = await getAdminAuth()
+    if (!user || !adminUser) {
+      return NextResponse.json({ error: "Bu islem icin yetkiniz yok" }, { status: 403 })
+    }
+
     const { appointmentId } = await params
     const supabase = createServiceRoleClient()
 
