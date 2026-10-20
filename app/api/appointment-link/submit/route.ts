@@ -16,9 +16,11 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceRoleClient()
 
     // Form verisini kaydet
-    const { error: formError } = supabase.from("appointment_forms").upsert(
+    // Sadece token'in ait oldugu randevuya yazilir (istekteki appointmentId'ye guvenilmez).
+    const targetAppointmentId = tokenData.appointment_id || appointmentId
+    const { error: formError } = await supabase.from("appointment_forms").upsert(
       {
-        appointment_id: appointmentId,
+        appointment_id: targetAppointmentId,
         form_data: formData,
         updated_at: new Date().toISOString(),
       },

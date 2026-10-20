@@ -57,6 +57,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    if (adminUser.role !== "doktor") {
+      return NextResponse.json({ error: "Personel eklemek icin doktor yetkisi gerekir" }, { status: 403 })
+    }
+
     const { full_name, email, password, role } = await request.json()
 
     // Validate input

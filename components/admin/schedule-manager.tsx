@@ -789,7 +789,7 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
               <AlertDialogHeader>
                 <AlertDialogTitle className="text-lg text-orange-600">Programlari Sifirla?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  <strong>{MONTHS[selectedMonth].label} {selectedYear}</strong> ayindaki TUM programlar ve buna bagli randevular silinip, sadece hafta sonu haric is gunleri icin yeniden olusturulacak. Bu islem geri alinamaz!
+                  <strong>{MONTHS[selectedMonth].label} {selectedYear}</strong> ayindaki TUM programlar silinip, sadece hafta sonu haric is gunleri icin yeniden olusturulacak. Mevcut randevular silinmez. Bu islem geri alinamaz!
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

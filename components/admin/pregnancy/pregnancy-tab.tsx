@@ -450,10 +450,9 @@ export function PregnancyTab({ patientId, patientData }: PregnancyTabProps) {
                         </div>
                       )}
                       {visit.exam_notes && (
-                        <div
-                          className="text-sm text-gray-600 mt-2 line-clamp-2 prose prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{ __html: visit.exam_notes }}
-                        />
+                        <div className="text-sm text-gray-600 mt-2 line-clamp-2 whitespace-pre-wrap">
+                          {visit.exam_notes}
+                        </div>
                       )}
                     </div>
                     <Button size="sm" variant="ghost" onClick={(e) => {

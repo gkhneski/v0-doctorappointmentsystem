@@ -1,22 +1,20 @@
 "use server"
 
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { getAdminAuth } from "@/lib/admin-auth"
 
 export async function resetSchedulesForMonth(year: number, month: number) {
+  // Server action'lar disaridan dogrudan cagrilabilir; sadece giris yapmis admin.
+  const { user, adminUser } = await getAdminAuth()
+  if (!user || !adminUser) {
+    return { success: false, error: "Bu islem icin yetkiniz yok" }
+  }
+
   const supabase = createServiceRoleClient()
 
   console.log("Starting reset for", year, month)
 
-  // 1) Tüm randevuları sil
-  const { error: deleteAppointmentsError } = await supabase
-    .from("appointments")
-    .delete()
-    .neq("id", "00000000-0000-0000-0000-000000000000") // Delete all
-
-  if (deleteAppointmentsError) {
-    console.error("Appointment delete error:", deleteAppointmentsError)
-    return { success: false, error: "Randevular silinemedi" }
-  }
+  // Randevulara DOKUNULMAZ. (Eski kod sistemdeki TUM randevulari siliyordu.)
 
   // 2) O ayın TÜM programlarını sil (hafta sonu dahil)
   const daysInMonth = new Date(year, month, 0).getDate()

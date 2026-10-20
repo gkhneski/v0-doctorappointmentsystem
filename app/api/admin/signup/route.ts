@@ -11,7 +11,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Bu islem icin yetkiniz yok" }, { status: 403 })
     }
 
+    if (adminUser.role !== "doktor") {
+      return NextResponse.json({ error: "Personel eklemek icin doktor yetkisi gerekir" }, { status: 403 })
+    }
+
     const { email, password, fullName, role } = await request.json()
+
+    if (!["doktor", "sekreter", "hemsire"].includes(role)) {
+      return NextResponse.json({ error: "Geçersiz rol" }, { status: 400 })
+    }
 
     const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
       auth: {
