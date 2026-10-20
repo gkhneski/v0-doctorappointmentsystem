@@ -97,9 +97,17 @@ export async function GET(request: Request) {
     console.log("Found appointments:", appointments.length)
 
     let successCount = 0
+    let noPhoneCount = 0
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.dreraycaliskan.com"
 
     for (const appointment of appointments) {
+      // Hizli blok ile acilan kayitlarda telefon yoktur ("0000000000"); SMS denemeden atla.
+      const rawPhone = (appointment.patients?.phone || "").replace(/\D/g, "")
+      if (!rawPhone || /^0+$/.test(rawPhone)) {
+        noPhoneCount++
+        continue
+      }
+
       // Generate confirmation token if not exists
       let token = appointment.confirmation_token
       if (!token) {
@@ -157,12 +165,13 @@ export async function GET(request: Request) {
       }
     }
 
-    console.log("Reminders sent:", successCount)
+    console.log("Reminders sent:", successCount, "| skipped (no phone):", noPhoneCount)
 
     return NextResponse.json({
       message: "Reminders sent",
       total: appointments.length,
       success: successCount,
+      skippedNoPhone: noPhoneCount,
     })
   } catch (error: any) {
     console.error("Cron error:", error)
