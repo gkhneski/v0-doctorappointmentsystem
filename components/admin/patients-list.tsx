@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
+import { fetchAllPatients } from "@/lib/fetch-all-patients"
 
 type Patient = {
   id: string
@@ -87,11 +88,7 @@ export default function PatientsList({
       if (!res.ok) throw new Error(data.error || "Hata")
       setQuickAddResult({ success: true, message: data.message, smsSent: data.smsSent })
       // Listeyi yenile
-      const { data: updated } = await supabase
-        .from("patients")
-        .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-        .order("full_name")
-        .range(0, 9999)
+      const { data: updated } = await fetchAllPatients(supabase, { column: "full_name", ascending: true })
       if (updated) setPatients(updated)
     } catch (err: any) {
       toast({ title: "Hata", description: err.message, variant: "destructive" })
@@ -132,11 +129,7 @@ export default function PatientsList({
       toast({ title: "Başarılı", description: "Black List'e eklendi" })
       setManualBlacklistDialog({ open: false, fullName: "", phone: "", reason: "" })
 
-      const { data: updatedPatients } = await supabase
-        .from("patients")
-        .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason")
-        .order("full_name")
-        .range(0, 9999)
+      const { data: updatedPatients } = await fetchAllPatients(supabase, { column: "full_name", ascending: true })
 
       if (updatedPatients) setPatients(updatedPatients)
     } catch (error: any) {
@@ -287,12 +280,19 @@ export default function PatientsList({
   // Search filter - isim, TC, telefon ile Türkçe duyarsız arama
   const filteredPatients = patients.filter((patient) => {
     if (blacklistOnly && !patient.is_blacklisted) return false
-    if (!searchQuery.trim()) return true
-    const query = normalizeTurkish(searchQuery.trim())
+    const raw = searchQuery.trim()
+    if (!raw) return true
+    // Her kelime ayri aranir: "nurgul kaya ozmen" -> "Nurgül Özmen Kaya" da bulunur
+    const name = normalizeTurkish(patient.full_name || "")
+    const nameMatch = normalizeTurkish(raw)
+      .split(/\s+/)
+      .every((word) => name.includes(word))
+    const digits = raw.replace(/\D/g, "")
+    const phoneDigits = (patient.phone || "").replace(/\D/g, "")
     return (
-      normalizeTurkish(patient.full_name || "").includes(query) ||
-      (patient.tc_no || "").includes(searchQuery.trim()) ||
-      (patient.phone || "").includes(searchQuery.trim())
+      nameMatch ||
+      (patient.tc_no || "").includes(raw) ||
+      (digits.length >= 3 && (phoneDigits.includes(digits) || phoneDigits.includes(digits.replace(/^0+/, ""))))
     )
   })
 

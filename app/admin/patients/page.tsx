@@ -6,18 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link"
 import { UserPlus } from "lucide-react"
 import PatientsList from "@/components/admin/patients-list"
+import { fetchAllPatients } from "@/lib/fetch-all-patients"
 
 export default async function PatientsPage() {
   const supabase = await createClient()
 
   // Cache'li auth (layout ile paylasilir) + hasta listesi PARALEL cekilir
-  const [{ user, adminUser }, { data: patients, error: patientsError, count: patientsCount }] = await Promise.all([
+  const [{ user, adminUser }, { data: patients }] = await Promise.all([
     getAdminAuth(),
-    supabase
-      .from("patients")
-      .select("id, full_name, tc_no, phone, date_of_birth, kvkk_approved, created_at, profile_photo_url, is_blacklisted, blacklist_reason", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(0, 9999),
+    fetchAllPatients(supabase),
   ])
 
   if (!user || !adminUser) {
