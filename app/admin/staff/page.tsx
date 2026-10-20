@@ -27,7 +27,7 @@ export default async function StaffPage() {
     .select("*")
     .order("created_at", { ascending: false })
 
-  console.log("[v0] Staff members from DB:", staffMembers)
+  console.log("Staff members from DB:", staffMembers)
 
   const handleSignOut = async () => {
     "use server"

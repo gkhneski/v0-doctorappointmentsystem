@@ -72,17 +72,17 @@ export default function WeeklyPatternManager({ doctors }: { doctors: Doctor[] })
     const loadPatterns = async () => {
       setIsLoading(true)
       try {
-        console.log("[v0] Loading patterns for doctor:", selectedDoctor)
+        console.log("Loading patterns for doctor:", selectedDoctor)
         const res = await fetch(`/api/weekly-patterns?doctor_id=${selectedDoctor}`)
         const data = await res.json()
-        console.log("[v0] API response data:", data)
+        console.log("API response data:", data)
 
         if (Array.isArray(data) && data.length > 0) {
-          console.log("[v0] Setting patterns from API:", data)
+          console.log("Setting patterns from API:", data)
           setWeeklyPatterns(data)
         } else {
           // Varsayılan pattern oluştur (Mon-Fri çalış, Sat-Sun kapalı)
-          console.log("[v0] Creating default patterns")
+          console.log("Creating default patterns")
           // Pzt=1,Çar=3,Cum=5 → 11:30-18:00 | Sal=2,Per=4 → 13:00-18:00
           const defaults = DAYS.map((day) => ({
             id: `default-${day.value}`,
@@ -94,11 +94,11 @@ export default function WeeklyPatternManager({ doctors }: { doctors: Doctor[] })
             slot_duration: 15,
             notes: null,
           }))
-          console.log("[v0] Default patterns created:", defaults)
+          console.log("Default patterns created:", defaults)
           setWeeklyPatterns(defaults)
         }
       } catch (err) {
-        console.error("[v0] Load patterns error:", err)
+        console.error("Load patterns error:", err)
         setMessage({ type: "error", text: "Pattern yüklenemedi" })
       } finally {
         setIsLoading(false)
@@ -134,7 +134,7 @@ export default function WeeklyPatternManager({ doctors }: { doctors: Doctor[] })
 
       setMessage({ type: "success", text: "Haftalık desen başarıyla kaydedildi!" })
     } catch (err) {
-      console.error("[v0] Save error:", err)
+      console.error("Save error:", err)
       setMessage({ type: "error", text: "Hata oluştu" })
     } finally {
       setIsSaving(false)
@@ -172,7 +172,7 @@ export default function WeeklyPatternManager({ doctors }: { doctors: Doctor[] })
       setMessage({ type: "success", text: `${data.created} programa desen uygulandı!` })
       router.refresh()
     } catch (err) {
-      console.error("[v0] Apply error:", err)
+      console.error("Apply error:", err)
       setMessage({ type: "error", text: err instanceof Error ? err.message : "Hata oluştu" })
     } finally {
       setIsApplying(false)

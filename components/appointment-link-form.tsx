@@ -47,7 +47,7 @@ export default function AppointmentLinkForm({ appointmentId, token, appointmentT
         alert("Form gönderilemedi. Lütfen tekrar deneyin.")
       }
     } catch (error) {
-      console.error("[v0] Form submission error:", error)
+      console.error("Form submission error:", error)
       alert("Bir hata oluştu")
     } finally {
       setIsSubmitting(false)

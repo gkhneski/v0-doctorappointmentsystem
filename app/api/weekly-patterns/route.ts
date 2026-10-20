@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data || [])
   } catch (error) {
-    console.error("[v0] Weekly pattern GET error:", error)
+    console.error("Weekly pattern GET error:", error)
     return NextResponse.json({ error: "Failed to fetch patterns" }, { status: 500 })
   }
 }
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data })
   } catch (error) {
-    console.error("[v0] Weekly pattern POST error:", error)
+    console.error("Weekly pattern POST error:", error)
     return NextResponse.json({ error: "Failed to save patterns" }, { status: 500 })
   }
 }

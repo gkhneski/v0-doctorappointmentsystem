@@ -126,7 +126,7 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
           setWeeklyPatterns(data)
         }
       } catch (err) {
-        console.error("[v0] Pattern load error:", err)
+        console.error("Pattern load error:", err)
       } finally {
         setIsLoadingPatterns(false)
       }
@@ -211,7 +211,7 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
       alert(`${weekdaysToGenerate.length} iş günü için program başarıyla oluşturuldu!`)
       router.refresh()
     } catch (err: unknown) {
-      console.error("[v0] Generate error:", err)
+      console.error("Generate error:", err)
       setError(err instanceof Error ? err.message : "Programlar oluşturulamadı")
     } finally {
       setIsGenerating(false)
@@ -431,7 +431,7 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
 
       alert("Haftalık desen başarıyla kaydedildi!")
     } catch (err) {
-      console.error("[v0] Save patterns error:", err)
+      console.error("Save patterns error:", err)
       setPatternError(err instanceof Error ? err.message : "Hata oluştu")
     } finally {
       setIsSavingPatterns(false)
@@ -469,7 +469,7 @@ export default function ScheduleManager({ doctors, schedules }: { doctors: Docto
       alert(`${data.created} programa desen başarıyla uygulandı!`)
       router.refresh()
     } catch (err) {
-      console.error("[v0] Apply pattern error:", err)
+      console.error("Apply pattern error:", err)
       setError(err instanceof Error ? err.message : "Desen uygulanamadı")
     } finally {
       setIsGenerating(false)

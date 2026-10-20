@@ -83,7 +83,7 @@ export function PregnancyTab({ patientId, patientData }: PregnancyTabProps) {
         setOutcome(outcomeData)
       }
     } catch (error: any) {
-      console.error("[v0] Pregnancy data load error:", error)
+      console.error("Pregnancy data load error:", error)
       toast({
         title: "Hata",
         description: "Gebelik verileri yüklenemedi",

@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (error) {
-      console.error("[v0] SMS verification query error:", error)
+      console.error("SMS verification query error:", error)
       return NextResponse.json(
         { error: "Doğrulama hatası" },
         { status: 500 }
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       message: "KVKK onayı tamamlandı",
     })
   } catch (error) {
-    console.error("[v0] KVKK verify error:", error)
+    console.error("KVKK verify error:", error)
     return NextResponse.json(
       { error: "Beklenmeyen bir hata oluştu" },
       { status: 500 }

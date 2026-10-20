@@ -43,13 +43,13 @@ export async function POST(request: Request) {
     })
 
     if (error) {
-      console.error("[v0] Password reset error:", error)
+      console.error("Password reset error:", error)
       return NextResponse.json({ error: error.message || "Şifre güncellenemedi" }, { status: 400 })
     }
 
     return NextResponse.json({ success: true, message: "Şifre başarıyla güncellendi" })
   } catch (error: any) {
-    console.error("[v0] Reset password error:", error)
+    console.error("Reset password error:", error)
     return NextResponse.json({ error: "Sunucu hatası oluştu" }, { status: 500 })
   }
 }

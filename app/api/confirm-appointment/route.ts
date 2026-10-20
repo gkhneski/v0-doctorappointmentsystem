@@ -39,7 +39,7 @@ async function notifyStaffOfCancellation(
         .map((r) => sendTelegramMessage(String(r.telegram_chat_id), text)),
     )
   } catch (err: any) {
-    console.log("[v0] Telegram cancellation notify error:", err?.message)
+    console.log("Telegram cancellation notify error:", err?.message)
   }
 }
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     })
 
     if (error) {
-      console.error("[v0] Confirmation audit error:", error)
+      console.error("Confirmation audit error:", error)
       const status = error.message.includes("not found") ? 404 : 500
       return NextResponse.json({ error: status === 404 ? "Randevu bulunamadı" : "İşlem kaydedilemedi" }, { status })
     }
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, status: responseType })
   } catch (error: any) {
-    console.error("[v0] Confirmation error:", error)
+    console.error("Confirmation error:", error)
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 })
   }
 }

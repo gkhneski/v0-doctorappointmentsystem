@@ -16,12 +16,12 @@ export async function checkRateLimit(bucket: string, max: number, windowSeconds:
       p_window_seconds: windowSeconds,
     })
     if (error) {
-      console.log("[v0] rate limit rpc error:", error.message)
+      console.log("rate limit rpc error:", error.message)
       return true
     }
     return data === true
   } catch (err: any) {
-    console.log("[v0] rate limit error:", err?.message)
+    console.log("rate limit error:", err?.message)
     return true
   }
 }

@@ -30,13 +30,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ pati
       .limit(50)
 
     if (error) {
-      console.error("[v0] Patient appointments error:", error)
+      console.error("Patient appointments error:", error)
       return NextResponse.json({ error: "Randevular alınamadı" }, { status: 500 })
     }
 
     return NextResponse.json({ appointments: appointments || [] })
   } catch (error) {
-    console.error("[v0] Patient appointments route error:", error)
+    console.error("Patient appointments route error:", error)
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 })
   }
 }

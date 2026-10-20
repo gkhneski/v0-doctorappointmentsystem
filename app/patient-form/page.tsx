@@ -14,20 +14,20 @@ export default async function PatientFormPage({
   const params = await searchParams
   const token = params.t
 
-  console.log("[v0] Patient form page - Token:", token)
+  console.log("Patient form page - Token:", token)
 
   if (!token) {
-    console.log("[v0] No token in search params")
+    console.log("No token in search params")
     notFound()
   }
 
   // Token'ı validate et
   const tokenData = await validateAppointmentToken(token)
 
-  console.log("[v0] Token validation in page:", tokenData)
+  console.log("Token validation in page:", tokenData)
 
   if (!tokenData || !tokenData.appointments) {
-    console.log("[v0] Invalid token or no appointment data")
+    console.log("Invalid token or no appointment data")
     notFound()
   }
 

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       documentCount: documents?.length || 0,
     })
   } catch (error) {
-    console.error("[v0] Error checking document status:", error)
+    console.error("Error checking document status:", error)
     return NextResponse.json({ hasForm: false, documentCount: 0 }, { status: 500 })
   }
 }

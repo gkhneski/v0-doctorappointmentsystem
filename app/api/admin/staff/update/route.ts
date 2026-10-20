@@ -6,7 +6,7 @@ export async function PUT(request: Request) {
   try {
     const { userId, full_name, email, role, password } = await request.json()
 
-    console.log("[v0] Update request received:", { userId, full_name, email, role, hasPassword: !!password })
+    console.log("Update request received:", { userId, full_name, email, role, hasPassword: !!password })
 
     if (!userId) {
       return NextResponse.json({ error: "Kullanıcı ID gerekli" }, { status: 400 })
@@ -45,7 +45,7 @@ export async function PUT(request: Request) {
     const supabaseAdmin = await createServiceRoleClient()
 
     // Update admin_users table
-    console.log("[v0] Updating admin_users with:", { full_name, email, role, userId })
+    console.log("Updating admin_users with:", { full_name, email, role, userId })
     
     const { data: updateResult, error: dbError } = await supabaseAdmin
       .from("admin_users")
@@ -57,10 +57,10 @@ export async function PUT(request: Request) {
       .eq("id", userId)
       .select()
 
-    console.log("[v0] Update result:", { updateResult, dbError })
+    console.log("Update result:", { updateResult, dbError })
 
     if (dbError) {
-      console.error("[v0] Database update error:", dbError)
+      console.error("Database update error:", dbError)
       return NextResponse.json({ error: "Veritabanı güncellenemedi" }, { status: 400 })
     }
 
@@ -82,20 +82,20 @@ export async function PUT(request: Request) {
       updateData.password = password
     }
 
-    console.log("[v0] Updating auth user with:", updateData)
+    console.log("Updating auth user with:", updateData)
 
     const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, updateData)
 
     if (authError) {
-      console.error("[v0] Auth update error:", authError)
+      console.error("Auth update error:", authError)
       // Don't fail completely if auth update fails, just log it
     } else {
-      console.log("[v0] Auth user updated successfully")
+      console.log("Auth user updated successfully")
     }
 
     return NextResponse.json({ success: true, message: "Personel başarıyla güncellendi" })
   } catch (error: any) {
-    console.error("[v0] Update staff error:", error)
+    console.error("Update staff error:", error)
     return NextResponse.json({ error: "Sunucu hatası oluştu" }, { status: 500 })
   }
 }

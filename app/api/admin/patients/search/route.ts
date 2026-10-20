@@ -33,13 +33,13 @@ export async function GET(request: Request) {
     const { data: patients, error } = await serviceSupabase.rpc("search_patients_tr", { q: query })
 
     if (error) {
-      console.error("[v0] Patient search error:", error)
+      console.error("Patient search error:", error)
       return NextResponse.json({ error: "Arama sırasında hata oluştu" }, { status: 500 })
     }
 
     return NextResponse.json({ patients: patients || [] })
   } catch (error) {
-    console.error("[v0] Patient search route error:", error)
+    console.error("Patient search route error:", error)
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 })
   }
 }

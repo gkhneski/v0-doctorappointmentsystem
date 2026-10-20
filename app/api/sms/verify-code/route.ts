@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (error) {
-      console.error("[v0] SMS verification query error:", error)
+      console.error("SMS verification query error:", error)
       return NextResponse.json(
         {
           success: false,
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       message: "Randevu onaylandı",
     })
   } catch (error) {
-    console.error("[v0] Kod doğrulama hatası:", error)
+    console.error("Kod doğrulama hatası:", error)
     return NextResponse.json(
       {
         success: false,

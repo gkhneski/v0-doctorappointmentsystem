@@ -255,7 +255,7 @@ export async function POST(request: Request) {
       devCode, // Only included in dev/error cases
     })
   } catch (error) {
-    console.error("[v0] Error in POST /api/appointments:", error)
+    console.error("Error in POST /api/appointments:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Randevu oluşturulurken bir hata oluştu" },
       { status: 500 },

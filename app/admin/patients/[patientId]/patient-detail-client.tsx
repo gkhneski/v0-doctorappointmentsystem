@@ -135,7 +135,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       setCalendarAppointments(apptData || [])
       setCalendarSchedules(schedData || [])
     } catch (err) {
-      console.error("[v0] openAppointmentModal error:", err)
+      console.error("openAppointmentModal error:", err)
     }
     setAppointmentModalOpen(true)
   }
@@ -146,7 +146,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       if (error) throw error
       setReferences(data || [])
     } catch (error: any) {
-      console.error("[v0] References fetch error:", error)
+      console.error("References fetch error:", error)
     }
   }
 
@@ -212,13 +212,13 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
                   .createSignedUrl(storagePath, 3600)
 
                 if (error) {
-                  console.error("[v0] Signed URL error for", doc.file_name, error)
+                  console.error("Signed URL error for", doc.file_name, error)
                   return { ...doc, signedUrl: null }
                 }
 
                 return { ...doc, signedUrl: signedData?.signedUrl || null }
               } catch (err) {
-                console.error("[v0] Error processing document:", doc.file_name, err)
+                console.error("Error processing document:", doc.file_name, err)
                 return { ...doc, signedUrl: null }
               }
             }),
@@ -234,7 +234,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
         .order("created_at", { ascending: false })
       setNotes(notesData || [])
     } catch (error: any) {
-      console.error("[v0] Patient fetch error:", error)
+      console.error("Patient fetch error:", error)
       toast({ title: "Hata", description: error.message, variant: "destructive" })
     } finally {
       setLoading(false)
@@ -284,7 +284,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       setShowAddReference(false)
       toast({ title: "Başarılı", description: "Yeni referans eklendi" })
     } catch (error: any) {
-      console.error("[v0] Add reference error:", error)
+      console.error("Add reference error:", error)
       toast({ title: "Hata", description: "Referans eklenemedi", variant: "destructive" })
     }
   }
@@ -304,7 +304,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       setShowAddSpouseReference(false)
       toast({ title: "Başarılı", description: "Yeni eş referansı eklendi" })
     } catch (error: any) {
-      console.error("[v0] Add spouse reference error:", error)
+      console.error("Add spouse reference error:", error)
       toast({ title: "Hata", description: "Eş referansı eklenemedi", variant: "destructive" })
     }
   }
@@ -312,16 +312,16 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
   const handleSavePatientData = async () => {
     try {
       setSaving(true)
-      console.log("[v0] Saving patient data:", formData)
+      console.log("Saving patient data:", formData)
       
       const { data, error } = await supabase.from("patients").update(formData).eq("id", patientId).select()
       
       if (error) {
-        console.error("[v0] Database error:", error)
+        console.error("Database error:", error)
         throw error
       }
       
-      console.log("[v0] Save successful:", data)
+      console.log("Save successful:", data)
       setPatient(formData)
       setEditMode(false)
       
@@ -331,7 +331,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
         duration: 4000,
       })
     } catch (error: any) {
-      console.error("[v0] Save error:", error)
+      console.error("Save error:", error)
       toast({
         title: "✗ Hata",
         description: `Bilgiler kaydedilemedi: ${error.message || "Bilinmeyen hata"}`,
@@ -379,7 +379,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       setProfilePhotoSignedUrl(signedData.signedUrl)
       toast({ title: "Başarılı", description: "Profil resmi güncellendi" })
     } catch (error: any) {
-      console.error("[v0] Photo upload error:", error)
+      console.error("Photo upload error:", error)
       toast({ title: "Hata", description: "Resim yüklenemedi", variant: "destructive" })
     } finally {
       setUploadingPhoto(false)
@@ -417,7 +417,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       setSpousePhotoSignedUrl(signedData.signedUrl)
       toast({ title: "Başarılı", description: "Eş profil resmi güncellendi" })
     } catch (error: any) {
-      console.error("[v0] Spouse photo upload error:", error)
+      console.error("Spouse photo upload error:", error)
       toast({ title: "Hata", description: "Eş resmi yüklenemedi", variant: "destructive" })
     } finally {
       setUploadingSpousePhoto(false)
@@ -491,7 +491,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
 
       router.push("/admin/patients")
     } catch (error) {
-      console.error("[v0] Error deleting patient:", error)
+      console.error("Error deleting patient:", error)
       toast({
         title: "Hata",
         description: error instanceof Error ? error.message : "Hasta silinirken bir hata oluştu",
@@ -1170,7 +1170,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
                             alt={doc.file_name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              console.error("[v0] Image load error:", doc.file_name)
+                              console.error("Image load error:", doc.file_name)
                               e.currentTarget.style.display = "none"
                               e.currentTarget.nextElementSibling?.classList.remove("hidden")
                             }}
@@ -1394,7 +1394,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
               await supabase.from("patients").update({ medical_alerts: alerts }).eq("id", patientId)
               setPatient(updated)
             } catch (error: any) {
-              console.error("[v0] Medical alerts update error:", error)
+              console.error("Medical alerts update error:", error)
               toast({ title: "Hata", description: "Tıbbi uyarılar kaydedilemedi", variant: "destructive" })
             }
           }}

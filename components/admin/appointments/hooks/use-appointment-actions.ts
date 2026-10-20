@@ -49,7 +49,7 @@ export function useAppointmentActions(
       if (error) throw error
       router.refresh()
     } catch (error) {
-      console.error("[v0] Randevu güncellenirken hata:", error)
+      console.error("Randevu güncellenirken hata:", error)
     } finally {
       setIsUpdating(null)
     }
@@ -74,7 +74,7 @@ export function useAppointmentActions(
         onSelectedChange({ ...selectedAppointment, payment_status: status })
       }
     } catch (error) {
-      console.error("[v0] Ödeme durumu güncellenirken hata:", error)
+      console.error("Ödeme durumu güncellenirken hata:", error)
     }
   }
 
@@ -97,7 +97,7 @@ export function useAppointmentActions(
         onSelectedChange({ ...selectedAppointment, payment_amount: amount })
       }
     } catch (error) {
-      console.error("[v0] Ödeme tutarı güncellenirken hata:", error)
+      console.error("Ödeme tutarı güncellenirken hata:", error)
     }
   }
 
@@ -118,7 +118,7 @@ export function useAppointmentActions(
       onAppointmentsChange(updated)
       toast({ title: "Başarılı", description: "Yazdırma tipi güncellendi" })
     } catch (error) {
-      console.error("[v0] Yazdırma tipi güncellenirken hata:", error)
+      console.error("Yazdırma tipi güncellenirken hata:", error)
       toast({ title: "Hata", description: "Yazdırma tipi güncellenemedi", variant: "destructive" })
     }
   }
@@ -134,7 +134,7 @@ export function useAppointmentActions(
       toast({ title: "Silindi", description: "Randevu başarıyla silindi" })
       router.refresh()
     } catch (error) {
-      console.error("[v0] Randevu silinirken hata:", error)
+      console.error("Randevu silinirken hata:", error)
     }
   }
 

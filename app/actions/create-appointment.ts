@@ -53,7 +53,7 @@ export async function createAppointment(data: {
 
     return { success: true, data: appointment }
   } catch (error) {
-    console.error("[v0] Server action error:", error)
+    console.error("Server action error:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Randevu oluşturulamadı",

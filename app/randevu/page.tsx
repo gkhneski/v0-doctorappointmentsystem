@@ -45,12 +45,12 @@ export default async function AppointmentPage() {
       .neq("status", "cancelled")
 
     if (error) {
-      console.error("[v0] Error fetching appointments with service role:", error)
+      console.error("Error fetching appointments with service role:", error)
     } else {
       existingAppointments = data || []
     }
   } catch (serviceError) {
-    console.error("[v0] Service role client failed, trying regular client:", serviceError)
+    console.error("Service role client failed, trying regular client:", serviceError)
 
     const { data, error } = await supabase
       .from("appointments")
@@ -59,7 +59,7 @@ export default async function AppointmentPage() {
       .neq("status", "cancelled")
 
     if (error) {
-      console.error("[v0] Error fetching appointments with regular client:", error)
+      console.error("Error fetching appointments with regular client:", error)
     } else {
       existingAppointments = data || []
     }

@@ -21,7 +21,7 @@ export async function generateAppointmentAccessToken(appointmentId: string) {
     .single()
 
   if (error) {
-    console.error("[v0] Error creating access token:", error)
+    console.error("Error creating access token:", error)
     throw new Error("Token oluşturulamadı")
   }
 
@@ -29,7 +29,7 @@ export async function generateAppointmentAccessToken(appointmentId: string) {
 }
 
 export async function validateAppointmentToken(token: string) {
-  console.log("[v0] Validating token:", token)
+  console.log("Validating token:", token)
 
   const supabase = createServiceRoleClient()
 
@@ -54,7 +54,7 @@ export async function validateAppointmentToken(token: string) {
     .gt("expires_at", new Date().toISOString())
     .single()
 
-  console.log("[v0] Token query result:", { data, error })
+  console.log("Token query result:", { data, error })
 
   if (error || !data) {
     return null

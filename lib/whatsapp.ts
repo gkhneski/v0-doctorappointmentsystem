@@ -88,14 +88,14 @@ export async function sendWhatsAppTemplate(
     const data = await res.json()
     if (!res.ok) {
       const msg = data?.error?.message || `HTTP ${res.status}`
-      console.error("[v0] WhatsApp send error:", msg)
+      console.error("WhatsApp send error:", msg)
       return { success: false, to, error: msg }
     }
     const id = data?.messages?.[0]?.id
-    console.log("[v0] WhatsApp sent:", to, id)
+    console.log("WhatsApp sent:", to, id)
     return { success: true, to, id }
   } catch (error: any) {
-    console.error("[v0] WhatsApp fetch error:", error?.message)
+    console.error("WhatsApp fetch error:", error?.message)
     return { success: false, to, error: error?.message || "Network error" }
   }
 }

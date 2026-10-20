@@ -8,16 +8,16 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
-  console.log("[v0] POST /api/appointments/verify called")
-  console.log("[v0] Request URL:", request.url)
-  console.log("[v0] Request method:", request.method)
+  console.log("POST /api/appointments/verify called")
+  console.log("Request URL:", request.url)
+  console.log("Request method:", request.method)
   
   try {
     const body = await request.json()
     const { appointmentId, code } = body
 
-    console.log("[v0] Verifying SMS code for appointment:", appointmentId)
-    console.log("[v0] Code provided:", code)
+    console.log("Verifying SMS code for appointment:", appointmentId)
+    console.log("Code provided:", code)
 
     const supabase = createServiceRoleClient()
 
@@ -29,10 +29,10 @@ export async function POST(request: Request) {
       .eq("verified", false)
       .maybeSingle()
 
-    console.log("[v0] Verification query result:", { verification, verificationError })
+    console.log("Verification query result:", { verification, verificationError })
 
     if (verificationError || !verification) {
-      console.error("[v0] Verification record not found:", verificationError)
+      console.error("Verification record not found:", verificationError)
       return NextResponse.json({ error: "Doğrulama kaydı bulunamadı" }, { status: 404 })
     }
 
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     // Verify code
     if (verification.code !== code) {
-      console.log("[v0] Code mismatch - expected:", verification.code, "got:", code)
+      console.log("Code mismatch - expected:", verification.code, "got:", code)
       return NextResponse.json({ error: "Geçersiz doğrulama kodu" }, { status: 400 })
     }
 
@@ -61,13 +61,13 @@ export async function POST(request: Request) {
       .select("id")
 
     if (updateError) {
-      console.error("[v0] Error updating verification:", updateError)
+      console.error("Error updating verification:", updateError)
       throw updateError
     }
 
     // Another concurrent request already verified this appointment → do NOT resend SMS.
     if (!claimedRows || claimedRows.length === 0) {
-      console.log("[v0] Verification already claimed by another request, skipping SMS:", appointmentId)
+      console.log("Verification already claimed by another request, skipping SMS:", appointmentId)
       return NextResponse.json({ success: true, message: "Randevunuz zaten onaylandı" })
     }
 
@@ -78,11 +78,11 @@ export async function POST(request: Request) {
       .eq("id", appointmentId)
 
     if (appointmentError) {
-      console.error("[v0] Error updating appointment:", appointmentError)
+      console.error("Error updating appointment:", appointmentError)
       throw appointmentError
     }
 
-    console.log("[v0] Appointment verified successfully:", appointmentId)
+    console.log("Appointment verified successfully:", appointmentId)
 
     try {
       // Randevu ve hasta bilgilerini al
@@ -119,12 +119,12 @@ export async function POST(request: Request) {
         // 2. Evrak listesi SMS'i ayri olarak gonder
         if (appointmentData.appointment_type) {
           await sendDocumentListSMS(patient.phone, patient.full_name, appointmentData.appointment_type)
-          console.log("[v0] Document list SMS sent for type:", appointmentData.appointment_type)
+          console.log("Document list SMS sent for type:", appointmentData.appointment_type)
         }
       }
     } catch (linkError) {
       // Link gönderme hatası randevu oluşturmayı engellemez
-      console.error("[v0] Error sending appointment confirmation SMS:", linkError)
+      console.error("Error sending appointment confirmation SMS:", linkError)
     }
 
     return NextResponse.json({
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
       message: "Randevunuz onaylandı",
     })
   } catch (error) {
-    console.error("[v0] Error in POST /api/appointments/verify:", error)
+    console.error("Error in POST /api/appointments/verify:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Doğrulama sırasında bir hata oluştu" },
       { status: 500 },

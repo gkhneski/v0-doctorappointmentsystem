@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (insertError) {
-      console.error("[v0] SMS verification insert error:", insertError)
+      console.error("SMS verification insert error:", insertError)
       throw insertError
     }
 
@@ -48,10 +48,10 @@ export async function POST(request: NextRequest) {
     const netgsmHeader = process.env.NETGSM_HEADER || "SAGLIK"
 
     if (!netgsmUser || !netgsmPassword) {
-      console.error("[v0] Netgsm credentials eksik!")
+      console.error("Netgsm credentials eksik!")
       // Development ortamında konsola yazdır
-      console.log("[v0] SMS Doğrulama Kodu:", verificationCode)
-      console.log("[v0] Telefon:", phone)
+      console.log("SMS Doğrulama Kodu:", verificationCode)
+      console.log("Telefon:", phone)
 
       return NextResponse.json({
         success: true,
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(netgsmUrl)
     const responseText = await response.text()
 
-    console.log("[v0] Netgsm Response:", responseText)
+    console.log("Netgsm Response:", responseText)
 
     // Netgsm response kodları:
     // 00 veya 01 = Başarılı
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       throw new Error(`Netgsm error: ${responseText}`)
     }
   } catch (error) {
-    console.error("[v0] SMS gönderme hatası:", error)
+    console.error("SMS gönderme hatası:", error)
     return NextResponse.json(
       {
         success: false,

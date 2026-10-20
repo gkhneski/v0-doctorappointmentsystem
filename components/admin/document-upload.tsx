@@ -85,7 +85,7 @@ export function DocumentUpload({ patientId, appointmentId, onDocumentUploaded }:
       const input = document.getElementById("document-upload") as HTMLInputElement
       if (input) input.value = ""
     } catch (error: any) {
-      console.error("[v0] Evrak yükleme hatası:", error.message || error)
+      console.error("Evrak yükleme hatası:", error.message || error)
       toast.error("Evrak yüklenirken bir hata oluştu.")
     } finally {
       setUploading(false)

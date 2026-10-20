@@ -54,7 +54,7 @@ export default async function ConfirmAppointmentPage({ params }: { params: Promi
         ...evidence,
       })
     } catch (auditError) {
-      console.error("[v0] Link audit error:", auditError)
+      console.error("Link audit error:", auditError)
     }
   }
 

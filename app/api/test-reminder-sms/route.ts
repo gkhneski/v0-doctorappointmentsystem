@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       confirmUrl,
     })
   } catch (error) {
-    console.error("[v0] Test reminder SMS error:", error)
+    console.error("Test reminder SMS error:", error)
     return NextResponse.json({ error: "Beklenmeyen hata" }, { status: 500 })
   }
 }

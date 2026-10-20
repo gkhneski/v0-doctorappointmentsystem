@@ -92,7 +92,7 @@ export async function PATCH(
       `)
 
     if (error) {
-      console.error("[v0] Error updating appointment:", error)
+      console.error("Error updating appointment:", error)
       return NextResponse.json(
         { error: "Randevu guncellenirken hata olustu" },
         { status: 500 }
@@ -121,7 +121,7 @@ export async function PATCH(
           )
         } catch (smsError) {
           // SMS hatasi randevu guncellemeyi etkilememeli
-          console.error("[v0] Reschedule SMS failed (non-blocking):", smsError)
+          console.error("Reschedule SMS failed (non-blocking):", smsError)
         }
       }
     }
@@ -132,7 +132,7 @@ export async function PATCH(
       data,
     })
   } catch (error) {
-    console.error("[v0] Error in update appointment:", error)
+    console.error("Error in update appointment:", error)
     return NextResponse.json(
       { error: "Beklenmeyen bir hata olustu" },
       { status: 500 }
@@ -151,7 +151,7 @@ export async function DELETE(
 
     const { appointmentId } = await params
 
-    console.log("[v0] Deleting appointment:", appointmentId)
+    console.log("Deleting appointment:", appointmentId)
 
     const supabase = createServiceRoleClient()
 
@@ -162,21 +162,21 @@ export async function DELETE(
       .eq("id", appointmentId)
 
     if (error) {
-      console.error("[v0] Error deleting appointment:", error)
+      console.error("Error deleting appointment:", error)
       return NextResponse.json(
         { error: "Randevu silinirken hata oluştu" },
         { status: 500 }
       )
     }
 
-    console.log("[v0] Appointment deleted successfully")
+    console.log("Appointment deleted successfully")
 
     return NextResponse.json({
       success: true,
       message: "Randevu başarıyla silindi",
     })
   } catch (error) {
-    console.error("[v0] Error in delete appointment:", error)
+    console.error("Error in delete appointment:", error)
     return NextResponse.json(
       { error: "Beklenmeyen bir hata oluştu" },
       { status: 500 }

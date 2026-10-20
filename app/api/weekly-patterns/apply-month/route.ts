@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       message: `${schedules.length} schedule(s) created for ${year}-${month}`,
     })
   } catch (error) {
-    console.error("[v0] Apply pattern error:", error)
+    console.error("Apply pattern error:", error)
     return NextResponse.json({ error: "Failed to apply pattern" }, { status: 500 })
   }
 }

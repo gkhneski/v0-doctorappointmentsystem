@@ -74,7 +74,6 @@ export const metadata: Metadata = {
   authors: [{ name: "Prof. Dr. Eray Çalışkan" }],
   creator: "Prof. Dr. Eray Çalışkan",
   publisher: "Prof. Dr. Eray Çalışkan",
-  generator: "v0.app",
   applicationName: "Prof. Dr. Eray Çalışkan Randevu Sistemi",
   referrer: "origin-when-cross-origin",
   formatDetection: {

@@ -45,14 +45,14 @@ export async function POST(request: Request) {
     const netgsmResponse = await fetch(netgsmUrl)
     const netgsmResult = await netgsmResponse.text()
 
-    console.log("[v0] NETGSM Response:", netgsmResult)
+    console.log("NETGSM Response:", netgsmResult)
 
     // NETGSM returns response codes: 00, 01, 02, etc.
     // 00 or 01 = success
     const isSuccess = netgsmResult.trim().startsWith("00") || netgsmResult.trim().startsWith("01")
 
     if (!isSuccess) {
-      console.error("[v0] NETGSM Error:", netgsmResult)
+      console.error("NETGSM Error:", netgsmResult)
       return NextResponse.json({ error: `SMS gönderilemedi: ${netgsmResult}` }, { status: 400 })
     }
 
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: "SMS başarıyla gönderildi" })
   } catch (error) {
-    console.error("[v0] SMS send error:", error)
+    console.error("SMS send error:", error)
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 })
   }
 }

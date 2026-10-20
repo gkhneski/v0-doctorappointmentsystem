@@ -509,7 +509,7 @@ export default function AppointmentWizardModal({
         try {
           errorData = await response.json()
         } catch (parseError) {
-          console.error("[v0] Failed to parse error response:", parseError)
+          console.error("Failed to parse error response:", parseError)
           throw new Error("Randevu oluşturulurken bir hata oluştu")
         }
 
@@ -602,9 +602,9 @@ export default function AppointmentWizardModal({
   }
 
   const getCurrentPrice = () => {
-    console.log("[v0] Selected type for price:", selectedType)
+    console.log("Selected type for price:", selectedType)
     const price = appointmentPrices[selectedType as keyof typeof appointmentPrices] || 4500 // default'u 4500 yaptım
-    console.log("[v0] Calculated price:", price)
+    console.log("Calculated price:", price)
     return price
   }
 

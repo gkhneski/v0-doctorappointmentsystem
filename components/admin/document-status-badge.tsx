@@ -29,7 +29,7 @@ export default function DocumentStatusBadge({ appointmentId }: DocumentStatusBad
           setStatus("none")
         }
       } catch (error) {
-        console.error("[v0] Error checking document status:", error)
+        console.error("Error checking document status:", error)
         setStatus("none")
       }
     }

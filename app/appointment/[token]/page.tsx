@@ -9,20 +9,20 @@ export default async function AppointmentLinkPage({
 }) {
   const { token } = await params
 
-  console.log("[v0] Appointment link page - Token:", token)
+  console.log("Appointment link page - Token:", token)
 
   const tokenData = await validateAppointmentToken(token)
 
-  console.log("[v0] Token validation result:", tokenData ? "Valid" : "Invalid")
+  console.log("Token validation result:", tokenData ? "Valid" : "Invalid")
 
   if (!tokenData) {
-    console.log("[v0] Token invalid, redirecting to not-found")
+    console.log("Token invalid, redirecting to not-found")
     notFound()
   }
 
   const appointment = tokenData.appointments as any
 
-  console.log("[v0] Appointment data:", appointment)
+  console.log("Appointment data:", appointment)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8 px-4">

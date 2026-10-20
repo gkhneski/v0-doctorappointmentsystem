@@ -122,7 +122,7 @@ export function OutcomeModal({
       onSuccess()
       onClose()
     } catch (error: any) {
-      console.error("[v0] Outcome save error:", error)
+      console.error("Outcome save error:", error)
       toast({
         title: "Hata",
         description: error.message || "Gebelik kapatılamadı",

@@ -289,7 +289,7 @@ export function VisitModal({ open, onClose, episode, visit, onSuccess }: VisitMo
       onSuccess()
       onClose()
     } catch (error: any) {
-      console.error("[v0] Visit save error:", error)
+      console.error("Visit save error:", error)
       toast({
         title: "Hata",
         description: error.message || "Muayene kaydedilemedi",
@@ -317,7 +317,7 @@ export function VisitModal({ open, onClose, episode, visit, onSuccess }: VisitMo
       onSuccess()
       onClose()
     } catch (error: any) {
-      console.error("[v0] Visit delete error:", error)
+      console.error("Visit delete error:", error)
       toast({
         title: "Hata",
         description: error.message || "Muayene silinemedi",

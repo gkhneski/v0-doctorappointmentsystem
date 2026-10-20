@@ -13,10 +13,10 @@ export async function GET(request: Request) {
     }
 
     const result = await sendDueDigests()
-    console.log("[v0] Staff digest cron:", result)
+    console.log("Staff digest cron:", result)
     return NextResponse.json({ ok: true, ...result })
   } catch (error: any) {
-    console.error("[v0] Staff digest cron error:", error?.message)
+    console.error("Staff digest cron error:", error?.message)
     return NextResponse.json({ error: error?.message || "Server error" }, { status: 500 })
   }
 }

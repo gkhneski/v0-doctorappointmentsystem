@@ -85,7 +85,7 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
 
   const loadLatestEvaluation = async () => {
     try {
-      console.log("[v0] Loading evaluation for patient:", patientId)
+      console.log("Loading evaluation for patient:", patientId)
 
       const { data, error } = await supabase
         .from("infertility_evaluations")
@@ -96,9 +96,9 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
         .maybeSingle()
 
       if (error) {
-        console.error("[v0] Load error:", error)
+        console.error("Load error:", error)
       } else if (data) {
-        console.log("[v0] Loaded data:", data)
+        console.log("Loaded data:", data)
         // Deep merge function to preserve nested structure
         const deepMerge = (target: any, source: any) => {
           if (!source || typeof source !== "object") return target
@@ -171,7 +171,7 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
         setLoaded(true) // Also set loaded if no data exists
       }
     } catch (error) {
-      console.error("[v0] Load evaluation error:", error)
+      console.error("Load evaluation error:", error)
     }
   }
 
@@ -249,7 +249,7 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
     try {
       setSaving(true)
       setSaveStatus("saving")
-      console.log("[v0] Saving infertility evaluation...")
+      console.log("Saving infertility evaluation...")
 
       const evaluationData = {
         patient_id: patientId,
@@ -308,11 +308,11 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
       }
 
       if (error) {
-        console.error("[v0] Save error:", error)
+        console.error("Save error:", error)
         throw error
       }
 
-      console.log("[v0] Form saved successfully")
+      console.log("Form saved successfully")
 
       // Reload data from database to show persisted values
       await loadLatestEvaluation()
@@ -331,7 +331,7 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
         duration: 4000,
       })
     } catch (error: any) {
-      console.error("[v0] Form save error:", error)
+      console.error("Form save error:", error)
       setSaveStatus("unsaved")
       toast({
         title: "Hata",

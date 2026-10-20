@@ -58,12 +58,12 @@ Kadin Hastaliklari ve Dogum Uzmani`
     clearTimeout(timeoutId)
 
     const result = await response.text()
-    console.log("[v0] Reschedule SMS sent:", result)
+    console.log("Reschedule SMS sent:", result)
 
     return result.startsWith("00") || result.includes("ID:")
   } catch (error) {
     // Hata loglama ama throw etme - SMS hatasi kritik degil
-    console.error("[v0] Reschedule SMS sending error:", error)
+    console.error("Reschedule SMS sending error:", error)
     return false
   }
 }

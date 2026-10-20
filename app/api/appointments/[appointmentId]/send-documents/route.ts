@@ -41,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Error sending document list SMS:", error)
+    console.error("Error sending document list SMS:", error)
     return NextResponse.json({ error: "Evrak SMS'i gönderilirken hata oluştu" }, { status: 500 })
   }
 }

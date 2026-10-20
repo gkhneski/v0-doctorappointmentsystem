@@ -84,7 +84,7 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
         .single()
 
       if (!error && data) {
-        console.log("[v0] Loaded evaluation:", data)
+        console.log("Loaded evaluation:", data)
         setEvaluationId(data.id)
         setDoctorName(data.doctor_name || "")
         setEvaluationDate(data.evaluation_date || "")
@@ -121,7 +121,7 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
         setUsgNotes(data.usg_notes || "")
       }
     } catch (error: any) {
-      console.error("[v0] Load evaluation error:", error)
+      console.error("Load evaluation error:", error)
     }
   }
 
@@ -233,7 +233,7 @@ export function InfertilityEvaluationForm({ patientId, appointmentId }: Infertil
       alert("Form başarıyla kaydedildi!")
       await loadLatestEvaluation()
     } catch (error: any) {
-      console.error("[v0] Form save error:", error)
+      console.error("Form save error:", error)
       alert("Form kaydedilirken hata oluştu: " + error.message)
     } finally {
       setSaving(false)

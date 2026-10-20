@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         .single()
 
       if (patientError || !newPatient) {
-        console.error("[v0] Patient creation error:", patientError)
+        console.error("Patient creation error:", patientError)
         return NextResponse.json(
           { error: "Hasta kaydı oluşturulamadı" },
           { status: 500 }
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       .single()
 
     if (appointmentError) {
-      console.error("[v0] Appointment creation error:", appointmentError)
+      console.error("Appointment creation error:", appointmentError)
       return NextResponse.json(
         { error: "Randevu oluşturulamadı" },
         { status: 500 }
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       data: { appointment, patient },
     })
   } catch (error) {
-    console.error("[v0] Quick block error:", error)
+    console.error("Quick block error:", error)
     return NextResponse.json(
       { error: "Beklenmeyen bir hata oluştu" },
       { status: 500 }

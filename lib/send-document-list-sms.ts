@@ -84,11 +84,11 @@ Kadin Hastaliklari ve Dogum Uzmani`
     })
 
     const result = await response.text()
-    console.log("[v0] Document list SMS sent:", result)
+    console.log("Document list SMS sent:", result)
 
     return result.startsWith("00") || result.includes("ID:")
   } catch (error) {
-    console.error("[v0] Document list SMS sending error:", error)
+    console.error("Document list SMS sending error:", error)
     return false
   }
 }

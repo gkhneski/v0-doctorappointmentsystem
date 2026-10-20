@@ -5,7 +5,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role"
 export async function resetSchedulesForMonth(year: number, month: number) {
   const supabase = createServiceRoleClient()
 
-  console.log("[v0] Starting reset for", year, month)
+  console.log("Starting reset for", year, month)
 
   // 1) Tüm randevuları sil
   const { error: deleteAppointmentsError } = await supabase
@@ -14,7 +14,7 @@ export async function resetSchedulesForMonth(year: number, month: number) {
     .neq("id", "00000000-0000-0000-0000-000000000000") // Delete all
 
   if (deleteAppointmentsError) {
-    console.error("[v0] Appointment delete error:", deleteAppointmentsError)
+    console.error("Appointment delete error:", deleteAppointmentsError)
     return { success: false, error: "Randevular silinemedi" }
   }
 
@@ -30,7 +30,7 @@ export async function resetSchedulesForMonth(year: number, month: number) {
     .lte("schedule_date", endDate)
 
   if (deleteSchedulesError) {
-    console.error("[v0] Schedule delete error:", deleteSchedulesError)
+    console.error("Schedule delete error:", deleteSchedulesError)
     return { success: false, error: "Programlar silinemedi" }
   }
 
@@ -57,12 +57,12 @@ export async function resetSchedulesForMonth(year: number, month: number) {
     }
   }
 
-  console.log(`[v0] Creating ${schedules.length} weekday schedules for ${year}-${month}`)
+  console.log(`Creating ${schedules.length} weekday schedules for ${year}-${month}`)
 
   const { error: insertError } = await supabase.from("doctor_schedules").insert(schedules)
 
   if (insertError) {
-    console.error("[v0] Schedule insert error:", insertError)
+    console.error("Schedule insert error:", insertError)
     return { success: false, error: "Programlar oluşturulamadı: " + insertError.message }
   }
 

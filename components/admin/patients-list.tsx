@@ -201,7 +201,7 @@ export default function PatientsList({
       setPatientToDelete(null)
       router.refresh()
     } catch (error) {
-      console.error("[v0] Error deleting patient:", error)
+      console.error("Error deleting patient:", error)
       toast({
         title: "Hata",
         description: error instanceof Error ? error.message : "Hasta silinirken bir hata oluştu",

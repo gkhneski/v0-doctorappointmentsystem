@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     )
 
     if (formError) {
-      console.error("[v0] Form save error:", formError)
+      console.error("Form save error:", formError)
       return NextResponse.json({ error: "Form kaydedilemedi" }, { status: 500 })
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Appointment link submit error:", error)
+    console.error("Appointment link submit error:", error)
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 })
   }
 }

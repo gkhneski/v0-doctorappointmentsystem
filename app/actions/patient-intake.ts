@@ -103,13 +103,13 @@ export async function createPatientIntakeFlow(params: IntakeFlowAction) {
     if (params.action === "upload_documents") {
       // In production, you would upload files to Vercel Blob or Supabase Storage
       // For now, we'll just skip this step
-      console.log("[v0] Documents would be uploaded here:", params.documents)
+      console.log("Documents would be uploaded here:", params.documents)
       return { success: true }
     }
 
     return { success: false, error: "Geçersiz işlem" }
   } catch (error: any) {
-    console.error("[v0] Patient intake flow error:", error)
+    console.error("Patient intake flow error:", error)
     return { success: false, error: error.message || "Beklenmeyen hata" }
   }
 }

@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     )
 
     if (upsertError) {
-      console.error("[v0] Admin user upsert error:", upsertError)
+      console.error("Admin user upsert error:", upsertError)
       // If upsert fails, try to clean up the auth user
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json({ error: `Kayıt tamamlanamadı: ${upsertError.message}` }, { status: 400 })
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, userId: authData.user.id })
   } catch (error) {
-    console.error("[v0] Signup error:", error)
+    console.error("Signup error:", error)
     return NextResponse.json({ error: "Sunucu hatası oluştu" }, { status: 500 })
   }
 }

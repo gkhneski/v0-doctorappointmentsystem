@@ -172,7 +172,7 @@ export async function sendDueDigests(forceHour?: number) {
     .eq("send_hour", hour)
 
   if (error) {
-    console.error("[v0] sendDueDigests recipients error:", error)
+    console.error("sendDueDigests recipients error:", error)
     throw new Error("Alicilar alinamadi")
   }
 

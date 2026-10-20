@@ -158,7 +158,7 @@ export default function PatientIntakeWizard({
       // Move to next step
       setCurrentStep("appointment_summary")
     } catch (err: any) {
-      console.error("[v0] SMS verification error:", err)
+      console.error("SMS verification error:", err)
       setError("Doğrulama hatası oluştu")
     } finally {
       setIsSubmitting(false)
@@ -186,7 +186,7 @@ export default function PatientIntakeWizard({
 
       setCurrentStep("document_upload")
     } catch (err: any) {
-      console.error("[v0] Intake form error:", err)
+      console.error("Intake form error:", err)
       setError("Form kaydetme hatası")
     } finally {
       setIsSubmitting(false)
@@ -220,7 +220,7 @@ export default function PatientIntakeWizard({
 
       setCurrentStep("completed")
     } catch (err: any) {
-      console.error("[v0] Document upload error:", err)
+      console.error("Document upload error:", err)
       setError("Belge yükleme hatası")
     } finally {
       setIsSubmitting(false)

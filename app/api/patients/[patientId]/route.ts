@@ -32,7 +32,7 @@ export async function PATCH(
       .select()
 
     if (error) {
-      console.error("[v0] Error updating patient:", error)
+      console.error("Error updating patient:", error)
       return NextResponse.json(
         { error: "Hasta bilgileri guncellenemedi" },
         { status: 500 }
@@ -45,7 +45,7 @@ export async function PATCH(
       data,
     })
   } catch (error) {
-    console.error("[v0] Error in update patient:", error)
+    console.error("Error in update patient:", error)
     return NextResponse.json(
       { error: "Beklenmeyen bir hata olustu" },
       { status: 500 }

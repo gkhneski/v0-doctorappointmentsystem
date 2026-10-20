@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       updated: scheduleIds.length,
     })
   } catch (error) {
-    console.error("[v0] Schedule availability toggle error:", error)
+    console.error("Schedule availability toggle error:", error)
     return NextResponse.json({ error: "Gün durumu güncellenemedi" }, { status: 500 })
   }
 }

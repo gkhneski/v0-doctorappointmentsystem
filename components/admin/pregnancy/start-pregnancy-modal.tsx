@@ -125,7 +125,7 @@ export function StartPregnancyModal({
         important_notes: "",
       })
     } catch (error: any) {
-      console.error("[v0] Create pregnancy error:", error)
+      console.error("Create pregnancy error:", error)
       toast({
         title: "Hata",
         description: error.message || "Gebelik kaydı oluşturulamadı",

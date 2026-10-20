@@ -100,7 +100,7 @@ export function PatientPhotoUpload({
       onPhotoUploaded?.(photoUrlToSave)
       onOpenChange?.(false)
     } catch (error: any) {
-      console.error("[v0] Fotoğraf yükleme hatası:", error)
+      console.error("Fotoğraf yükleme hatası:", error)
       toast.error(error.message || "Fotoğraf yüklenirken bir hata oluştu")
       setPreviewUrl(null)
     } finally {
@@ -129,7 +129,7 @@ export function PatientPhotoUpload({
       onPhotoUploaded?.("")
       onOpenChange?.(false)
     } catch (error: any) {
-      console.error("[v0] Fotoğraf kaldırma hatası:", error)
+      console.error("Fotoğraf kaldırma hatası:", error)
       toast.error("Fotoğraf kaldırılırken bir hata oluştu.")
     } finally {
       setUploading(false)

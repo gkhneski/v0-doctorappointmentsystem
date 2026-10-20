@@ -58,13 +58,13 @@ export async function sendTelegramMessage(
     const data = await res.json()
     if (!res.ok || !data.ok) {
       const msg = data?.description || `HTTP ${res.status}`
-      console.log("[v0] Telegram send error:", msg)
+      console.log("Telegram send error:", msg)
       return { success: false, chatId, error: msg }
     }
-    console.log("[v0] Telegram sent:", chatId, data?.result?.message_id)
+    console.log("Telegram sent:", chatId, data?.result?.message_id)
     return { success: true, chatId, messageId: data?.result?.message_id }
   } catch (error: any) {
-    console.log("[v0] Telegram fetch error:", error?.message)
+    console.log("Telegram fetch error:", error?.message)
     return { success: false, chatId, error: error?.message || "Network error" }
   }
 }

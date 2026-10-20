@@ -48,7 +48,7 @@ export default function SmsVerificationDialog({ isOpen, onClose, phone, appointm
         setError(data.message || "Kod doğrulanamadı")
       }
     } catch (err) {
-      console.error("[v0] Doğrulama hatası:", err)
+      console.error("Doğrulama hatası:", err)
       setError("Bir hata oluştu, lütfen tekrar deneyin")
     } finally {
       setIsVerifying(false)
@@ -78,7 +78,7 @@ export default function SmsVerificationDialog({ isOpen, onClose, phone, appointm
         setError("SMS gönderilemedi")
       }
     } catch (err) {
-      console.error("[v0] SMS gönderme hatası:", err)
+      console.error("SMS gönderme hatası:", err)
       setError("SMS gönderilemedi")
     } finally {
       setIsResending(false)

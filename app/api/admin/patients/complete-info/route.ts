@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       .eq("id", patient_id)
 
     if (updateError) {
-      console.error("[v0] Patient update error:", updateError)
+      console.error("Patient update error:", updateError)
       return NextResponse.json(
         { error: "Hasta bilgileri güncellenemedi" },
         { status: 500 }
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     })
 
     if (insertError) {
-      console.error("[v0] SMS verification insert error:", insertError)
+      console.error("SMS verification insert error:", insertError)
       return NextResponse.json(
         { error: "Doğrulama kodu kaydedilemedi" },
         { status: 500 }
@@ -78,8 +78,8 @@ export async function POST(request: Request) {
     const netgsmHeader = process.env.NETGSM_HEADER || "SAGLIK"
 
     if (!netgsmUser || !netgsmPassword) {
-      console.log("[v0] Development mode - SMS Doğrulama Kodu:", verificationCode)
-      console.log("[v0] Telefon:", phone)
+      console.log("Development mode - SMS Doğrulama Kodu:", verificationCode)
+      console.log("Telefon:", phone)
 
       return NextResponse.json({
         success: true,
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     const response = await fetch(netgsmUrl)
     const responseText = await response.text()
 
-    console.log("[v0] Netgsm Response:", responseText)
+    console.log("Netgsm Response:", responseText)
 
     if (responseText.startsWith("00") || responseText.startsWith("01")) {
       return NextResponse.json({
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     } else {
       // SMS gönderilemedi ama kod oluşturuldu - development için
       if (responseText === "30") {
-        console.log("[v0] Netgsm hata - Development kod:", verificationCode)
+        console.log("Netgsm hata - Development kod:", verificationCode)
         return NextResponse.json({
           success: true,
           message: "Development mode - Kod konsola yazdırıldı",
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       throw new Error(`Netgsm error: ${responseText}`)
     }
   } catch (error) {
-    console.error("[v0] Complete patient info error:", error)
+    console.error("Complete patient info error:", error)
     return NextResponse.json(
       { error: "Beklenmeyen bir hata oluştu" },
       { status: 500 }

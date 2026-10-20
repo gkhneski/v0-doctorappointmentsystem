@@ -19,13 +19,13 @@ async function sendSMS(phone: string, message: string) {
   const netgsmHeader = process.env.NETGSM_HEADER || "SAGLIK"
 
   if (!netgsmUser || !netgsmPassword) {
-    console.error("[v0] NETGSM credentials not found")
+    console.error("NETGSM credentials not found")
     return { sent: false, providerReference: "credentials_missing" }
   }
 
   const cleanPhone = phone.replace(/\D/g, "")
   if (!/^0?5\d{9}$/.test(cleanPhone)) {
-    console.error("[v0] Invalid patient phone format")
+    console.error("Invalid patient phone format")
     return { sent: false, providerReference: "invalid_phone" }
   }
 
@@ -44,10 +44,10 @@ async function sendSMS(phone: string, message: string) {
     const result = (await response.text()).trim()
     const sent = response.ok && (result.startsWith("00") || result.startsWith("01"))
 
-    if (!sent) console.error("[v0] NETGSM rejected reminder:", result)
+    if (!sent) console.error("NETGSM rejected reminder:", result)
     return { sent, providerReference: result.slice(0, 200) }
   } catch (error) {
-    console.error("[v0] SMS send error:", error)
+    console.error("SMS send error:", error)
     return { sent: false, providerReference: "network_error" }
   }
 }
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     // Always calculate the reminder date in the clinic's timezone.
     const tomorrowDate = getTomorrowInIstanbul()
 
-    console.log("[v0] Checking appointments for:", tomorrowDate)
+    console.log("Checking appointments for:", tomorrowDate)
 
     // Find appointments for tomorrow that haven't received reminder
     // Include both scheduled and confirmed appointments
@@ -85,16 +85,16 @@ export async function GET(request: Request) {
       .is("reminder_sent_at", null)
 
     if (error) {
-      console.error("[v0] Fetch error:", error)
+      console.error("Fetch error:", error)
       return NextResponse.json({ error: "Database error" }, { status: 500 })
     }
 
     if (!appointments || appointments.length === 0) {
-      console.log("[v0] No appointments to remind")
+      console.log("No appointments to remind")
       return NextResponse.json({ message: "No appointments to remind", count: 0 })
     }
 
-    console.log("[v0] Found appointments:", appointments.length)
+    console.log("Found appointments:", appointments.length)
 
     let successCount = 0
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.dreraycaliskan.com"
@@ -153,11 +153,11 @@ export async function GET(request: Request) {
 
         successCount++
       } else {
-        console.error("[v0] Reminder SMS failed for appointment:", appointment.id, smsResult.providerReference)
+        console.error("Reminder SMS failed for appointment:", appointment.id, smsResult.providerReference)
       }
     }
 
-    console.log("[v0] Reminders sent:", successCount)
+    console.log("Reminders sent:", successCount)
 
     return NextResponse.json({
       message: "Reminders sent",
@@ -165,7 +165,7 @@ export async function GET(request: Request) {
       success: successCount,
     })
   } catch (error: any) {
-    console.error("[v0] Cron error:", error)
+    console.error("Cron error:", error)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

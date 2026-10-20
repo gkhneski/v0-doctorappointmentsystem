@@ -22,11 +22,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { patie
     const { error: deleteError } = await supabase.from("patients").delete().eq("id", patientId)
 
     if (deleteError) {
-      console.error("[v0] Error deleting patient:", deleteError)
+      console.error("Error deleting patient:", deleteError)
       return NextResponse.json({ error: "Hasta silinirken bir hata oluştu" }, { status: 500 })
     }
 
-    console.log(`[v0] Patient deleted successfully: ${patientId}`)
+    console.log(`Patient deleted successfully: ${patientId}`)
 
     // Revalidate the patients page to clear cache
     revalidatePath("/admin/patients")
@@ -36,7 +36,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { patie
       message: "Hasta başarıyla silindi",
     })
   } catch (error) {
-    console.error("[v0] Error in patient delete API:", error)
+    console.error("Error in patient delete API:", error)
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 })
   }
 }
