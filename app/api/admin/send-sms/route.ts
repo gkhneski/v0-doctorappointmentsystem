@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
 
 export async function POST(request: Request) {
   try {
@@ -16,18 +17,13 @@ export async function POST(request: Request) {
 
     const { patientId, patientPhone, message, templateId } = await request.json()
 
-    if (!patientId || !patientPhone || !message) {
+    if (!patientPhone || !message) {
       return NextResponse.json({ error: "Gerekli alanlar eksik" }, { status: 400 })
     }
 
-    // Clean phone number (remove spaces, dashes, etc.)
-    let cleanPhone = patientPhone.replace(/\D/g, "")
-
-    // Ensure phone starts with 90 (Turkey country code)
-    if (cleanPhone.startsWith("0")) {
-      cleanPhone = "90" + cleanPhone.substring(1)
-    } else if (!cleanPhone.startsWith("90")) {
-      cleanPhone = "90" + cleanPhone
+    const cleanPhone = toNetgsmNumber(patientPhone)
+    if (!cleanPhone) {
+      return NextResponse.json({ error: "Geçerli bir cep telefonu numarası yok" }, { status: 400 })
     }
 
     // NETGSM credentials from environment
@@ -60,9 +56,9 @@ export async function POST(request: Request) {
     const supabaseAdmin = await createServiceRoleClient()
 
     await supabaseAdmin.from("sent_messages").insert({
-      patient_id: patientId,
+      patient_id: patientId || null,
       template_id: templateId,
-      phone_number: cleanPhone,
+      phone_number: normalizePhone(patientPhone),
       message_content: message,
       channel: "sms",
       status: "sent",

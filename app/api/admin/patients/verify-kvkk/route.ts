@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { normalizePhone } from "@/lib/phone"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { patient_id, appointment_id, phone, code } = body
+    const { patient_id, appointment_id, code } = body
+    const phone = normalizePhone(body.phone)
 
     if (!patient_id || !appointment_id || !phone || !code) {
       return NextResponse.json(

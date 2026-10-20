@@ -1,10 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, appointmentId } = await request.json()
+    const body = await request.json()
+    const { appointmentId } = body
+    const phone = normalizePhone(body.phone) || String(body.phone || "")
 
     // SMS maliyet/spam korumasi: her telefon icin saatte en fazla 5, her IP icin
     // saatte en fazla 15 dogrulama SMS'i. Boylece bir bot binlerce SMS attiramaz.
@@ -63,7 +66,7 @@ export async function POST(request: NextRequest) {
     const smsMessage = `Randevu onay kodunuz: ${verificationCode}\n\nKod 5 dakika geçerlidir.\nProf. Dr. Eray Caliskan`
 
     // Netgsm SMS API çağrısı
-    const netgsmUrl = `https://api.netgsm.com.tr/sms/send/get/?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${phone.replace(/\D/g, "")}&message=${encodeURIComponent(smsMessage)}&msgheader=${netgsmHeader}`
+    const netgsmUrl = `https://api.netgsm.com.tr/sms/send/get/?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${toNetgsmNumber(phone) ?? phone.replace(/\D/g, "")}&message=${encodeURIComponent(smsMessage)}&msgheader=${netgsmHeader}`
 
     const response = await fetch(netgsmUrl)
     const responseText = await response.text()

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { normalizePhone } from "@/lib/phone"
 
 export async function PATCH(
   request: Request,
@@ -14,7 +15,7 @@ export async function PATCH(
 
     const updateData: Record<string, string> = {}
     if (tc_no) updateData.tc_no = tc_no
-    if (phone) updateData.phone = phone
+    if (phone) updateData.phone = normalizePhone(phone) || phone
     if (full_name) updateData.full_name = full_name
     if (date_of_birth) updateData.date_of_birth = date_of_birth
 

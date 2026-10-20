@@ -64,6 +64,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { normalizePhone } from "@/lib/phone"
 
 interface PatientDetailClientProps {
   patientId: string
@@ -314,7 +315,8 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
       setSaving(true)
       console.log("Saving patient data:", formData)
       
-      const { data, error } = await supabase.from("patients").update(formData).eq("id", patientId).select()
+      const toSave = formData.phone ? { ...formData, phone: normalizePhone(formData.phone) || formData.phone } : formData
+      const { data, error } = await supabase.from("patients").update(toSave).eq("id", patientId).select()
       
       if (error) {
         console.error("Database error:", error)
@@ -428,11 +430,12 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
     if (!smsMessage.trim()) return
     setSendingSms(true)
     try {
-      const response = await fetch("/api/sms/send", {
+      const response = await fetch("/api/admin/send-sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: patient.phone,
+          patientId,
+          patientPhone: patient.phone,
           message: smsMessage,
         }),
       })

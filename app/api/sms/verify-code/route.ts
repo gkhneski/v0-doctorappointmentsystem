@@ -1,9 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { normalizePhone } from "@/lib/phone"
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, code, appointmentId } = await request.json()
+    const body = await request.json()
+    const { code, appointmentId } = body
+    const phone = normalizePhone(body.phone) || String(body.phone || "")
 
     const supabase = await createServiceRoleClient()
 

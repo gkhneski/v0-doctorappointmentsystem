@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { normalizePhone, phoneVariants } from "@/lib/phone"
 
 export type ResolvePatientInput = {
   tc_no: string
@@ -31,7 +32,7 @@ export async function resolvePatientId(
   input: ResolvePatientInput,
 ): Promise<string> {
   const tc = (input.tc_no || "").trim()
-  const phone = (input.phone || "").trim()
+  const phone = normalizePhone(input.phone) || (input.phone || "").trim()
   const hasRealTc = !isTempTc(tc)
 
   // 1. Gerçek TC ile eşleşme
@@ -56,11 +57,11 @@ export async function resolvePatientId(
     }
 
     // 2. TC bulunamadı — aynı telefonlu GEÇİCİ kaydı ara ve yükselt
-    if (phone && phone !== "0000000000") {
+    if (normalizePhone(phone)) {
       const { data: byPhone } = await supabase
         .from("patients")
         .select("id, tc_no")
-        .eq("phone", phone)
+        .in("phone", phoneVariants(phone))
         .order("created_at", { ascending: true })
         .limit(10)
 

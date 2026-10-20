@@ -212,10 +212,10 @@ export default function AppointmentsList({ appointments: initialAppointments, do
     if (!smsPhone || !smsMessage) return
     setSmsSending(true)
     try {
-      const response = await fetch("/api/sms/send", {
+      const response = await fetch("/api/admin/send-sms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: smsPhone, message: smsMessage }),
+        body: JSON.stringify({ patientPhone: smsPhone, message: smsMessage }),
       })
       if (response.ok) {
         setSmsDialogOpen(false)
@@ -513,7 +513,7 @@ export default function AppointmentsList({ appointments: initialAppointments, do
               </select>
             </div>
             <div className="flex gap-2 items-end">
-              <Button variant="outline" size="sm" onClick={handlePrint}>Yazdir</Button>
+              <Button variant="outline" size="sm" onClick={() => handlePrint()}>Yazdir</Button>
               <Button variant="outline" size="sm" onClick={() => {
                 setSelectedDateFilter("")
                 setAppointmentTypeFilter("all")

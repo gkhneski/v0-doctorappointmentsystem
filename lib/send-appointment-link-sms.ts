@@ -1,3 +1,4 @@
+import { toNetgsmNumber } from "@/lib/phone"
 // Randevu tipi slug -> okunabilir isim
 const APPOINTMENT_TYPE_NAMES: Record<string, string> = {
   "asilama-tup-bebek": "Asilama/Tup Bebek",
@@ -47,7 +48,7 @@ export async function sendAppointmentLinkSMS(
   const params = new URLSearchParams({
     usercode: process.env.NETGSM_USER || "",
     password: process.env.NETGSM_PASSWORD || "",
-    gsmno: phone.replace(/\D/g, ""),
+    gsmno: toNetgsmNumber(phone) ?? phone.replace(/\D/g, ""),
     message: message,
     msgheader: process.env.NETGSM_HEADER || "SAGLIK",
   })

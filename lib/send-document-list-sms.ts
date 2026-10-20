@@ -1,3 +1,4 @@
+import { toNetgsmNumber } from "@/lib/phone"
 export function getDocumentListByType(appointmentType: string): string[] {
   const documentCategories: Record<string, string[]> = {
     "asilama-tup-bebek": [
@@ -73,7 +74,7 @@ Kadin Hastaliklari ve Dogum Uzmani`
   const params = new URLSearchParams({
     usercode: process.env.NETGSM_USER || "",
     password: process.env.NETGSM_PASSWORD || "",
-    gsmno: phone.replace(/\D/g, ""),
+    gsmno: toNetgsmNumber(phone) ?? phone.replace(/\D/g, ""),
     message: message,
     msgheader: process.env.NETGSM_HEADER || "SAGLIK",
   })

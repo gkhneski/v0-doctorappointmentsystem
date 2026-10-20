@@ -74,6 +74,7 @@ export function QuickBlockAppointment() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [fullName, setFullName] = useState("")
+  const [phone, setPhone] = useState("")
   const [appointmentDate, setAppointmentDate] = useState("")
   const [selectedHour, setSelectedHour] = useState("")
   const [selectedMinute, setSelectedMinute] = useState("")
@@ -112,6 +113,7 @@ export function QuickBlockAppointment() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           full_name: fullName,
+          phone,
           appointment_date: appointmentDate,
           appointment_time: appointmentTime,
           appointment_type: appointmentType,
@@ -129,6 +131,7 @@ export function QuickBlockAppointment() {
       // Başarılı - modalı kapat ve formu temizle
       setOpen(false)
       setFullName("")
+      setPhone("")
       setAppointmentDate("")
       setSelectedHour("")
       setSelectedMinute("")
@@ -184,6 +187,18 @@ export function QuickBlockAppointment() {
                 onChange={(e) => setFullName(e.target.value)}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="qb-phone">Telefon (isteğe bağlı)</Label>
+              <Input
+                id="qb-phone"
+                type="tel"
+                inputMode="tel"
+                placeholder="05XX XXX XX XX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Girilirse hastaya randevu hatırlatma SMS&apos;i gider.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

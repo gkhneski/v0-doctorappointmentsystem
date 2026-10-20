@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
 
 const SITE_URL = "https://www.dreraycaliskan.com"
 const GOOGLE_MAPS_LINK = "https://maps.google.com/?q=Prof+Dr+Eray+Caliskan+Kadin+Hastaliklari+Istanbul"
@@ -12,9 +13,7 @@ async function sendSMS(phone: string, message: string): Promise<boolean> {
 
   if (!netgsmUser || !netgsmPassword) return false
 
-  let cleanPhone = phone.replace(/\D/g, "")
-  if (cleanPhone.startsWith("0")) cleanPhone = "90" + cleanPhone.substring(1)
-  else if (!cleanPhone.startsWith("90")) cleanPhone = "90" + cleanPhone
+  const cleanPhone = toNetgsmNumber(phone) ?? phone.replace(/\D/g, "")
 
   const url = `https://api.netgsm.com.tr/sms/send/get/?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${cleanPhone}&message=${encodeURIComponent(message)}&msgheader=${netgsmHeader}`
 
@@ -33,11 +32,12 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 })
 
-    const { full_name, phone } = await request.json()
+    const { full_name, phone: rawPhone } = await request.json()
 
-    if (!full_name?.trim() || !phone?.trim()) {
+    if (!full_name?.trim() || !normalizePhone(rawPhone)) {
       return NextResponse.json({ error: "Ad soyad ve telefon zorunludur" }, { status: 400 })
     }
+    const phone = normalizePhone(rawPhone)
 
     const supabaseAdmin = createServiceRoleClient()
 
@@ -45,8 +45,10 @@ export async function POST(request: Request) {
     const { data: existing } = await supabaseAdmin
       .from("patients")
       .select("id, full_name, phone")
-      .eq("phone", phone.trim())
-      .maybeSingle()
+      .in("phone", phoneVariants(phone))
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .then((r) => ({ ...r, data: r.data && r.data.length > 0 ? r.data[0] : null }))
 
     let patientId: string
     let isNew = false
@@ -59,7 +61,7 @@ export async function POST(request: Request) {
         .from("patients")
         .insert({
           full_name: full_name.trim(),
-          phone: phone.trim(),
+          phone: phone,
           tc_no: "",
           date_of_birth: "1900-01-01",
           kvkk_approved: false,
@@ -82,12 +84,12 @@ export async function POST(request: Request) {
       `Online randevu icin web sitemiz:\n${SITE_URL}\n\n` +
       `Klinigimizin konumu icin:\n${GOOGLE_MAPS_LINK}`
 
-    const smsSent = await sendSMS(phone.trim(), smsMessage)
+    const smsSent = await sendSMS(phone, smsMessage)
 
     // sent_messages tablosuna kaydet
     await supabaseAdmin.from("sent_messages").insert({
       patient_id: patientId,
-      phone_number: phone.trim(),
+      phone_number: phone,
       message_content: smsMessage,
       channel: "sms",
       status: smsSent ? "sent" : "failed",

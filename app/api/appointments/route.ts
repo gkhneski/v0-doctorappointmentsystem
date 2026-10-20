@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { resolvePatientId } from "@/lib/resolve-patient"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
       appointment_type,
       patient_tc_no,
       patient_name,
-      patient_phone,
+      patient_phone: rawPatientPhone,
       patient_dob,
       referral_doctor,
       female_history,
@@ -24,6 +25,7 @@ export async function POST(request: Request) {
       fetal_bebek_sayisi,
       created_by_admin,
     } = body
+    const patient_phone = normalizePhone(rawPatientPhone) || String(rawPatientPhone || "")
 
     let isVerifiedAdmin = false
     if (created_by_admin === true) {
@@ -102,13 +104,20 @@ export async function POST(request: Request) {
         .lte("appointment_date", weekEnd.toISOString().split("T")[0])
         .neq("status", "cancelled"),
 
-      // 3. Blacklist check - query directly instead of fetching all
+      // 3. Blacklist check - TC veya telefonun herhangi bir yazilisi
+      //    (birden fazla eslesmede de calismasi icin limit(1), maybeSingle degil)
       supabase
         .from("patients")
         .select("id")
         .eq("is_blacklisted", true)
-        .or(`tc_no.eq.${patient_tc_no},phone.eq.${patient_phone}`)
-        .maybeSingle(),
+        .or(
+          [
+            `tc_no.eq.${String(patient_tc_no || "").replace(/[^A-Za-z0-9_-]/g, "")}`,
+            ...phoneVariants(patient_phone).map((p) => `phone.eq.${p.replace(/[^0-9+]/g, "")}`),
+          ].join(","),
+        )
+        .limit(1)
+        .then((r) => ({ ...r, data: r.data && r.data.length > 0 ? r.data[0] : null })),
 
       // 4. Gün yeni randevu alımına açık mı?
       supabase
@@ -229,7 +238,7 @@ export async function POST(request: Request) {
       const netgsmHeader = process.env.NETGSM_HEADER
 
       if (netgsmUser && netgsmPassword && netgsmHeader) {
-        const formattedPhone = patient_phone.startsWith("0") ? patient_phone.slice(1) : patient_phone
+        const formattedPhone = toNetgsmNumber(patient_phone) ?? patient_phone.replace(/\D/g, "")
         const smsMessage = `Dogrulama kodunuz: ${verificationCode}. Bu kodu randevu islemini tamamlamak icin kullanin.`
         const smsUrl = `https://api.netgsm.com.tr/sms/send/get?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${formattedPhone}&message=${encodeURIComponent(smsMessage)}&msgheader=${netgsmHeader}`
         const smsResponse = await fetch(smsUrl)

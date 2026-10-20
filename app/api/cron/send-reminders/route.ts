@@ -2,6 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
 import { recordAppointmentAudit } from "@/lib/appointment-audit"
+import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
 
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
@@ -23,8 +24,9 @@ async function sendSMS(phone: string, message: string) {
     return { sent: false, providerReference: "credentials_missing" }
   }
 
-  const cleanPhone = phone.replace(/\D/g, "")
-  if (!/^0?5\d{9}$/.test(cleanPhone)) {
+  // "+90 532...", "90532...", "532..." hepsi kabul edilir
+  const cleanPhone = toNetgsmNumber(phone)
+  if (!cleanPhone) {
     console.error("Invalid patient phone format")
     return { sent: false, providerReference: "invalid_phone" }
   }
@@ -102,8 +104,7 @@ export async function GET(request: Request) {
 
     for (const appointment of appointments) {
       // Hizli blok ile acilan kayitlarda telefon yoktur ("0000000000"); SMS denemeden atla.
-      const rawPhone = (appointment.patients?.phone || "").replace(/\D/g, "")
-      if (!rawPhone || /^0+$/.test(rawPhone)) {
+      if (!normalizePhone(appointment.patients?.phone)) {
         noPhoneCount++
         continue
       }

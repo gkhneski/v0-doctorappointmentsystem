@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
 import { fetchAllPatients } from "@/lib/fetch-all-patients"
+import { normalizePhone } from "@/lib/phone"
 
 type Patient = {
   id: string
@@ -115,7 +116,7 @@ export default function PatientsList({
         .from("patients")
         .insert({
           full_name: manualBlacklistDialog.fullName,
-          phone: manualBlacklistDialog.phone,
+          phone: normalizePhone(manualBlacklistDialog.phone) || manualBlacklistDialog.phone,
           is_blacklisted: true,
           blacklist_reason: manualBlacklistDialog.reason,
           tc_no: "",

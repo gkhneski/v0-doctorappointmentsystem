@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { patient_id, appointment_id, tc_no, phone, date_of_birth } = body
+    const { patient_id, appointment_id, tc_no, date_of_birth } = body
+    const phone = normalizePhone(body.phone)
 
     if (!patient_id || !tc_no || !phone) {
       return NextResponse.json(
@@ -90,7 +92,7 @@ export async function POST(request: Request) {
 
     const smsMessage = `KVKK Onay Kodunuz: ${verificationCode}\n\nKod 5 dakika geçerlidir.\nProf. Dr. Eray Caliskan`
 
-    const netgsmUrl = `https://api.netgsm.com.tr/sms/send/get/?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${phone.replace(/\D/g, "")}&message=${encodeURIComponent(smsMessage)}&msgheader=${netgsmHeader}`
+    const netgsmUrl = `https://api.netgsm.com.tr/sms/send/get/?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${toNetgsmNumber(phone) ?? phone}&message=${encodeURIComponent(smsMessage)}&msgheader=${netgsmHeader}`
 
     const response = await fetch(netgsmUrl)
     const responseText = await response.text()

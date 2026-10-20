@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
+import { normalizePhone, PLACEHOLDER_PHONE } from "@/lib/phone"
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { full_name, appointment_date, appointment_time, appointment_type, print_type, notes, is_intermediate = false } = body
+    // Telefon istege bagli; girilirse hatirlatma SMS'i gidebilsin diye kaydedilir.
+    const phone = normalizePhone(body.phone)
 
     if (!full_name || !appointment_date || !appointment_time) {
       return NextResponse.json(
@@ -23,6 +26,13 @@ export async function POST(request: Request) {
 
     if (existingId) {
       patient = { id: existingId as string }
+      // Mevcut kayitta telefon yoksa ve simdi girildiyse tamamla (var olan telefona dokunma)
+      if (phone) {
+        const { data: current } = await supabase.from("patients").select("phone").eq("id", existingId).maybeSingle()
+        if (!normalizePhone(current?.phone)) {
+          await supabase.from("patients").update({ phone }).eq("id", existingId)
+        }
+      }
     } else {
       // Mevcut kayıt yoksa geçici hasta oluştur (TC ve telefon olmadan, KVKK onaysız)
       const { data: newPatient, error: patientError } = await supabase
@@ -30,7 +40,7 @@ export async function POST(request: Request) {
         .insert({
           full_name,
           tc_no: `TEMP_${Date.now()}`, // Geçici TC
-          phone: "0000000000", // Geçici telefon
+          phone: phone || PLACEHOLDER_PHONE, // Girilmediyse geçici telefon
           date_of_birth: "1900-01-01", // Geçici doğum tarihi
           kvkk_approved: false, // Henüz onay yok
           kvkk_approved_at: null,
