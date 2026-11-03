@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Search, Loader2, X, ChevronRight, CalendarClock } from "lucide-react"
+import { normalizePrintType } from "@/lib/print-types"
 
 type PatientResult = {
   id: string
@@ -226,7 +227,7 @@ export function PatientQuickSearch() {
                       ) : (
                         <ul className="space-y-1">
                           {appointments.map((a) => {
-                            const type = a.print_type || a.appointment_type || ""
+                            const type = normalizePrintType(a.print_type) || a.appointment_type || ""
                             const isCancelled = a.status === "cancelled"
                             const past = isPastAppointment(a.appointment_date, a.appointment_time)
                             return (

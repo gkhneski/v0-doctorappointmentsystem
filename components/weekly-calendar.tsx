@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
+import { normalizePrintType } from "@/lib/print-types"
 import { useRouter } from "next/navigation"
 
 // Randevu tipi kısa etiketleri (kartlarda göstermek için)
@@ -37,7 +38,7 @@ const TYPE_SHORT_LABELS: Record<string, string> = {
 }
 
 function getTypeLabel(appointment: { appointment_type?: string; print_type?: string | null }): string | null {
-  if (appointment.print_type && appointment.print_type !== "") return appointment.print_type
+  if (appointment.print_type && appointment.print_type !== "") return normalizePrintType(appointment.print_type)
   if (!appointment.appointment_type) return null
   return TYPE_SHORT_LABELS[appointment.appointment_type] || appointment.appointment_type.replace(/-/g, " ")
 }

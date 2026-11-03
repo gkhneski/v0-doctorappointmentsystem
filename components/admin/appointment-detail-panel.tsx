@@ -8,6 +8,7 @@ import { MessageSquare, User, Edit, ClipboardCheck, Calendar, Phone, FileText, P
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import { PRINT_TYPES, normalizePrintType } from "@/lib/print-types"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -183,6 +184,8 @@ export function AppointmentDetailPanel({
       setIsLoading(false)
     }
   }
+
+  const printTypeValue = normalizePrintType(appointment.print_type)
 
   const handleUpdatePrintType = async (printType: string | null) => {
     const supabase = createClient()
@@ -458,39 +461,17 @@ export function AppointmentDetailPanel({
             <div className="flex-1">
               <label className="text-xs text-muted-foreground block mb-1">Yazdırma Tipi</label>
               <select
-                value={appointment.print_type || ""}
+                value={printTypeValue}
                 onChange={(e) => handleUpdatePrintType(e.target.value || null)}
                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Seç —</option>
-                <option value="IVF kontrol">1. IVF kontrol</option>
-                <option value="IUI kontrol">2. IUI kontrol</option>
-                <option value="DET kontrol">3. DET kontrol</option>
-                <option value="Endom kontrol">4. Endom kontrol</option>
-                <option value="Klomen takip">5. Klomen takip</option>
-                <option value="OP sonrasi kontrol">6. OP sonrasi kontrol</option>
-                <option value="Serklaj sonrasi kontrol">7. Serklaj sonrasi kontrol</option>
-                <option value="Sonuc">8. Sonuc</option>
-                <option value="G.M">9. G.M</option>
-                <option value="DTY">10. DTY</option>
-                <option value="Gebelik istemi">11. Gebelik istemi</option>
-                <option value="Mens">12. Mens</option>
-                <option value="Mens IUI">13. Mens IUI</option>
-                <option value="Mens IVF">14. Mens IVF</option>
-                <option value="Mens DET">15. Mens DET</option>
-                <option value="Gebe kontrol">16. Gebe kontrol</option>
-                <option value="Gebe muayene">17. Gebe muayene</option>
-                <option value="Negatif IVF">18. Negatif IVF</option>
-                <option value="Negatif IUI">19. Negatif IUI</option>
-                <option value="D21">20. D21</option>
-                <option value="Kontrol">21. Kontrol</option>
-                <option value="Amniosentez sonrasi k.">22. Amniosentez sonrasi k.</option>
-                <option value="Kurtaj sonrasi k.">23. Kurtaj sonrasi k.</option>
-                <option value="OHSS kontrol">24. OHSS kontrol</option>
-                <option value="Kese kontrol">25. Kese kontrol</option>
-                <option value="C/S sonrasi kontrol">26. C/S sonrasi kontrol</option>
-                <option value="Kist kontrol">27. Kist kontrol</option>
-                <option value="Akinti kontrol">28. Akinti kontrol</option>
+                {PRINT_TYPES.map((t, i) => (
+                  <option key={t} value={t}>{i + 1}. {t}</option>
+                ))}
+                {printTypeValue && !(PRINT_TYPES as readonly string[]).includes(printTypeValue) && (
+                  <option value={printTypeValue}>{printTypeValue}</option>
+                )}
               </select>
             </div>
           </div>

@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar, Trash2, Search, X, CalendarDays, LayoutGrid, Printer } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { normalizePrintType } from "@/lib/print-types"
 import WeeklyCalendar from "@/components/weekly-calendar"
 
 // Hooks
@@ -269,7 +270,7 @@ export default function AppointmentsList({ appointments: initialAppointments, do
     }
 
     const getShortTypeName = (appointment: Appointment): string => {
-      if (appointment.print_type) return appointment.print_type
+      if (appointment.print_type) return normalizePrintType(appointment.print_type)
       if (!appointment.appointment_type) return "-"
       return shortTypeNames[appointment.appointment_type] || appointment.appointment_type.replace(/-/g, " ")
     }
@@ -285,7 +286,7 @@ export default function AppointmentsList({ appointments: initialAppointments, do
         const time = a.appointment_time || "-"
         const name = a.patients?.full_name || "-"
         // Yazdırma tipi seçildiyse onu göster, seçilmediyse direkt appointment_type göster (kısaltma yok)
-        const type = (a.print_type && a.print_type !== "") ? a.print_type : (a.appointment_type || "-")
+        const type = (a.print_type && a.print_type !== "") ? normalizePrintType(a.print_type) : (a.appointment_type || "-")
         const paymentDisplay = a.payment_status === "paid" && a.payment_amount 
           ? a.payment_amount + " TL" 
           : "Kontrol"

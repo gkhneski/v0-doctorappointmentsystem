@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { sendTelegramMessage, escapeHtml } from "@/lib/telegram"
+import { normalizePrintType } from "@/lib/print-types"
 
 // Randevu tipi kisa etiketleri (ozetlerde gostermek icin)
 const TYPE_SHORT_LABELS: Record<string, string> = {
@@ -21,7 +22,7 @@ const TYPE_SHORT_LABELS: Record<string, string> = {
 }
 
 function typeLabel(appt: { appointment_type?: string; print_type?: string | null }): string {
-  if (appt.print_type && appt.print_type !== "") return appt.print_type
+  if (appt.print_type && appt.print_type !== "") return normalizePrintType(appt.print_type)
   if (!appt.appointment_type) return ""
   return TYPE_SHORT_LABELS[appt.appointment_type] || appt.appointment_type.replace(/-/g, " ")
 }

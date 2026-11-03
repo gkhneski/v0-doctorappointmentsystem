@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarPlus, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import { PRINT_TYPES } from "@/lib/print-types"
 
 const APPOINTMENT_TYPES = [
   { value: "ilk-muayene", label: "İlk Muayene" },
@@ -26,26 +27,6 @@ const APPOINTMENT_TYPES = [
   { value: "jinekolojik-muayene", label: "Jinekolojik Muayene" },
   { value: "ayrintili-fetal-ultrason", label: "Ayrıntılı Fetal Ultrason" },
   { value: "diger", label: "Diğer" },
-]
-
-const PRINT_TYPES = [
-  { value: "none", label: "— Seç (opsiyonel) —" },
-  { value: "IVF kontrol", label: "1. IVF kontrol" },
-  { value: "IUI kontrol", label: "2. IUI kontrol" },
-  { value: "det kontrol", label: "3. det kontrol" },
-  { value: "op sonrasi kontrol", label: "4. op sonrası kontrol" },
-  { value: "serklaj sonrasi kontrol", label: "5. serklaj sonrası kontrol" },
-  { value: "G.M", label: "6. G.M" },
-  { value: "DTY", label: "7. DTY" },
-  { value: "gebelik istemi", label: "8. gebelik istemi" },
-  { value: "mens", label: "9. mens" },
-  { value: "gebe kontrol", label: "10. gebe kontrol" },
-  { value: "gebe muayene", label: "11. gebe muayene" },
-  { value: "OHSS kontrol", label: "12. OHSS kontrol" },
-  { value: "Kese kontrol", label: "13. Kese kontrol" },
-  { value: "C/S sonrasi kontrol", label: "14. C/S sonrası kontrol" },
-  { value: "Kist kontrol", label: "15. Kist kontrol" },
-  { value: "Akinti kontrol", label: "16. Akıntı kontrol" },
 ]
 
 // Saat seçenekleri (08:00 - 19:00)
@@ -221,8 +202,9 @@ export function QuickBlockAppointment() {
                     <SelectValue placeholder="— Seç —" />
                   </SelectTrigger>
                   <SelectContent>
-                    {PRINT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    <SelectItem value="none">— Seç —</SelectItem>
+                    {PRINT_TYPES.map((t, i) => (
+                      <SelectItem key={t} value={t}>{i + 1}. {t}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
