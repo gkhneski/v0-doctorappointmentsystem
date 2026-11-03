@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
 import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
+import { SITE_URL } from "@/lib/site-url"
 
-const SITE_URL = "https://www.dreraycaliskan.com"
 const GOOGLE_MAPS_LINK = "https://maps.google.com/?q=Prof+Dr+Eray+Caliskan+Kadin+Hastaliklari+Istanbul"
 
 async function sendSMS(phone: string, message: string): Promise<boolean> {

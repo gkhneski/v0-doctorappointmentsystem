@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { SITE_URL } from "@/lib/site-url"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
 import { getAdminAuth } from "@/lib/admin-auth"
 import { recordAppointmentAudit } from "@/lib/appointment-audit"
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
 
     const { appointmentId } = await request.json()
     const supabase = createServiceRoleClient()
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.dreraycaliskan.com"
+    const siteUrl = SITE_URL
 
     // Fetch appointment with patient info
     const { data: appointment, error } = await supabase

@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { SITE_URL } from "@/lib/site-url"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
 import { recordAppointmentAudit } from "@/lib/appointment-audit"
 import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
@@ -100,7 +101,7 @@ export async function GET(request: Request) {
 
     let successCount = 0
     let noPhoneCount = 0
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.dreraycaliskan.com"
+    const siteUrl = SITE_URL
 
     for (const appointment of appointments) {
       // Hizli blok ile acilan kayitlarda telefon yoktur ("0000000000"); SMS denemeden atla.
