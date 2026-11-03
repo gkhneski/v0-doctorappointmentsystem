@@ -113,7 +113,7 @@ export function AppointmentDetailPanel({
     const fetchFresh = async () => {
       const { data } = await supabase
         .from("appointments")
-        .select(`*, patients (id, full_name, phone, tc_no, date_of_birth, email, blood_group, city, district, country, occupation, mother_name, father_name, spouse_name, spouse_phone, spouse_blood_group), doctors (id, full_name)`)
+        .select(`*, patients (id, full_name, phone, tc_no, date_of_birth, kvkk_approved, kvkk_approved_at, kvkk_approved_via, medical_alerts, blood_group, city, district, country, occupation, mother_name, father_name, spouse_name, spouse_phone, spouse_blood_group), doctors (name, specialization)`)
         .eq("id", appointment.id)
         .single()
       if (data) {

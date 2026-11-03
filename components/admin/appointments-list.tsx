@@ -137,8 +137,8 @@ export default function AppointmentsList({ appointments: initialAppointments, do
               .from("appointments")
               .select(`
                 *,
-                patients (id, full_name, phone, tc_no, date_of_birth, email),
-                doctors (id, full_name)
+                doctors:doctor_id (name, specialization),
+                patients:patient_id (id, full_name, phone, tc_no, date_of_birth, kvkk_approved, kvkk_approved_at, kvkk_approved_via, medical_alerts)
               `)
               .eq("id", payload.new.id)
               .single()
