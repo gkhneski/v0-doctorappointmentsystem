@@ -313,7 +313,6 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
   const handleSavePatientData = async () => {
     try {
       setSaving(true)
-      console.log("Saving patient data:", formData)
       
       const toSave = formData.phone ? { ...formData, phone: normalizePhone(formData.phone) || formData.phone } : formData
       const { data, error } = await supabase.from("patients").update(toSave).eq("id", patientId).select()

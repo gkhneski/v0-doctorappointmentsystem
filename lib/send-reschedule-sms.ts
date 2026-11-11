@@ -59,7 +59,6 @@ Kadin Hastaliklari ve Dogum Uzmani`
     clearTimeout(timeoutId)
 
     const result = await response.text()
-    console.log("Reschedule SMS sent:", result)
 
     return result.startsWith("00") || result.includes("ID:")
   } catch (error) {

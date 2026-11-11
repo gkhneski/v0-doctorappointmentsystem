@@ -92,7 +92,6 @@ export async function sendWhatsAppTemplate(
       return { success: false, to, error: msg }
     }
     const id = data?.messages?.[0]?.id
-    console.log("WhatsApp sent:", to, id)
     return { success: true, to, id }
   } catch (error: any) {
     console.error("WhatsApp fetch error:", error?.message)

@@ -84,9 +84,6 @@ export async function POST(request: Request) {
     const netgsmHeader = process.env.NETGSM_HEADER || "SAGLIK"
 
     if (!netgsmUser || !netgsmPassword) {
-      console.log("Development mode - SMS Doğrulama Kodu:", verificationCode)
-      console.log("Telefon:", phone)
-
       return NextResponse.json({
         success: true,
         message: "Development mode - Kod konsola yazdırıldı",
@@ -101,8 +98,6 @@ export async function POST(request: Request) {
     const response = await fetch(netgsmUrl)
     const responseText = await response.text()
 
-    console.log("Netgsm Response:", responseText)
-
     if (responseText.startsWith("00") || responseText.startsWith("01")) {
       return NextResponse.json({
         success: true,
@@ -111,7 +106,6 @@ export async function POST(request: Request) {
     } else {
       // SMS gönderilemedi ama kod oluşturuldu - development için
       if (responseText === "30") {
-        console.log("Netgsm hata - Development kod:", verificationCode)
         return NextResponse.json({
           success: true,
           message: "Development mode - Kod konsola yazdırıldı",

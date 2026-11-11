@@ -6,8 +6,6 @@ export async function PUT(request: Request) {
   try {
     const { userId, full_name, email, role, password } = await request.json()
 
-    console.log("Update request received:", { userId, full_name, email, role, hasPassword: !!password })
-
     if (!userId) {
       return NextResponse.json({ error: "Kullanıcı ID gerekli" }, { status: 400 })
     }
@@ -45,7 +43,6 @@ export async function PUT(request: Request) {
     const supabaseAdmin = await createServiceRoleClient()
 
     // Update admin_users table
-    console.log("Updating admin_users with:", { full_name, email, role, userId })
     
     const { data: updateResult, error: dbError } = await supabaseAdmin
       .from("admin_users")
@@ -56,8 +53,6 @@ export async function PUT(request: Request) {
       })
       .eq("id", userId)
       .select()
-
-    console.log("Update result:", { updateResult, dbError })
 
     if (dbError) {
       console.error("Database update error:", dbError)
@@ -82,15 +77,11 @@ export async function PUT(request: Request) {
       updateData.password = password
     }
 
-    console.log("Updating auth user with:", updateData)
-
     const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, updateData)
 
     if (authError) {
       console.error("Auth update error:", authError)
       // Don't fail completely if auth update fails, just log it
-    } else {
-      console.log("Auth user updated successfully")
     }
 
     return NextResponse.json({ success: true, message: "Personel başarıyla güncellendi" })

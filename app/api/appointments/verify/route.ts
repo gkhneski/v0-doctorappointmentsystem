@@ -8,16 +8,9 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
-  console.log("POST /api/appointments/verify called")
-  console.log("Request URL:", request.url)
-  console.log("Request method:", request.method)
-  
   try {
     const body = await request.json()
     const { appointmentId, code } = body
-
-    console.log("Verifying SMS code for appointment:", appointmentId)
-    console.log("Code provided:", code)
 
     const supabase = createServiceRoleClient()
 
@@ -28,8 +21,6 @@ export async function POST(request: Request) {
       .eq("appointment_id", appointmentId)
       .eq("verified", false)
       .maybeSingle()
-
-    console.log("Verification query result:", { verification, verificationError })
 
     if (verificationError || !verification) {
       console.error("Verification record not found:", verificationError)
@@ -43,7 +34,6 @@ export async function POST(request: Request) {
 
     // Verify code
     if (verification.code !== code) {
-      console.log("Code mismatch - expected:", verification.code, "got:", code)
       return NextResponse.json({ error: "Geçersiz doğrulama kodu" }, { status: 400 })
     }
 
@@ -67,7 +57,6 @@ export async function POST(request: Request) {
 
     // Another concurrent request already verified this appointment → do NOT resend SMS.
     if (!claimedRows || claimedRows.length === 0) {
-      console.log("Verification already claimed by another request, skipping SMS:", appointmentId)
       return NextResponse.json({ success: true, message: "Randevunuz zaten onaylandı" })
     }
 
@@ -81,8 +70,6 @@ export async function POST(request: Request) {
       console.error("Error updating appointment:", appointmentError)
       throw appointmentError
     }
-
-    console.log("Appointment verified successfully:", appointmentId)
 
     try {
       // Randevu ve hasta bilgilerini al
@@ -119,7 +106,6 @@ export async function POST(request: Request) {
         // 2. Evrak listesi SMS'i ayri olarak gonder
         if (appointmentData.appointment_type) {
           await sendDocumentListSMS(patient.phone, patient.full_name, appointmentData.appointment_type)
-          console.log("Document list SMS sent for type:", appointmentData.appointment_type)
         }
       }
     } catch (linkError) {

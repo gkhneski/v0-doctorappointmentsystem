@@ -41,8 +41,6 @@ export async function POST(request: Request) {
     const netgsmResponse = await fetch(netgsmUrl)
     const netgsmResult = await netgsmResponse.text()
 
-    console.log("NETGSM Response:", netgsmResult)
-
     // NETGSM returns response codes: 00, 01, 02, etc.
     // 00 or 01 = success
     const isSuccess = netgsmResult.trim().startsWith("00") || netgsmResult.trim().startsWith("01")

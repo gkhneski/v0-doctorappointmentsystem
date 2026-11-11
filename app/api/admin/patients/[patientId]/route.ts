@@ -30,8 +30,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Hasta silinirken bir hata oluştu" }, { status: 500 })
     }
 
-    console.log(`Patient deleted successfully: ${patientId}`)
-
     // Revalidate the patients page to clear cache
     revalidatePath("/admin/patients")
 

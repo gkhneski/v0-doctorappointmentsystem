@@ -151,8 +151,6 @@ export async function DELETE(
 
     const { appointmentId } = await params
 
-    console.log("Deleting appointment:", appointmentId)
-
     const supabase = createServiceRoleClient()
 
     // Delete the appointment
@@ -168,8 +166,6 @@ export async function DELETE(
         { status: 500 }
       )
     }
-
-    console.log("Appointment deleted successfully")
 
     return NextResponse.json({
       success: true,

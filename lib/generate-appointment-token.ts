@@ -29,8 +29,6 @@ export async function generateAppointmentAccessToken(appointmentId: string) {
 }
 
 export async function validateAppointmentToken(token: string) {
-  console.log("Validating token:", token)
-
   const supabase = createServiceRoleClient()
 
   const { data, error } = await supabase
@@ -53,8 +51,6 @@ export async function validateAppointmentToken(token: string) {
     .eq("token", token)
     .gt("expires_at", new Date().toISOString())
     .single()
-
-  console.log("Token query result:", { data, error })
 
   if (error || !data) {
     return null

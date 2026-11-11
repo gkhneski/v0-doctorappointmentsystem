@@ -39,7 +39,7 @@ async function notifyStaffOfCancellation(
         .map((r) => sendTelegramMessage(String(r.telegram_chat_id), text)),
     )
   } catch (err: any) {
-    console.log("Telegram cancellation notify error:", err?.message)
+    console.error("Telegram cancellation notify error:", err?.message)
   }
 }
 

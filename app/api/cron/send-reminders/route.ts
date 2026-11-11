@@ -71,8 +71,6 @@ export async function GET(request: Request) {
     // Always calculate the reminder date in the clinic's timezone.
     const tomorrowDate = getTomorrowInIstanbul()
 
-    console.log("Checking appointments for:", tomorrowDate)
-
     // Find appointments for tomorrow that haven't received reminder
     // Include both scheduled and confirmed appointments
     const { data: appointments, error } = await supabase
@@ -93,11 +91,8 @@ export async function GET(request: Request) {
     }
 
     if (!appointments || appointments.length === 0) {
-      console.log("No appointments to remind")
       return NextResponse.json({ message: "No appointments to remind", count: 0 })
     }
-
-    console.log("Found appointments:", appointments.length)
 
     let successCount = 0
     let noPhoneCount = 0
@@ -166,8 +161,6 @@ export async function GET(request: Request) {
         console.error("Reminder SMS failed for appointment:", appointment.id, smsResult.providerReference)
       }
     }
-
-    console.log("Reminders sent:", successCount, "| skipped (no phone):", noPhoneCount)
 
     return NextResponse.json({
       message: "Reminders sent",
