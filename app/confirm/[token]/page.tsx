@@ -2,6 +2,7 @@ import { headers } from "next/headers"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { getRequestEvidence, recordAppointmentAudit } from "@/lib/appointment-audit"
 import { AppointmentConfirmation } from "@/components/appointment-confirmation"
+import { isConfirmationExpired, toConfirmationView } from "@/lib/confirmation-view"
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +24,7 @@ export default async function ConfirmAppointmentPage({ params }: { params: Promi
     .eq("confirmation_token", token)
     .single()
 
-  if (error || !appointment) {
+  if (error || !appointment || isConfirmationExpired(appointment.appointment_date)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -58,5 +59,6 @@ export default async function ConfirmAppointmentPage({ params }: { params: Promi
     }
   }
 
-  return <AppointmentConfirmation appointment={appointment} token={token} />
+  // Tarayiciya yalnizca ekranda gosterilen alanlar gider (telefon, not, odeme gitmez).
+  return <AppointmentConfirmation appointment={toConfirmationView(appointment)} token={token} />
 }

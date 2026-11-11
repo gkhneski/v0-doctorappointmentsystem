@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Calendar, Clock, User, CheckCircle, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import type { ConfirmationView } from "@/lib/confirmation-view"
 
 type Props = {
-  appointment: any
+  appointment: ConfirmationView
   token: string
 }
 

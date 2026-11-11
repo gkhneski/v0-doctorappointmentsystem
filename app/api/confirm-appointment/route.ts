@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { sendTelegramMessage, escapeHtml } from "@/lib/telegram"
 import { NextResponse } from "next/server"
+import { isConfirmationExpired } from "@/lib/confirmation-view"
 
 // Hasta linkten randevusunu iptal edince tum aktif Telegram alicilarina anlik haber ver.
 async function notifyStaffOfCancellation(
@@ -60,6 +61,19 @@ export async function POST(request: Request) {
     const ipAddress = forwardedIp || request.headers.get("x-real-ip") || null
     const userAgent = request.headers.get("user-agent")?.slice(0, 1000) || null
     const responseType = action === "confirm" ? "confirmed" : "cancelled"
+
+    // Gecmis randevularin baglantisi islem yapmaz (baglanti suresiz kalmasin).
+    if (typeof token !== "string") {
+      return NextResponse.json({ error: "Randevu bulunamadı" }, { status: 404 })
+    }
+    const { data: tokenRows } = await supabase
+      .from("appointments")
+      .select("appointment_date")
+      .eq("confirmation_token", token)
+      .limit(1)
+    if (tokenRows?.[0] && isConfirmationExpired(tokenRows[0].appointment_date)) {
+      return NextResponse.json({ error: "Bu bağlantının süresi dolmuş" }, { status: 410 })
+    }
 
     const { data, error } = await supabase.rpc("record_appointment_response", {
       p_token: token,
