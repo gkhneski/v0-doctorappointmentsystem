@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import AppointmentTypeSelector from "@/components/appointment-type-selector"
 import { AIAppointmentAssistant } from "@/components/ai-appointment-assistant"
 import { purgeStaleUnverified } from "@/lib/public-booking"
+import { toPublicSlots } from "@/lib/public-slots"
 
 export default async function AppointmentPage() {
   const supabase = await createClient()
@@ -43,28 +44,28 @@ export default async function AppointmentPage() {
     await purgeStaleUnverified(serviceSupabase)
     const { data, error } = await serviceSupabase
       .from("appointments")
-      .select("id, doctor_id, appointment_date, appointment_time, status")
+      .select("doctor_id, appointment_date, appointment_time, status")
       .gte("appointment_date", today)
       .neq("status", "cancelled")
 
     if (error) {
       console.error("Error fetching appointments with service role:", error)
     } else {
-      existingAppointments = data || []
+      existingAppointments = toPublicSlots(data || [])
     }
   } catch (serviceError) {
     console.error("Service role client failed, trying regular client:", serviceError)
 
     const { data, error } = await supabase
       .from("appointments")
-      .select("id, doctor_id, appointment_date, appointment_time, status")
+      .select("doctor_id, appointment_date, appointment_time, status")
       .gte("appointment_date", today)
       .neq("status", "cancelled")
 
     if (error) {
       console.error("Error fetching appointments with regular client:", error)
     } else {
-      existingAppointments = data || []
+      existingAppointments = toPublicSlots(data || [])
     }
   }
 
