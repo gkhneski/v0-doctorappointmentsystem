@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { isUnderPath } from "@/lib/path-prefix"
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -71,7 +72,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Protect patient routes
-  if (request.nextUrl.pathname.startsWith("/patient") && !user) {
+  // "/patient-form" herkese aciktir (SMS'teki form baglantisi); yalnizca "/patient" ve alti korunur.
+  if (isUnderPath(request.nextUrl.pathname, "/patient") && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/patient/login"
     return NextResponse.redirect(url)
