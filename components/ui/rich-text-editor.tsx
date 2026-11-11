@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from "react"
 import { Bold, Italic, Underline, List, AlignLeft, AlignCenter, AlignRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { sanitizeRichText } from "@/lib/sanitize-rich-text"
 
 interface RichTextEditorProps {
   value: string
@@ -28,7 +29,8 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
   useEffect(() => {
     if (editorRef.current && !isInternalChange.current) {
       if (editorRef.current.innerHTML !== value) {
-        editorRef.current.innerHTML = value || ""
+        // Kayitli HTML suzulerek yuklenir (lib/sanitize-rich-text.ts)
+        editorRef.current.innerHTML = sanitizeRichText(value)
       }
     }
     isInternalChange.current = false

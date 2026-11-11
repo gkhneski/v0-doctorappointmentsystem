@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { sanitizeRichText } from "@/lib/sanitize-rich-text"
 
 interface RichTextEditorProps {
   value: string
@@ -46,7 +47,8 @@ export function RichTextEditor({ value, onChange, label, placeholder }: RichText
 
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value || ""
+      // Kayitli HTML suzulerek yuklenir (lib/sanitize-rich-text.ts)
+      editorRef.current.innerHTML = sanitizeRichText(value)
     }
   }, [value])
 
