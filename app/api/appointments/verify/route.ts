@@ -2,6 +2,9 @@ import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { sendAppointmentLinkSMS } from "@/lib/send-appointment-link-sms"
 import { sendDocumentListSMS } from "@/lib/send-document-list-sms"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { applyPendingPatient } from "@/lib/resolve-patient"
+import { isUuid } from "@/lib/public-booking"
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic'
@@ -11,6 +14,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { appointmentId, code } = body
+
+    if (!isUuid(appointmentId) || typeof code !== "string") {
+      return NextResponse.json({ error: "Geçersiz doğrulama kodu" }, { status: 400 })
+    }
 
     const supabase = createServiceRoleClient()
 
@@ -25,6 +32,20 @@ export async function POST(request: Request) {
     if (verificationError || !verification) {
       console.error("Verification record not found:", verificationError)
       return NextResponse.json({ error: "Doğrulama kaydı bulunamadı" }, { status: 404 })
+    }
+
+    // Deneme siniri: randevu basina 15 dakikada en cok 5 deneme. Sinir asilirsa (ya da kontrol
+    // edilemezse) kod iptal edilir; 6 haneli kod deneme-yanilma ile bulunamasin.
+    const attemptAllowed = await checkRateLimit(`verify:appt:${appointmentId}`, 5, 900, { failClosed: true })
+    if (!attemptAllowed) {
+      await supabase
+        .from("sms_verifications")
+        .update({ expires_at: new Date().toISOString() })
+        .eq("id", verification.id)
+      return NextResponse.json(
+        { error: "Çok fazla deneme yapıldı. Lütfen randevuyu yeniden oluşturun." },
+        { status: 429 },
+      )
     }
 
     // Check if code has expired
@@ -70,6 +91,9 @@ export async function POST(request: Request) {
       console.error("Error updating appointment:", appointmentError)
       throw appointmentError
     }
+
+    // Herkese acik yolda bekletilen hasta kaydi degisikligi (ad, telefon...) ancak simdi uygulanir.
+    await applyPendingPatient(supabase, appointmentId)
 
     try {
       // Randevu ve hasta bilgilerini al

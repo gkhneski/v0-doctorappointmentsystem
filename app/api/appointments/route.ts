@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
-import { resolvePatientId } from "@/lib/resolve-patient"
+import { resolvePatient, PENDING_PATIENT_KEY } from "@/lib/resolve-patient"
+import {
+  PUBLIC_REFUSAL_MESSAGE,
+  SMS_FAILED_MESSAGE,
+  initialStatus,
+  purgeStaleUnverified,
+  smsOutcome,
+} from "@/lib/public-booking"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
 import { validatePublicBooking } from "@/lib/validate-booking"
@@ -65,6 +72,16 @@ export async function POST(request: Request) {
         )
       }
 
+      // Telefon basina sinir: ayni numaraya art arda dogrulama SMS'i gonderilmesin.
+      // (Altyapi hatasinda gecirir; gercek hasta engellenmesin.)
+      const phoneKey = normalizePhone(rawPatientPhone)
+      if (phoneKey && !(await checkRateLimit(`appt:phone:${phoneKey}`, 3, 3600))) {
+        return NextResponse.json(
+          { error: "Cok fazla randevu istegi. Lutfen bir sure sonra tekrar deneyin." },
+          { status: 429 },
+        )
+      }
+
       // Serbest metin alanlari (ad, randevu turu) personel ekranlarinda gosterildigi icin
       // herkese acik istekte dogrulanir. Personelin actigi randevular etkilenmez.
       const invalid = validatePublicBooking({ patient_name, appointment_type })
@@ -74,6 +91,9 @@ export async function POST(request: Request) {
     }
 
     const supabase = createServiceRoleClient()
+
+    // Kodu dogrulanmadan birakilmis herkese acik randevular saati tutmaya devam etmesin.
+    await purgeStaleUnverified(supabase)
 
     // Calculate week range for duplicate check
     const appointmentDate = new Date(appointment_date)
@@ -158,19 +178,14 @@ export async function POST(request: Request) {
     }
 
     if (!isVerifiedAdmin && sameWeekAppointments && sameWeekAppointments.length > 0) {
-      const existing = sameWeekAppointments[0]
-      const existingDate = new Date(existing.appointment_date).toLocaleDateString("tr-TR")
-      return NextResponse.json(
-        {
-          error: "duplicate_appointment",
-          message: `Bu hasta ${existingDate} tarihinde zaten randevusu var. Acil durum için lütfen sekreterimizle iletişime geçin:\n\nSekreter: 0531 080 47 20`,
-          existing_appointment: { date: existingDate, time: existing.appointment_time },
-        },
-        { status: 409 }
-      )
+      // Hangi TC'nin ne zaman randevusu oldugu disariya soylenmez (kara listeyle ayni yanit).
+      return NextResponse.json({ error: PUBLIC_REFUSAL_MESSAGE }, { status: 409 })
     }
 
     if (blacklistedPatient) {
+      if (!isVerifiedAdmin) {
+        return NextResponse.json({ error: PUBLIC_REFUSAL_MESSAGE }, { status: 409 })
+      }
       return Response.json(
         { error: "Sistem arızası nedeniyle şu anda randevu verilememiştir. Lütfen daha sonra tekrar deneyiniz." },
         { status: 403 }
@@ -179,13 +194,19 @@ export async function POST(request: Request) {
 
     // Hasta kaydını çöz: gerçek TC → aynı telefonlu geçici kaydı yükselt → yeni kayıt
     // (duplicate oluşmasını engeller)
-    const patientId = await resolvePatientId(supabase, {
-      tc_no: patient_tc_no,
-      full_name: patient_name,
-      phone: patient_phone,
-      date_of_birth: patient_dob,
-      kvkk_approved,
-    })
+    // Herkese acik yolda MEVCUT kayit degistirilmez; degisiklik kod dogrulaninca uygulanir.
+    const patient = await resolvePatient(
+      supabase,
+      {
+        tc_no: patient_tc_no,
+        full_name: patient_name,
+        phone: patient_phone,
+        date_of_birth: patient_dob,
+        kvkk_approved,
+      },
+      { defer: !isVerifiedAdmin },
+    )
+    const patientId = patient.id
 
     // Generate unique confirmation token
     const confirmationToken = generateUrlToken()
@@ -197,7 +218,7 @@ export async function POST(request: Request) {
         doctor_id,
         appointment_date,
         appointment_time,
-        status: "scheduled",
+        status: initialStatus(isVerifiedAdmin),
         confirmation_status: "pending",
         confirmation_token: confirmationToken,
         appointment_type: appointment_type,
@@ -219,6 +240,7 @@ export async function POST(request: Request) {
         appointment_type,
         referral_doctor,
         medical_documents,
+        ...(patient.pending ? { [PENDING_PATIENT_KEY]: patient.pending } : {}),
       },
     })
 
@@ -239,7 +261,6 @@ export async function POST(request: Request) {
     if (smsError) throw smsError
 
     let smsStatus = "sent"
-    let devCode: string | undefined
 
     try {
       const netgsmUser = process.env.NETGSM_USER
@@ -254,15 +275,20 @@ export async function POST(request: Request) {
         const smsResult = await smsResponse.text()
         if (!smsResult.startsWith("00") && !smsResult.startsWith("01")) {
           smsStatus = "failed"
-          devCode = verificationCode
         }
       } else {
         smsStatus = "dev_mode"
-        devCode = verificationCode
       }
     } catch {
       smsStatus = "error"
-      devCode = verificationCode
+    }
+
+    const outcome = smsOutcome(isVerifiedAdmin, smsStatus === "sent", verificationCode)
+    if (outcome.action === "rollback") {
+      // Herkese acik yolda kod yanita konmaz; SMS gitmediyse randevu saati tutmasin.
+      await supabase.from("appointments").delete().eq("id", appointment.id)
+      if (patient.created) await supabase.from("patients").delete().eq("id", patientId)
+      return NextResponse.json({ error: SMS_FAILED_MESSAGE }, { status: 502 })
     }
 
     return NextResponse.json({
@@ -270,7 +296,7 @@ export async function POST(request: Request) {
       appointmentId: appointment.id,
       message: "Randevu oluşturuldu. Lütfen telefonunuza gelen doğrulama kodunu girin.",
       smsStatus,
-      devCode, // Only included in dev/error cases
+      devCode: outcome.devCode, // Yalnizca personele, SMS gitmediyse
     })
   } catch (error) {
     console.error("Error in POST /api/appointments:", error)

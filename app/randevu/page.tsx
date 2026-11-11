@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import AppointmentTypeSelector from "@/components/appointment-type-selector"
 import { AIAppointmentAssistant } from "@/components/ai-appointment-assistant"
+import { purgeStaleUnverified } from "@/lib/public-booking"
 
 export default async function AppointmentPage() {
   const supabase = await createClient()
@@ -38,6 +39,8 @@ export default async function AppointmentPage() {
 
   try {
     const serviceSupabase = await createServiceRoleClient()
+    // Kodu dogrulanmadan birakilmis randevular takvimde dolu gorunmesin.
+    await purgeStaleUnverified(serviceSupabase)
     const { data, error } = await serviceSupabase
       .from("appointments")
       .select("id, doctor_id, appointment_date, appointment_time, status")

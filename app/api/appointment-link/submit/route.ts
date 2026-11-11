@@ -1,10 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { validateAppointmentToken, markTokenAsUsed } from "@/lib/generate-appointment-token"
+import { PENDING_PATIENT_KEY } from "@/lib/resolve-patient"
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, appointmentId, formData } = await request.json()
+    const { token, appointmentId, formData: rawFormData } = await request.json()
+
+    // Sunucunun ic anahtari istemciden kabul edilmez (hasta kaydi degisikligi tasir).
+    let formData = rawFormData
+    if (rawFormData && typeof rawFormData === "object" && !Array.isArray(rawFormData)) {
+      const { [PENDING_PATIENT_KEY]: _ignored, ...rest } = rawFormData
+      formData = rest
+    }
 
     // Token'ı validate et
     const tokenData = await validateAppointmentToken(token)

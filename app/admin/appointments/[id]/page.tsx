@@ -25,7 +25,8 @@ const formatFormData = (data: Record<string, any>) => {
   }
 
   return Object.entries(data)
-    .filter(([key]) => key !== "medical_documents") // Filter out medical_documents
+    // medical_documents ayri gosterilir; "_" ile baslayan anahtarlar sunucunun ic kaydidir.
+    .filter(([key]) => key !== "medical_documents" && !key.startsWith("_"))
     .map(([key, value]) => ({
       label: fieldLabels[key] || key.replace(/([A-Z_])/g, " $1").trim(),
       value:
