@@ -274,6 +274,8 @@ Kural: her adım önce ön izleme ortamında, hem herkese açık randevu akış�
 
 **Adım 0.6 — Veritabanı kuralları ve dosyalar**
 
+> **Durum (Plan 3, `scripts/rls/`):** 11.11.2026'da canlıya uygulandı ve dışarıdan doğrulandı: **G21** (01), form belirteçleri + girişsiz randevu ekleme (02, ek bulgu), **G25** (03), **G26** (04). **G27** kodu yazıldı, canlıya alınmayı bekliyor. Bekleyen: **G20** (05), **G22** (06), **G23** (07), **G24** (08) — her biri admin ekranı denemesiyle birlikte uygulanacak.
+
 | No | Bulgu | Yapılacak | Bozulma riski ve önlemi |
 |---|---|---|---|
 | G20 | Gebelik tabloları girişsiz okunabiliyor (`pregnancy_episodes`, `pregnancy_visits`, `pregnancy_outcomes`). | Okuma yalnızca personele. | Admin gebelik ekranı personel oturumuyla çalışıyor; etkilenmez. |
