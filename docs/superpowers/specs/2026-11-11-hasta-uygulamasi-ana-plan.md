@@ -252,6 +252,8 @@ Kural: her adım önce ön izleme ortamında, hem herkese açık randevu akış�
 
 **Adım 0.4 — Herkese açık randevu akışının sağlamlaştırılması (tek paket, iki sihirbazla denenir)**
 
+> **Durum (G10–G19): Kod tamam (Plan 2, 11.11.2026); ön izleme denemesi ve canlıya alma bekliyor.** Veritabanı şeması değişmedi: doğrulanmamış herkese açık randevu `status = 'pending'` ile işaretlenir. Kalan karar: TC'yi bilen biri kendi telefonuyla randevu alıp kodu doğrularsa hasta kaydındaki telefon yine değişir; tam kapatmak için telefonu değişen hastanın sekretere yönlendirilmesi gerekir.
+
 | No | Bulgu | Yapılacak | Bozulma riski ve önlemi |
 |---|---|---|---|
 | G10 | Bir hastanın TC'sini bilen biri, SMS kodu olmadan o hastanın adını, telefonunu ve doğum tarihini değiştirebiliyor. Hasta uygulaması telefonla giriş yapacağı için bu, hesap ele geçirmeye dönüşür. | Herkese açık yolda mevcut hasta kaydı kod doğrulanmadan güncellenmez. | Sekreterlerin kullandığı "geçici kaydı tamamlama" davranışı personel için aynen kalır. |
