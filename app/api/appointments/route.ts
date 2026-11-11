@@ -4,6 +4,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { resolvePatientId } from "@/lib/resolve-patient"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
+import { validatePublicBooking } from "@/lib/validate-booking"
 
 export async function POST(request: Request) {
   try {
@@ -61,6 +62,13 @@ export async function POST(request: Request) {
           { error: "Cok fazla randevu istegi. Lutfen bir sure sonra tekrar deneyin." },
           { status: 429 },
         )
+      }
+
+      // Serbest metin alanlari (ad, randevu turu) personel ekranlarinda gosterildigi icin
+      // herkese acik istekte dogrulanir. Personelin actigi randevular etkilenmez.
+      const invalid = validatePublicBooking({ patient_name, appointment_type })
+      if (invalid) {
+        return NextResponse.json({ error: invalid }, { status: 400 })
       }
     }
 
