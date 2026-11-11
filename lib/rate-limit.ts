@@ -1,13 +1,21 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 
 /**
- * Postgres tabanli basit sliding-window rate limit.
+ * Postgres tabanli basit sliding-window rate limit (SQL'i: scripts/rate-limit.sql).
  * Kotuye kullanimi (SMS/AI spam, otomatik randevu botu) sinirlamak icin kullanilir.
  *
- * Hata olursa "fail-open" davranir (istegi engellemez) — cunku rate limit
- * altyapisi bir aksiliktan dolayi gercek hastalarin randevu almasini engellememeli.
+ * Altyapi hatasinda varsayilan davranis "fail-open"dur (istegi engellemez) — rate limit
+ * bir aksilikten dolayi gercek hastalarin randevu almasini engellememeli.
+ * Kod denemesi ve yapay zeka gibi kotuye kullanimi pahali yollar `failClosed: true` verir:
+ * sinir kontrol edilemiyorsa istek reddedilir.
  */
-export async function checkRateLimit(bucket: string, max: number, windowSeconds: number): Promise<boolean> {
+export async function checkRateLimit(
+  bucket: string,
+  max: number,
+  windowSeconds: number,
+  options: { failClosed?: boolean } = {},
+): Promise<boolean> {
+  const onFailure = !options.failClosed
   try {
     const supabase = createServiceRoleClient()
     const { data, error } = await supabase.rpc("check_rate_limit", {
@@ -17,12 +25,12 @@ export async function checkRateLimit(bucket: string, max: number, windowSeconds:
     })
     if (error) {
       console.error("rate limit rpc error:", error.message)
-      return true
+      return onFailure
     }
     return data === true
   } catch (err: any) {
     console.error("rate limit error:", err?.message)
-    return true
+    return onFailure
   }
 }
 
