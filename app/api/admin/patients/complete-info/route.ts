@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
 import { requireAdmin } from "@/lib/require-admin"
+import { generateVerificationCode } from "@/lib/secure-random"
 
 export async function POST(request: Request) {
   const gate = await requireAdmin()
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     }
 
     // 6 haneli rastgele kod oluştur
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+    const verificationCode = generateVerificationCode()
 
     // Kodu veritabanına kaydet (5 dakika geçerli)
     const expiresAt = new Date()

@@ -5,6 +5,7 @@ import { resolvePatientId } from "@/lib/resolve-patient"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
 import { validatePublicBooking } from "@/lib/validate-booking"
+import { generateUrlToken, generateVerificationCode } from "@/lib/secure-random"
 
 export async function POST(request: Request) {
   try {
@@ -187,7 +188,7 @@ export async function POST(request: Request) {
     })
 
     // Generate unique confirmation token
-    const confirmationToken = Math.random().toString(36).substring(2) + Date.now().toString(36)
+    const confirmationToken = generateUrlToken()
 
     const { data: appointment, error: appointmentError } = await supabase
       .from("appointments")
@@ -221,7 +222,7 @@ export async function POST(request: Request) {
       },
     })
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+    const verificationCode = generateVerificationCode()
 
     const { data: smsVerification, error: smsError } = await supabase
       .from("sms_verifications")

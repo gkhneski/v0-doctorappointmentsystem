@@ -4,6 +4,7 @@ import { SITE_URL } from "@/lib/site-url"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
 import { getAdminAuth } from "@/lib/admin-auth"
 import { recordAppointmentAudit } from "@/lib/appointment-audit"
+import { generateUrlToken } from "@/lib/secure-random"
 
 export async function POST(request: Request) {
   try {
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     // Generate or get existing token
     let token = appointment.confirmation_token
     if (!token) {
-      token = `${Date.now()}-${Math.random().toString(36).substring(7)}`
+      token = generateUrlToken()
       await supabase.from("appointments").update({ confirmation_token: token }).eq("id", appointmentId)
     }
 

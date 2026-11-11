@@ -4,10 +4,7 @@ import { SITE_URL } from "@/lib/site-url"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
 import { recordAppointmentAudit } from "@/lib/appointment-audit"
 import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
-
-function generateToken() {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36)
-}
+import { generateUrlToken } from "@/lib/secure-random"
 
 function getTomorrowInIstanbul() {
   const istanbulNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }))
@@ -108,7 +105,7 @@ export async function GET(request: Request) {
       // Generate confirmation token if not exists
       let token = appointment.confirmation_token
       if (!token) {
-        token = generateToken()
+        token = generateUrlToken()
         await supabase.from("appointments").update({ confirmation_token: token }).eq("id", appointment.id)
       }
 
