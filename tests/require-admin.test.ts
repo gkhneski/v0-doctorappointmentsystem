@@ -44,4 +44,20 @@ describe("requireAdmin", () => {
     expect(gate.ok).toBe(false)
     if (!gate.ok) expect(gate.response.status).toBe(401)
   })
+
+  it("rol istenirse ve rol uymuyorsa 403 döner", async () => {
+    getAdminAuth.mockResolvedValue({ user: { id: "u1" }, adminUser: { full_name: "A", role: "sekreter" } })
+    const gate = await requireAdmin({ role: "doktor" })
+    expect(gate.ok).toBe(false)
+    if (!gate.ok) {
+      expect(gate.response.status).toBe(403)
+      expect(await gate.response.json()).toEqual({ error: "Bu islem icin doktor yetkisi gerekir" })
+    }
+  })
+
+  it("rol istenirse ve rol uyuyorsa geçer", async () => {
+    getAdminAuth.mockResolvedValue({ user: { id: "u1" }, adminUser: { full_name: "A", role: "doktor" } })
+    const gate = await requireAdmin({ role: "doktor" })
+    expect(gate.ok).toBe(true)
+  })
 })

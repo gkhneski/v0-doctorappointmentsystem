@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/require-admin"
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const { id } = await params
     const supabase = await createClient()
@@ -41,6 +45,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const { id } = await params
     const supabase = await createClient()

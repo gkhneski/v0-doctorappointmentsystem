@@ -233,22 +233,22 @@ Kural: her adım önce ön izleme ortamında, hem herkese açık randevu akış�
 | G1 | Yeni kayıt olan herkesi yönetici yapan iki tetikleyici canlı veritabanında etkin. Supabase'de herkese açık kayıt açıksa, site anahtarını bilen biri kendini "doktor" olarak kaydedip bütün hasta verisine erişebilir. | **Tetikleyiciler 11.11.2026'da kaldırıldı** (`scripts/drop-admin-signup-triggers.sql`); herkese açık kayıt canlıda açıktı, 11.11.2026'da Supabase CLI ile kapatıldı (`auth.enable_signup = false`) | **Tamamlandı.** Personel hesapları sunucudan (`auth.admin.createUser`) açıldığı için etkilenmez. |
 | G2 | Doktor ve sekreter hesabının e-posta ve şifresi depoda açık yazılı (`scripts/003_create_admin_account.sql`, `scripts/004_add_secretary_account.sql`). | Doğrulandı | Satırlar silindi (Plan 1, Görev 1). **Kalan: doktor ve sekreter şifreleri admin panelinden değiştirilecek** — değerler git geçmişinde durduğu için zorunlu. |
 | G3 | `nbreeda` deposunda Google, Replicate, Resend ve Emergent anahtarları ile yönetici/doktor giriş bilgileri açık. | Doğrulandı | Tüm anahtarlar yenilenir; depo kapatılsa bile. Eski sistem Faz 3'e kadar klinikte kullanılacağı için yeni anahtarlar aynı anda Emergent ayarlarına girilmelidir, yoksa klinikteki üretim durur (bkz. S11). |
-| G4 | `.gitignore` yalnızca `.env*.local` dosyalarını kapsıyor. | Doğrulandı | `.env*` eklenir. |
+| G4 | `.gitignore` yalnızca `.env*.local` dosyalarını kapsıyor. | Doğrulandı | `.env*` eklenir. **Kod tamam (Plan 1, 11.11.2026); ön izleme denemesi ve canlıya alma bekliyor.** |
 
 **Adım 0.2 — Next.js güncellemesi**
 
 | No | Bulgu | Yapılacak |
 |---|---|---|
-| G5 | Next.js 16.2.0'da 5 kritik (uzaktan kod çalıştırma) ve 14 yüksek (ara katman atlatma dahil) açık bildirimi var. | En az 16.4.1'e yükseltilir; ön izlemede giriş, randevu, sohbet ve iki zamanlanmış görev denenir. |
+| G5 | Next.js 16.2.0'da 5 kritik (uzaktan kod çalıştırma) ve 14 yüksek (ara katman atlatma dahil) açık bildirimi var. | En az 16.4.1'e yükseltilir; ön izlemede giriş, randevu, sohbet ve iki zamanlanmış görev denenir. **Kod tamam (Plan 1, 11.11.2026); ön izleme denemesi ve canlıya alma bekliyor.** |
 
 **Adım 0.3 — Yalnızca ekleme olan düzeltmeler**
 
 | No | Bulgu | Yapılacak |
 |---|---|---|
-| G6 | Sekiz yönetici yolu kendi içinde yetki kontrolü yapmıyor, yalnızca ara katmana güveniyor (hasta bilgisi değiştirme, KVKK onayı, haftalık program vb.). | Her yolun başına ortak yönetici kontrolü. |
-| G7 | Sunucu kayıtlarına personel şifresi, SMS kodları, erişim anahtarları ve hasta formu yazılıyor. | Bu kayıt satırları silinir. |
-| G8 | Herkese açık randevu formuna yazılan isim, personelin günlük liste yazdırma ekranında kod olarak çalışabiliyor; doktorun oturumunda çalışırsa yeni yönetici hesabı açabilir. | Yazdırma şablonunda tüm değerler kaçışlanır; herkese açık yolda isim ve randevu türü doğrulanır. |
-| G9 | Kullanılmayan, yetkisiz çalışan kod: iki SMS yolu, üç sunucu işlemi, iki bileşen. | Silinir. |
+| G6 | Sekiz yönetici yolu kendi içinde yetki kontrolü yapmıyor, yalnızca ara katmana güveniyor (hasta bilgisi değiştirme, KVKK onayı, haftalık program vb.). | Her yolun başına ortak yönetici kontrolü. **Kod tamam (Plan 1, 11.11.2026); ön izleme denemesi ve canlıya alma bekliyor.** |
+| G7 | Sunucu kayıtlarına personel şifresi, SMS kodları, erişim anahtarları ve hasta formu yazılıyor. | Bu kayıt satırları silinir. **Kod tamam (Plan 1, 11.11.2026); ön izleme denemesi ve canlıya alma bekliyor.** |
+| G8 | Herkese açık randevu formuna yazılan isim, personelin günlük liste yazdırma ekranında kod olarak çalışabiliyor; doktorun oturumunda çalışırsa yeni yönetici hesabı açabilir. | Yazdırma şablonunda tüm değerler kaçışlanır; herkese açık yolda isim ve randevu türü doğrulanır. **Kod tamam (Plan 1, 11.11.2026); ön izleme denemesi ve canlıya alma bekliyor.** |
+| G9 | Kullanılmayan, yetkisiz çalışan kod: iki SMS yolu, üç sunucu işlemi, iki bileşen. | Silinir. **Kod tamam (Plan 1, 11.11.2026); ön izleme denemesi ve canlıya alma bekliyor.** |
 
 **Adım 0.4 — Herkese açık randevu akışının sağlamlaştırılması (tek paket, iki sihirbazla denenir)**
 

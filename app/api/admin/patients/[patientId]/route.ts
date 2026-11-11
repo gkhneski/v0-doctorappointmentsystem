@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache"
 import { requireAdmin } from "@/lib/require-admin"
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ patientId: string }> }) {
-  const gate = await requireAdmin()
+  // Hasta silme geri alinamaz ve bagli kayitlari da siler: yalnizca doktor.
+  const gate = await requireAdmin({ role: "doktor" })
   if (!gate.ok) return gate.response
 
   try {

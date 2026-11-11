@@ -3,6 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
 import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
 import { SITE_URL } from "@/lib/site-url"
+import { requireAdmin } from "@/lib/require-admin"
 
 const GOOGLE_MAPS_LINK = "https://maps.google.com/?q=Prof+Dr+Eray+Caliskan+Kadin+Hastaliklari+Istanbul"
 
@@ -27,6 +28,9 @@ async function sendSMS(phone: string, message: string): Promise<boolean> {
 }
 
 export async function POST(request: Request) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

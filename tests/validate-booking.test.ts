@@ -16,21 +16,23 @@ const PUBLIC_TYPES: string[] = [
   "diger",
 ]
 
-const NAME_ERROR = "Lütfen adınızı ve soyadınızı yalnızca harflerle yazın."
+const NAME_ERROR = "Lütfen adınızı ve soyadınızı geçerli biçimde yazın."
 const TYPE_ERROR = "Geçersiz randevu türü."
 
 const check = (name: unknown, type: unknown = "kontrol-takip") =>
   validatePublicBooking({ patient_name: name, appointment_type: type })
 
 describe("validatePublicBooking", () => {
-  it.each(["Ayşe Gül Öztürk", "Zeynep-Nur O'Brien", "İ. Çağla Ş.", "Élodie Müller", "  Fatma Yılmaz  ", "ŞULE IŞIK"])(
+  it.each(["Ayşe Gül Öztürk", "Zeynep-Nur O'Brien", "İ. Çağla Ş.", "Élodie Müller", "  Fatma Yılmaz  ", "ŞULE IŞIK",
+    // Kızlık soyadı, virgül, uzun tire, yapıştırmadan gelen bölünemez boşluk, ayrık yazılmış ş, rakam, başka alfabe
+    "Ayşe Kaya (Yılmaz)", "Yılmaz, Ayşe", "Ayşe–Nur Kaya", "Ayşe Yılmaz", "Ayşe Yılmaz", "Ayşe Yılmaz 2", "प्रिया शर्मा"])(
     "geçerli adı kabul eder: %s",
     (name) => expect(check(name)).toBeNull(),
   )
 
   it.each(PUBLIC_TYPES)("mevcut randevu türünü kabul eder: %s", (type) => expect(check("Ayşe Yılmaz", type)).toBeNull())
 
-  it.each(["<img src=x onerror=alert(1)>", "Ayşe<script>", "A", "x".repeat(81), "12345", "", "   ", "Ayşe (eşi Ali)"])(
+  it.each(["<img src=x onerror=alert(1)>", "Ayşe<script>", "A", "x".repeat(81), "12345", "", "   ", "Ayşe\u0000Yılmaz", "Ayşe {x}", "Ayşe `x`", 'Ayşe "x"', "Ayşe\\Yılmaz"])(
     "geçersiz adı reddeder: %s",
     (name) => expect(check(name)).toBe(NAME_ERROR),
   )

@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/require-admin"
 
 export async function GET() {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const supabase = await createClient()
 
@@ -33,6 +37,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const supabase = await createClient()
 

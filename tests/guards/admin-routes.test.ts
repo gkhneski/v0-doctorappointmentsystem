@@ -18,7 +18,8 @@ describe("yönetici yolları", () => {
     it(`${file} her işleyicide yetki kontrolü yapar`, () => {
       const src = readFileSync(file, "utf8")
       const handlers = src.match(/export async function (GET|POST|PUT|PATCH|DELETE)\b/g) ?? []
-      const checks = src.match(/requireAdmin\(|getAdminAuth\(|auth\.getUser\(/g) ?? []
+      // Yalnızca oturum kontrolü (auth.getUser) yetmez: personel tablosuna bakılmalı.
+      const checks = src.match(/requireAdmin\(|getAdminAuth\(|from\("admin_users"\)/g) ?? []
       expect(handlers.length).toBeGreaterThan(0)
       expect(checks.length).toBeGreaterThanOrEqual(handlers.length)
     })
