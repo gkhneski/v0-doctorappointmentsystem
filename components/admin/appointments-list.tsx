@@ -24,6 +24,7 @@ import { DeleteDialog } from "@/components/admin/appointments/dialogs/delete-dia
 import { SmsDialog } from "@/components/admin/appointments/dialogs/sms-dialog"
 import { PatientDialog } from "@/components/admin/appointments/dialogs/patient-dialog"
 import { EditDialog } from "@/components/admin/appointments/dialogs/edit-dialog"
+import { escapeHtml } from "@/lib/escape-html"
 
 // Components
 const DetailPanel = lazy(() => import("./appointment-detail-panel").then(m => ({ default: m.AppointmentDetailPanel })))
@@ -293,12 +294,12 @@ export default function AppointmentsList({ appointments: initialAppointments, do
         // Tüm randevularda notları göster (varsa)
         const notes = a.notes || ""
         return `<tr>
-          <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold; width: 30px;">${no}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; width: 70px;">${time}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${name}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; width: 100px;">${type}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; width: 70px;">${paymentDisplay}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; min-width: 200px;">${notes}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold; width: 30px;">${escapeHtml(no)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; width: 70px;">${escapeHtml(time)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(name)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; width: 100px;">${escapeHtml(type)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; width: 70px;">${escapeHtml(paymentDisplay)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; min-width: 200px;">${escapeHtml(notes)}</td>
         </tr>`
       })
       .join("")
@@ -365,9 +366,9 @@ export default function AppointmentsList({ appointments: initialAppointments, do
       </head>
       <body>
         <div class="header">
-          <h1>Randevu Listesi${dateLabel}</h1>
+          <h1>Randevu Listesi${escapeHtml(dateLabel)}</h1>
           <p>Prof. Dr. Eray Çalışkan - Kadın Hastalıkları ve Doğum</p>
-          <div class="count">Toplam: ${listToPrint.length} hasta</div>
+          <div class="count">Toplam: ${escapeHtml(listToPrint.length)} hasta</div>
         </div>
         
         <table>
