@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/require-admin"
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await requireAdmin()
+  const gate = await requireAdmin({ role: "doktor" })
   if (!gate.ok) return gate.response
 
   try {
@@ -45,7 +45,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const gate = await requireAdmin()
+  const gate = await requireAdmin({ role: "doktor" })
   if (!gate.ok) return gate.response
 
   try {

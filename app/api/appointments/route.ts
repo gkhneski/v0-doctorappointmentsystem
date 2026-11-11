@@ -312,7 +312,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error in POST /api/appointments:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Randevu oluşturulurken bir hata oluştu" },
+      { error: "Randevu oluşturulurken bir hata oluştu" },
       { status: 500 },
     )
   }

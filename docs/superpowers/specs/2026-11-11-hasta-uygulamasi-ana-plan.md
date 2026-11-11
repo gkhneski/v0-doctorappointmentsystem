@@ -289,6 +289,8 @@ Kural: her adım önce ön izleme ortamında, hem herkese açık randevu akış�
 
 **Adım 0.7 — Roller ve sertleştirme**
 
+> **Durum (11.11.2026):** **S7 kararı verildi:** hemşire ile sekreter aynı haklara sahip. Yalnızca doktora ait olanlar: personel yönetimi, hasta silme, SMS şablonu oluşturma/düzenleme/silme. Randevu silme ve belge işlemleri sekreterlerin günlük işi olduğu için tüm personele açık bırakıldı. **G28** ve **G29** (çerçeve engeli ve temel başlıklar; tam içerik güvenlik politikası hariç) kodu yazıldı; **G31**'in herkese açık iki yoldaki kısmı yazıldı. Hepsi ön izleme ve canlıya alma bekliyor. **Bekleyen:** G30 (tek SMS gönderim işlevi), G31'in kalanı (tip hataları, diğer yollar), tam içerik güvenlik politikası.
+
 | No | Bulgu | Yapılacak |
 |---|---|---|
 | G28 | Doktora özel ekranlar yalnızca menüde gizli; sekreter ve hemşire aynı işlemleri doğrudan yapabiliyor (hasta silme, serbest SMS, hatırlatma ayarları, personel listesi). | Rol tablosu sizinle belirlenir (S7), sonra yol yol uygulanır. Sekreterlerin günlük işleri kısıtlanmaz. |

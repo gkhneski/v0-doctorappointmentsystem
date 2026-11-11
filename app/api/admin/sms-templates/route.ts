@@ -37,7 +37,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const gate = await requireAdmin()
+  const gate = await requireAdmin({ role: "doktor" })
   if (!gate.ok) return gate.response
 
   try {

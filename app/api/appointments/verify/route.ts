@@ -157,7 +157,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error in POST /api/appointments/verify:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Doğrulama sırasında bir hata oluştu" },
+      { error: "Doğrulama sırasında bir hata oluştu" },
       { status: 500 },
     )
   }

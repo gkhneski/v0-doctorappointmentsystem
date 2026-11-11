@@ -27,7 +27,7 @@ const navigation = [
     name: "Hatırlatmalar",
     href: "/admin/reminders",
     icon: BellRing,
-    roles: ["doktor", "sekreter"],
+    roles: ["doktor", "sekreter", "hemsire"],
   },
   { name: "Personel", href: "/admin/staff", icon: UserCog, roles: ["doktor"] }, // Only doctors
 ]
