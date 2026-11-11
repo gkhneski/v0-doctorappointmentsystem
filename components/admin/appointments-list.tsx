@@ -659,6 +659,9 @@ export default function AppointmentsList({ appointments: initialAppointments, do
                         {appointment.status === "cancelled" && (
                           <Badge className="ml-2 bg-red-500 text-white text-[10px] px-1">IPTAL</Badge>
                         )}
+                        {appointment.status === "pending" && (
+                          <Badge className="ml-2 bg-amber-500 text-white text-[10px] px-1">DOGRULANMADI</Badge>
+                        )}
                         {appointment.is_intermediate && appointment.status !== "cancelled" && (
                           <Badge className="ml-2 bg-orange-500 text-white text-[10px] px-1">ARA</Badge>
                         )}

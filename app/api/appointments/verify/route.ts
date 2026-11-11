@@ -2,9 +2,9 @@ import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { sendAppointmentLinkSMS } from "@/lib/send-appointment-link-sms"
 import { sendDocumentListSMS } from "@/lib/send-document-list-sms"
-import { checkRateLimit } from "@/lib/rate-limit"
+import { checkRateLimitDetailed } from "@/lib/rate-limit"
 import { applyPendingPatient } from "@/lib/resolve-patient"
-import { isUuid } from "@/lib/public-booking"
+import { isUuid, releaseIfUnverified } from "@/lib/public-booking"
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic'
@@ -34,14 +34,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Doğrulama kaydı bulunamadı" }, { status: 404 })
     }
 
-    // Deneme siniri: randevu basina 15 dakikada en cok 5 deneme. Sinir asilirsa (ya da kontrol
-    // edilemezse) kod iptal edilir; 6 haneli kod deneme-yanilma ile bulunamasin.
-    const attemptAllowed = await checkRateLimit(`verify:appt:${appointmentId}`, 5, 900, { failClosed: true })
-    if (!attemptAllowed) {
+    // Deneme siniri: randevu basina 15 dakikada en cok 5 deneme; 6 haneli kod deneme-yanilma
+    // ile bulunamasin. Sinir kontrol edilemiyorsa deneme reddedilir ama kod iptal EDILMEZ
+    // (gecici bir ariza dogru kodu yakmasin).
+    const attempt = await checkRateLimitDetailed(`verify:appt:${appointmentId}`, 5, 900)
+    if (attempt === "error") {
+      return NextResponse.json(
+        { error: "Şu anda doğrulama yapılamıyor. Lütfen biraz sonra tekrar deneyin." },
+        { status: 503 },
+      )
+    }
+    if (attempt === "limited") {
       await supabase
         .from("sms_verifications")
         .update({ expires_at: new Date().toISOString() })
         .eq("id", verification.id)
+      // Herkese acik randevu ise saati hemen bosalt ki hasta yeniden alabilsin.
+      await releaseIfUnverified(supabase, appointmentId)
       return NextResponse.json(
         { error: "Çok fazla deneme yapıldı. Lütfen randevuyu yeniden oluşturun." },
         { status: 429 },
@@ -50,7 +59,11 @@ export async function POST(request: Request) {
 
     // Check if code has expired
     if (new Date(verification.expires_at) < new Date()) {
-      return NextResponse.json({ error: "Doğrulama kodu süresi doldu" }, { status: 400 })
+      await releaseIfUnverified(supabase, appointmentId)
+      return NextResponse.json(
+        { error: "Doğrulama kodunun süresi doldu. Lütfen randevuyu yeniden oluşturun." },
+        { status: 400 },
+      )
     }
 
     // Verify code

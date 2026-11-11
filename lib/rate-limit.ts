@@ -15,7 +15,20 @@ export async function checkRateLimit(
   windowSeconds: number,
   options: { failClosed?: boolean } = {},
 ): Promise<boolean> {
-  const onFailure = !options.failClosed
+  const result = await checkRateLimitDetailed(bucket, max, windowSeconds)
+  if (result === "error") return !options.failClosed
+  return result === "allowed"
+}
+
+/**
+ * Sinir asimi ("limited") ile altyapi hatasini ("error") ayirir. Ikisine farkli davranmasi
+ * gereken yollar icin (or. kod dogrulama: hata durumunda kod iptal edilmemeli).
+ */
+export async function checkRateLimitDetailed(
+  bucket: string,
+  max: number,
+  windowSeconds: number,
+): Promise<"allowed" | "limited" | "error"> {
   try {
     const supabase = createServiceRoleClient()
     const { data, error } = await supabase.rpc("check_rate_limit", {
@@ -25,12 +38,12 @@ export async function checkRateLimit(
     })
     if (error) {
       console.error("rate limit rpc error:", error.message)
-      return onFailure
+      return "error"
     }
-    return data === true
+    return data === true ? "allowed" : "limited"
   } catch (err: any) {
     console.error("rate limit error:", err?.message)
-    return onFailure
+    return "error"
   }
 }
 

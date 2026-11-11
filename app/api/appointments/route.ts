@@ -72,16 +72,6 @@ export async function POST(request: Request) {
         )
       }
 
-      // Telefon basina sinir: ayni numaraya art arda dogrulama SMS'i gonderilmesin.
-      // (Altyapi hatasinda gecirir; gercek hasta engellenmesin.)
-      const phoneKey = normalizePhone(rawPatientPhone)
-      if (phoneKey && !(await checkRateLimit(`appt:phone:${phoneKey}`, 3, 3600))) {
-        return NextResponse.json(
-          { error: "Cok fazla randevu istegi. Lutfen bir sure sonra tekrar deneyin." },
-          { status: 429 },
-        )
-      }
-
       // Serbest metin alanlari (ad, randevu turu) personel ekranlarinda gosterildigi icin
       // herkese acik istekte dogrulanir. Personelin actigi randevular etkilenmez.
       const invalid = validatePublicBooking({ patient_name, appointment_type })
@@ -194,6 +184,19 @@ export async function POST(request: Request) {
 
     // Hasta kaydını çöz: gerçek TC → aynı telefonlu geçici kaydı yükselt → yeni kayıt
     // (duplicate oluşmasını engeller)
+    // Telefon basina sinir: ayni numaraya saatte en cok 3 dogrulama SMS'i. Yalnizca SMS
+    // gonderilecek noktada sayilir; dolu saat ya da gecersiz ad gibi hatalar hakki tuketmez.
+    // (Altyapi hatasinda gecirir; gercek hasta engellenmesin.)
+    if (!isVerifiedAdmin) {
+      const phoneKey = normalizePhone(rawPatientPhone)
+      if (phoneKey && !(await checkRateLimit(`appt:phone:${phoneKey}`, 3, 3600))) {
+        return NextResponse.json(
+          { error: "Cok fazla randevu istegi. Lutfen bir sure sonra tekrar deneyin." },
+          { status: 429 },
+        )
+      }
+    }
+
     // Herkese acik yolda MEVCUT kayit degistirilmez; degisiklik kod dogrulaninca uygulanir.
     const patient = await resolvePatient(
       supabase,
@@ -232,7 +235,7 @@ export async function POST(request: Request) {
 
     if (appointmentError || !appointment) throw appointmentError
 
-    await supabase.from("appointment_forms").insert({
+    const { error: formError } = await supabase.from("appointment_forms").insert({
       appointment_id: appointment.id,
       form_data: {
         ...female_history,
@@ -243,6 +246,14 @@ export async function POST(request: Request) {
         ...(patient.pending ? { [PENDING_PATIENT_KEY]: patient.pending } : {}),
       },
     })
+
+    // Form, bekleyen hasta degisikligini (yeni telefon vb.) tasiyor. Yazilamadiysa randevu
+    // onaylansa bile SMS'ler eski numaraya giderdi; bu yuzden randevu geri alinir.
+    if (formError && patient.pending) {
+      console.error("Appointment form insert failed:", formError.message)
+      await supabase.from("appointments").delete().eq("id", appointment.id)
+      return NextResponse.json({ error: "Randevu oluşturulurken bir hata oluştu" }, { status: 500 })
+    }
 
     const verificationCode = generateVerificationCode()
 

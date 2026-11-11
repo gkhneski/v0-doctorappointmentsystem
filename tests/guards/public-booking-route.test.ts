@@ -31,8 +31,8 @@ describe("herkese açık randevu yolu", () => {
 })
 
 describe("kod doğrulama yolu", () => {
-  it("deneme sayısını sınırlar ve sınır kontrol edilemezse reddeder", () => {
-    expect(verify).toMatch(/verify:appt:[\s\S]*failClosed: true/)
+  it("deneme sayısını sınırlar", () => {
+    expect(verify).toContain("checkRateLimitDetailed(`verify:appt:")
   })
 
   it("bekleyen hasta değişikliğini doğrulamadan sonra uygular", () => {

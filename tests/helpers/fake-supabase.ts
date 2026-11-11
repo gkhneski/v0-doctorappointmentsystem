@@ -2,7 +2,10 @@
 // Yalnızca lib/ işlevlerinin kullandığı zincirleri destekler.
 type Row = Record<string, any>
 
-export function createFakeSupabase(tables: Record<string, Row[]>) {
+export function createFakeSupabase(
+  tables: Record<string, Row[]>,
+  failOn: (table: string, op: string) => boolean = () => false,
+) {
   let seq = 0
 
   function from(table: string) {
@@ -13,7 +16,8 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
     let ascending = true
     let max: number | undefined
 
-    const run = () => {
+    const run = (): { data: any; error: any } => {
+      if (failOn(table, op)) return { data: null, error: { message: "simulated failure" } }
       const rows = (tables[table] ??= [])
       if (op === "insert") {
         const items = (Array.isArray(payload) ? payload : [payload]).map((p) => ({
@@ -53,9 +57,13 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
       limit: (n: number) => ((max = n), api),
       single: async () => {
         const r = run()
+        if (r.error) return r
         return r.data.length ? { data: r.data[0], error: null } : { data: null, error: { message: "no rows" } }
       },
-      maybeSingle: async () => ({ data: run().data[0] ?? null, error: null }),
+      maybeSingle: async () => {
+        const r = run()
+        return r.error ? r : { data: r.data[0] ?? null, error: null }
+      },
       then: (resolve: any, reject: any) => Promise.resolve(run()).then(resolve, reject),
     }
     return api

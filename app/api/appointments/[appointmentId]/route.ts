@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { sendRescheduleSMS } from "@/lib/send-reschedule-sms"
+import { staffEditStatus } from "@/lib/public-booking"
 
 // Randevu degistirme/silme SADECE giris yapmis admin tarafindan yapilabilir.
 // Aksi halde randevu ID'sini ele geciren biri baskasinin randevusunu tasiyabilir.
@@ -72,7 +73,15 @@ export async function PATCH(
     if (appointment_time) updateData.appointment_time = appointment_time
     if (appointment_type) updateData.appointment_type = appointment_type
     if (notes !== undefined) updateData.notes = notes
-    if (status) updateData.status = status
+    // Durum yalnizca bilinen degerlerden biri olabilir. Personel dogrulanmamis ("pending")
+    // bir randevuyu duzenlerse randevu "scheduled" olur; 15 dakika temizligi onu silmesin.
+    const { data: currentRow } = await supabase
+      .from("appointments")
+      .select("status")
+      .eq("id", appointmentId)
+      .maybeSingle()
+    const nextStatus = staffEditStatus(currentRow?.status, status)
+    if (nextStatus) updateData.status = nextStatus
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(

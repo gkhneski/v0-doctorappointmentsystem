@@ -171,7 +171,11 @@ export async function applyPendingPatient(supabase: SupabaseClient, appointmentI
 
     if (patientId && Object.keys(changes).length > 0) {
       const { error } = await supabase.from("patients").update(changes).eq("id", patientId)
-      if (error) console.error("Pending patient update failed:", error.message)
+      if (error) {
+        // Degisiklik kaybolmasin: anahtar formda kalir (personel ekraninda gorunmez, kayitta durur).
+        console.error("Pending patient update failed:", error.message)
+        return
+      }
     }
 
     const { [PENDING_PATIENT_KEY]: _removed, ...rest } = form.form_data

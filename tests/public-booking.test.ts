@@ -28,6 +28,11 @@ describe("purgeStaleUnverified", () => {
         { id: "old-scheduled", status: "scheduled", created_at: at(16) },
         { id: "old-confirmed", status: "confirmed", created_at: at(600) },
       ],
+      sms_verifications: ["old-pending", "new-pending", "old-scheduled"].map((id) => ({
+        id: `sms-${id}`,
+        appointment_id: id,
+        verified: false,
+      })),
     })
     await purgeStaleUnverified(db, now)
     expect(db.tables.appointments.map((a: any) => a.id)).toEqual(["new-pending", "old-scheduled", "old-confirmed"])
