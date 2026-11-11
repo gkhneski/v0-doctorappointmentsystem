@@ -1,14 +1,15 @@
+-- Bu dosyadaki eski giriş bilgileri git geçmişinde durduğu için GEÇERSİZ sayılmalıdır; şifreler değiştirilmelidir.
 -- Admin kullanıcı hesabı oluşturma scripti
--- Email: geski@live.de
--- Şifre: Geski41.q
+-- Email: <E-POSTA>
+-- Şifre: <ŞİFRE — depoya yazmayın>
 -- Not: Bu scripti çalıştırmadan önce lütfen /auth/admin/signup sayfasından kayıt olun
 
 -- Bu script otomatik şifre oluşturamaz çünkü Supabase Auth kullanıyoruz
 -- Lütfen tarayıcınızdan /auth/admin/signup adresine gidin ve şu bilgilerle kayıt olun:
 -- 
 -- Ad Soyad: Prof. Dr. Eray Çalışkan
--- E-posta: geski@live.de
--- Şifre: Geski41.q
+-- E-posta: <E-POSTA>
+-- Şifre: <ŞİFRE — depoya yazmayın>
 -- Rol: Doktor
 
 -- Alternatif: Eğer Supabase Dashboard'dan direkt auth.users tablosuna kullanıcı eklediyseniz,
@@ -17,5 +18,5 @@
 -- INSERT INTO public.admin_users (id, email, full_name, role)
 -- SELECT id, email, 'Prof. Dr. Eray Çalışkan', 'doktor'
 -- FROM auth.users
--- WHERE email = 'geski@live.de'
+-- WHERE email = '<E-POSTA>'
 -- ON CONFLICT (id) DO NOTHING;
