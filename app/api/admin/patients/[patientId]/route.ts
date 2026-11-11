@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { requireAdmin } from "@/lib/require-admin"
 
-export async function DELETE(request: NextRequest, { params }: { params: { patientId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ patientId: string }> }) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
-    const { patientId } = params
+    const { patientId } = await params
     const supabase = await createClient()
 
     // Check if patient exists

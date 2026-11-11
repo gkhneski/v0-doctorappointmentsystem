@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { normalizePhone, PLACEHOLDER_PHONE } from "@/lib/phone"
+import { requireAdmin } from "@/lib/require-admin"
 
 export async function POST(request: Request) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const body = await request.json()
     const { full_name, appointment_date, appointment_time, appointment_type, print_type, notes, is_intermediate = false } = body

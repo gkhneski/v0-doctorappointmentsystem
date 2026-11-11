@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js"
 import { NextRequest, NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/require-admin"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +9,9 @@ const supabase = createClient(
 
 // GET: Doktor için haftalık pattern'i getir
 export async function GET(request: NextRequest) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const { searchParams } = new URL(request.url)
     const doctorId = searchParams.get("doctor_id")
@@ -33,6 +37,9 @@ export async function GET(request: NextRequest) {
 
 // POST: Haftalık pattern oluştur/güncelle
 export async function POST(request: NextRequest) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const body = await request.json()
     const { doctor_id, patterns } = body

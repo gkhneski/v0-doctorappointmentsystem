@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { normalizePhone } from "@/lib/phone"
+import { requireAdmin } from "@/lib/require-admin"
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ patientId: string }> }
 ) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return gate.response
+
   try {
     const { patientId } = await params
     const body = await request.json()

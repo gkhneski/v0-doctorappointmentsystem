@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createClient()
 
     const {
@@ -25,7 +26,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const { data, error } = await supabaseAdmin
       .from("message_templates")
       .update({ name, content, updated_at: new Date().toISOString() })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 
@@ -39,8 +40,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = await createClient()
 
     const {
@@ -53,7 +55,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     const supabaseAdmin = await createServiceRoleClient()
 
-    const { error } = await supabaseAdmin.from("message_templates").delete().eq("id", params.id)
+    const { error } = await supabaseAdmin.from("message_templates").delete().eq("id", id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 })
