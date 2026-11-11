@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // 15 dakikalık slotları üretir
 // Ayrıntılı Fetal Ultrason için sadece :00 ve :30 slotları döner
@@ -46,6 +47,11 @@ const MONTH_NAMES_TR = [
 
 export async function POST(req: Request) {
   try {
+    const allowed = await checkRateLimit(`ai:slots:ip:${getClientIp(req)}`, 30, 60, { failClosed: true })
+    if (!allowed) {
+      return NextResponse.json({ slots: [], hasMore: false }, { status: 429 })
+    }
+
     const { appointmentTypeId, offsetDays = 0 } = await req.json()
     const supabase = createServiceRoleClient()
 

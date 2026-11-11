@@ -2,6 +2,7 @@ import { convertToModelMessages, streamText, tool, UIMessage } from "ai"
 import { z } from "zod"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { sanitizeChatMessages } from "@/lib/ai-chat-guard"
 
 export const maxDuration = 30
 
@@ -100,13 +101,21 @@ export async function POST(req: Request) {
   // AI maliyet korumasi: her IP icin dakikada 20 mesaj. Sinirsiz cagri Gemini
   // faturasini sisirmesin diye.
   const ip = getClientIp(req)
-  const allowed = await checkRateLimit(`ai:ip:${ip}`, 20, 60)
+  // Sinir kontrol edilemiyorsa reddedilir (failClosed). Uzun pencere 2 saattir: sinirlayici
+  // 2 saatten eski kayitlari sildigi icin daha uzun bir pencere sayilamaz.
+  const allowed =
+    (await checkRateLimit(`ai:ip:${ip}`, 20, 60, { failClosed: true })) &&
+    (await checkRateLimit(`ai:long:ip:${ip}`, 200, 7200, { failClosed: true }))
   if (!allowed) {
     return new Response("Cok fazla istek. Lutfen biraz bekleyin.", { status: 429 })
   }
 
-  const body = await req.json()
-  const messages: UIMessage[] = body.messages ?? []
+  const body = await req.json().catch(() => null)
+  // Yalnizca user/assistant rolleri, sinirli uzunluk ve ileti sayisi (lib/ai-chat-guard.ts).
+  const messages: UIMessage[] = sanitizeChatMessages(body?.messages)
+  if (messages.length === 0) {
+    return new Response("Gecersiz istek.", { status: 400 })
+  }
   
   const supabase = createServiceRoleClient()
 
