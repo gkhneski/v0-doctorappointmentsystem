@@ -57,7 +57,14 @@ export default function AiStickyWidget() {
   if (!mounted) return null
 
   // Yönetim paneli sayfalarında (admin) asistan gösterilmez — sadece hasta tarafında görünür
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/auth/admin") || pathname === "/admin-panel-giris") {
+  // Hasta uygulamasında (/anne) randevu düğmesi gösterilmez: uygulama randevu sisteminden bağımsızdır.
+  if (
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/auth/admin") ||
+    pathname === "/admin-panel-giris" ||
+    pathname === "/anne" ||
+    pathname?.startsWith("/anne/")
+  ) {
     return null
   }
 
