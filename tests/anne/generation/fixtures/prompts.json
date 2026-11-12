@@ -1,0 +1,530 @@
+[
+ {
+  "name": "bos",
+  "bio": {},
+  "week": 24,
+  "gender": "female",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 0.0,
+    "hc": 0.0,
+    "ac": 0.0,
+    "fl": 0.0,
+    "ofd": 0.0,
+    "nasal_bone": 0.0,
+    "iod": 0.0,
+    "fromen": 0.0,
+    "eye_diameter": 0.0,
+    "bioc_cap": 0.0,
+    "mouth_diameter": 0.0,
+    "upper_lip": 0.0,
+    "chin": 0.0
+   },
+   "calculated_indices": {},
+   "calculated_ratios": {},
+   "head_shape": {
+    "category": "unknown",
+    "description": ""
+   },
+   "face_proportions": {},
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.9,
+    "forehead_ratio": 0.33,
+    "chin_ratio": 0.26,
+    "nose_to_face": 0.14,
+    "eye_distance_ratio": 0.31,
+    "eye_size_ratio": 0.12,
+    "mouth_ratio": 0.22,
+    "upper_lip_ratio": 0.08
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 24 weeks\n- Gender: KIZ\n- Development Stage: orta gelişim, yüz özellikleri belirginleşiyor\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape:  (unknown)\n- BPD: 0.0mm, HC: 0.0mm\n- Face Structure: dengeli ve orantılı yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.90 - yüz genişlik oranı 0.90\n- Forehead ratio: 0.33 - normal orantılı alın (oran: 0.33)\n- Chin ratio: 0.26 - normal orantılı çene (oran: 0.26)\n- Nose/face ratio: 0.14 - ortalama burun\n- Eye distance ratio: 0.31 - ortalama göz mesafesi\n- Eye size ratio: 0.12\n- Mouth width ratio: 0.22 - ortalama ağız\n- Upper lip ratio: 0.08\n\n## GENDER FEATURES\nyumuşak ve yuvarlak hatlar, ince kaşlar, küçük burun\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "yalniz-bpd",
+  "bio": {
+   "bpd": 60
+  },
+  "week": 19,
+  "gender": "male",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 60.0,
+    "hc": 0.0,
+    "ac": 0.0,
+    "fl": 0.0,
+    "ofd": 75.9,
+    "nasal_bone": 0.0,
+    "iod": 0.0,
+    "fromen": 0.0,
+    "eye_diameter": 0.0,
+    "bioc_cap": 0.0,
+    "mouth_diameter": 0.0,
+    "upper_lip": 0.0,
+    "chin": 0.0
+   },
+   "calculated_indices": {
+    "cephalic_index": 79.05
+   },
+   "calculated_ratios": {},
+   "head_shape": {
+    "category": "mesocephalic",
+    "description": "Normal baş şekli"
+   },
+   "face_proportions": {},
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.9,
+    "forehead_ratio": 0.33,
+    "chin_ratio": 0.26,
+    "nose_to_face": 0.14,
+    "eye_distance_ratio": 0.31,
+    "eye_size_ratio": 0.12,
+    "mouth_ratio": 0.22,
+    "upper_lip_ratio": 0.08
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 19 weeks\n- Gender: ERKEK\n- Development Stage: erken gelişim aşaması, ince ve yumuşak yüz hatları\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape: Normal baş şekli (mesocephalic)\n- BPD: 60.0mm, HC: 0.0mm\n- Face Structure: dengeli ve orantılı yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.90 - yüz genişlik oranı 0.90\n- Forehead ratio: 0.33 - normal orantılı alın (oran: 0.33)\n- Chin ratio: 0.26 - normal orantılı çene (oran: 0.26)\n- Nose/face ratio: 0.14 - ortalama burun\n- Eye distance ratio: 0.31 - ortalama göz mesafesi\n- Eye size ratio: 0.12\n- Mouth width ratio: 0.22 - ortalama ağız\n- Upper lip ratio: 0.08\n\n## GENDER FEATURES\ndaha belirgin hatlar, geniş alın, güçlü çene hattı\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "tam-kagit",
+  "bio": {
+   "bpd": 63.7,
+   "hc": 235.1,
+   "ac": 210.4,
+   "fl": 46.2,
+   "ofd": 81.3,
+   "fromen": 21.5,
+   "nasal_bone": 8.4,
+   "iod": 17.9,
+   "eye_diameter": 9.6,
+   "bioc_cap": 41.2,
+   "mouth_diameter": 14.3,
+   "upper_lip": 4.1,
+   "chin": 6.8
+  },
+  "week": 26,
+  "gender": "female",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 63.7,
+    "hc": 235.1,
+    "ac": 210.4,
+    "fl": 46.2,
+    "ofd": 81.3,
+    "nasal_bone": 8.4,
+    "iod": 17.9,
+    "fromen": 21.5,
+    "eye_diameter": 9.6,
+    "bioc_cap": 41.2,
+    "mouth_diameter": 14.3,
+    "upper_lip": 4.1,
+    "chin": 6.8
+   },
+   "calculated_indices": {
+    "cephalic_index": 78.35
+   },
+   "calculated_ratios": {
+    "hc_ac_ratio": 1.117,
+    "fl_hc_ratio": 0.197,
+    "fl_ac_ratio": 0.22
+   },
+   "head_shape": {
+    "category": "mesocephalic",
+    "description": "Normal baş şekli"
+   },
+   "face_proportions": {
+    "nasal_to_bpd": 0.132,
+    "iod_to_bpd": 0.281
+   },
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.647,
+    "forehead_ratio": 0.338,
+    "chin_ratio": 0.107,
+    "nose_to_face": 0.22,
+    "eye_distance_ratio": 0.281,
+    "eye_size_ratio": 0.151,
+    "mouth_ratio": 0.224,
+    "upper_lip_ratio": 0.064
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 26 weeks\n- Gender: KIZ\n- Development Stage: orta gelişim, yüz özellikleri belirginleşiyor\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape: Normal baş şekli (mesocephalic)\n- BPD: 63.7mm, HC: 235.1mm\n- Face Structure: dengeli ve orantılı yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.65 - yüz genişliği 41.2mm (BPD'nin 65%'si)\n- Forehead ratio: 0.34 - alın 21.5mm (oran: 0.34)\n- Chin ratio: 0.11 - çene 6.8mm (oran: 0.11)\n- Nose/face ratio: 0.22 - burun uzunluğu 8.4mm\n- Eye distance ratio: 0.28 - göz arası mesafe 17.9mm, göz çapı 9.6mm\n- Eye size ratio: 0.15\n- Mouth width ratio: 0.22 - ağız genişliği 14.3mm, üst dudak 4.1mm\n- Upper lip ratio: 0.06\n\n## GENDER FEATURES\nyumuşak ve yuvarlak hatlar, ince kaşlar, küçük burun\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "uzun-bas",
+  "bio": {
+   "bpd": 70,
+   "ofd": 100,
+   "hc": 270,
+   "ac": 250,
+   "fl": 55,
+   "fromen": 30,
+   "chin": 9
+  },
+  "week": 30,
+  "gender": "male",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 70.0,
+    "hc": 270.0,
+    "ac": 250.0,
+    "fl": 55.0,
+    "ofd": 100.0,
+    "nasal_bone": 0.0,
+    "iod": 0.0,
+    "fromen": 30.0,
+    "eye_diameter": 0.0,
+    "bioc_cap": 0.0,
+    "mouth_diameter": 0.0,
+    "upper_lip": 0.0,
+    "chin": 9.0
+   },
+   "calculated_indices": {
+    "cephalic_index": 70.0
+   },
+   "calculated_ratios": {
+    "hc_ac_ratio": 1.08,
+    "fl_hc_ratio": 0.204,
+    "fl_ac_ratio": 0.22
+   },
+   "head_shape": {
+    "category": "dolichocephalic",
+    "description": "Uzun/oval baş şekli"
+   },
+   "face_proportions": {},
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.85,
+    "forehead_ratio": 0.429,
+    "chin_ratio": 0.129,
+    "nose_to_face": 0.14,
+    "eye_distance_ratio": 0.31,
+    "eye_size_ratio": 0.12,
+    "mouth_ratio": 0.22,
+    "upper_lip_ratio": 0.08
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 30 weeks\n- Gender: ERKEK\n- Development Stage: ileri gelişim, yanaklarda yağ birikimi başlıyor\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape: Uzun/oval baş şekli (dolichocephalic)\n- BPD: 70.0mm, HC: 270.0mm\n- Face Structure: uzun ve dar yüz yapısı, oval baş şekli\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.85 - yüz genişlik oranı 0.85\n- Forehead ratio: 0.43 - uzun alın 30.0mm (oran: 0.43)\n- Chin ratio: 0.13 - ince çene 9.0mm (oran: 0.13)\n- Nose/face ratio: 0.14 - ortalama burun\n- Eye distance ratio: 0.31 - ortalama göz mesafesi\n- Eye size ratio: 0.12\n- Mouth width ratio: 0.22 - ortalama ağız\n- Upper lip ratio: 0.08\n\n## GENDER FEATURES\ndaha belirgin hatlar, geniş alın, güçlü çene hattı\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "yuvarlak-bas",
+  "bio": {
+   "bpd": 88,
+   "ofd": 104,
+   "hc": 310,
+   "ac": 320,
+   "fl": 68,
+   "nasal_bone": 11,
+   "iod": 22,
+   "bioc_cap": 55
+  },
+  "week": 36,
+  "gender": "female",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 88.0,
+    "hc": 310.0,
+    "ac": 320.0,
+    "fl": 68.0,
+    "ofd": 104.0,
+    "nasal_bone": 11.0,
+    "iod": 22.0,
+    "fromen": 0.0,
+    "eye_diameter": 0.0,
+    "bioc_cap": 55.0,
+    "mouth_diameter": 0.0,
+    "upper_lip": 0.0,
+    "chin": 0.0
+   },
+   "calculated_indices": {
+    "cephalic_index": 84.62
+   },
+   "calculated_ratios": {
+    "hc_ac_ratio": 0.969,
+    "fl_hc_ratio": 0.219,
+    "fl_ac_ratio": 0.212
+   },
+   "head_shape": {
+    "category": "brachycephalic",
+    "description": "Yuvarlak/geniş baş şekli"
+   },
+   "face_proportions": {
+    "nasal_to_bpd": 0.125,
+    "iod_to_bpd": 0.25
+   },
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.625,
+    "forehead_ratio": 0.3,
+    "chin_ratio": 0.24,
+    "nose_to_face": 0.208,
+    "eye_distance_ratio": 0.25,
+    "eye_size_ratio": 0.12,
+    "mouth_ratio": 0.22,
+    "upper_lip_ratio": 0.08
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 36 weeks\n- Gender: KIZ\n- Development Stage: tam gelişim, dolgun yanaklar ve belirgin yüz hatları\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape: Yuvarlak/geniş baş şekli (brachycephalic)\n- BPD: 88.0mm, HC: 310.0mm\n- Face Structure: geniş ve yuvarlak yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.62 - yüz genişliği 55.0mm (BPD'nin 62%'si)\n- Forehead ratio: 0.30 - kısa ve geniş alın (oran: 0.30)\n- Chin ratio: 0.24 - kısa ve yuvarlak çene (oran: 0.24)\n- Nose/face ratio: 0.21 - burun uzunluğu 11.0mm\n- Eye distance ratio: 0.25 - göz arası mesafe 22.0mm, göz çapı 0.0mm\n- Eye size ratio: 0.12\n- Mouth width ratio: 0.22 - ortalama ağız\n- Upper lip ratio: 0.08\n\n## GENDER FEATURES\nyumuşak ve yuvarlak hatlar, ince kaşlar, küçük burun\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "tam-ortada-yuvarlama",
+  "bio": {
+   "bpd": 64,
+   "ofd": 80,
+   "fromen": 8,
+   "chin": 4.25,
+   "nasal_bone": 4.75,
+   "iod": 8.25,
+   "eye_diameter": 6.25,
+   "bioc_cap": 40,
+   "mouth_diameter": 8.75,
+   "upper_lip": 2.25
+  },
+  "week": 34,
+  "gender": "male",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 64.0,
+    "hc": 0.0,
+    "ac": 0.0,
+    "fl": 0.0,
+    "ofd": 80.0,
+    "nasal_bone": 4.75,
+    "iod": 8.25,
+    "fromen": 8.0,
+    "eye_diameter": 6.25,
+    "bioc_cap": 40.0,
+    "mouth_diameter": 8.75,
+    "upper_lip": 2.25,
+    "chin": 4.25
+   },
+   "calculated_indices": {
+    "cephalic_index": 80.0
+   },
+   "calculated_ratios": {},
+   "head_shape": {
+    "category": "mesocephalic",
+    "description": "Normal baş şekli"
+   },
+   "face_proportions": {
+    "nasal_to_bpd": 0.074,
+    "iod_to_bpd": 0.129
+   },
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.625,
+    "forehead_ratio": 0.125,
+    "chin_ratio": 0.066,
+    "nose_to_face": 0.124,
+    "eye_distance_ratio": 0.129,
+    "eye_size_ratio": 0.098,
+    "mouth_ratio": 0.137,
+    "upper_lip_ratio": 0.035
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 34 weeks\n- Gender: ERKEK\n- Development Stage: tam gelişim, dolgun yanaklar ve belirgin yüz hatları\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape: Normal baş şekli (mesocephalic)\n- BPD: 64.0mm, HC: 0.0mm\n- Face Structure: dengeli ve orantılı yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.62 - yüz genişliği 40.0mm (BPD'nin 62%'si)\n- Forehead ratio: 0.12 - alın 8.0mm (oran: 0.12)\n- Chin ratio: 0.07 - çene 4.2mm (oran: 0.07)\n- Nose/face ratio: 0.12 - burun uzunluğu 4.8mm\n- Eye distance ratio: 0.13 - göz arası mesafe 8.2mm, göz çapı 6.2mm\n- Eye size ratio: 0.10\n- Mouth width ratio: 0.14 - ağız genişliği 8.8mm, üst dudak 2.2mm\n- Upper lip ratio: 0.04\n\n## GENDER FEATURES\ndaha belirgin hatlar, geniş alın, güçlü çene hattı\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "ofd-var-bpd-yok",
+  "bio": {
+   "ofd": 80,
+   "hc": 200,
+   "ac": 180,
+   "fl": 40,
+   "nasal_bone": 7
+  },
+  "week": 22,
+  "gender": "female",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 0.0,
+    "hc": 200.0,
+    "ac": 180.0,
+    "fl": 40.0,
+    "ofd": 80.0,
+    "nasal_bone": 7.0,
+    "iod": 0.0,
+    "fromen": 0.0,
+    "eye_diameter": 0.0,
+    "bioc_cap": 0.0,
+    "mouth_diameter": 0.0,
+    "upper_lip": 0.0,
+    "chin": 0.0
+   },
+   "calculated_indices": {},
+   "calculated_ratios": {
+    "hc_ac_ratio": 1.111,
+    "fl_hc_ratio": 0.2,
+    "fl_ac_ratio": 0.222
+   },
+   "head_shape": {
+    "category": "unknown",
+    "description": ""
+   },
+   "face_proportions": {},
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.9,
+    "forehead_ratio": 0.33,
+    "chin_ratio": 0.26,
+    "nose_to_face": 0.14,
+    "eye_distance_ratio": 0.31,
+    "eye_size_ratio": 0.12,
+    "mouth_ratio": 0.22,
+    "upper_lip_ratio": 0.08
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 22 weeks\n- Gender: KIZ\n- Development Stage: orta gelişim, yüz özellikleri belirginleşiyor\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape:  (unknown)\n- BPD: 0.0mm, HC: 200.0mm\n- Face Structure: dengeli ve orantılı yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.90 - yüz genişlik oranı 0.90\n- Forehead ratio: 0.33 - normal orantılı alın (oran: 0.33)\n- Chin ratio: 0.26 - normal orantılı çene (oran: 0.26)\n- Nose/face ratio: 0.14 - burun uzunluğu 7.0mm\n- Eye distance ratio: 0.31 - ortalama göz mesafesi\n- Eye size ratio: 0.12\n- Mouth width ratio: 0.22 - ortalama ağız\n- Upper lip ratio: 0.08\n\n## GENDER FEATURES\nyumuşak ve yuvarlak hatlar, ince kaşlar, küçük burun\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "metin-degerler",
+  "bio": {
+   "bpd": "58.25",
+   "hc": "212.5",
+   "ac": "",
+   "fl": null,
+   "iod": "16.05"
+  },
+  "week": 27,
+  "gender": "male",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 58.25,
+    "hc": 212.5,
+    "ac": 0.0,
+    "fl": 0.0,
+    "ofd": 73.7,
+    "nasal_bone": 0.0,
+    "iod": 16.05,
+    "fromen": 0.0,
+    "eye_diameter": 0.0,
+    "bioc_cap": 0.0,
+    "mouth_diameter": 0.0,
+    "upper_lip": 0.0,
+    "chin": 0.0
+   },
+   "calculated_indices": {
+    "cephalic_index": 79.05
+   },
+   "calculated_ratios": {},
+   "head_shape": {
+    "category": "mesocephalic",
+    "description": "Normal baş şekli"
+   },
+   "face_proportions": {
+    "iod_to_bpd": 0.276
+   },
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.9,
+    "forehead_ratio": 0.33,
+    "chin_ratio": 0.26,
+    "nose_to_face": 0.14,
+    "eye_distance_ratio": 0.276,
+    "eye_size_ratio": 0.12,
+    "mouth_ratio": 0.22,
+    "upper_lip_ratio": 0.08
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 27 weeks\n- Gender: ERKEK\n- Development Stage: orta gelişim, yüz özellikleri belirginleşiyor\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape: Normal baş şekli (mesocephalic)\n- BPD: 58.2mm, HC: 212.5mm\n- Face Structure: dengeli ve orantılı yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.90 - yüz genişlik oranı 0.90\n- Forehead ratio: 0.33 - normal orantılı alın (oran: 0.33)\n- Chin ratio: 0.26 - normal orantılı çene (oran: 0.26)\n- Nose/face ratio: 0.14 - ortalama burun\n- Eye distance ratio: 0.28 - göz arası mesafe 16.1mm, göz çapı 0.0mm\n- Eye size ratio: 0.12\n- Mouth width ratio: 0.22 - ortalama ağız\n- Upper lip ratio: 0.08\n\n## GENDER FEATURES\ndaha belirgin hatlar, geniş alın, güçlü çene hattı\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "hafta-18",
+  "bio": {
+   "bpd": 41.5,
+   "hc": 152.3,
+   "ac": 128.9,
+   "fl": 27.4
+  },
+  "week": 18,
+  "gender": "female",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 41.5,
+    "hc": 152.3,
+    "ac": 128.9,
+    "fl": 27.4,
+    "ofd": 52.5,
+    "nasal_bone": 0.0,
+    "iod": 0.0,
+    "fromen": 0.0,
+    "eye_diameter": 0.0,
+    "bioc_cap": 0.0,
+    "mouth_diameter": 0.0,
+    "upper_lip": 0.0,
+    "chin": 0.0
+   },
+   "calculated_indices": {
+    "cephalic_index": 79.05
+   },
+   "calculated_ratios": {
+    "hc_ac_ratio": 1.182,
+    "fl_hc_ratio": 0.18,
+    "fl_ac_ratio": 0.213
+   },
+   "head_shape": {
+    "category": "mesocephalic",
+    "description": "Normal baş şekli"
+   },
+   "face_proportions": {},
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.9,
+    "forehead_ratio": 0.33,
+    "chin_ratio": 0.26,
+    "nose_to_face": 0.14,
+    "eye_distance_ratio": 0.31,
+    "eye_size_ratio": 0.12,
+    "mouth_ratio": 0.22,
+    "upper_lip_ratio": 0.08
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 18 weeks\n- Gender: KIZ\n- Development Stage: erken gelişim aşaması, ince ve yumuşak yüz hatları\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape: Normal baş şekli (mesocephalic)\n- BPD: 41.5mm, HC: 152.3mm\n- Face Structure: dengeli ve orantılı yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.90 - yüz genişlik oranı 0.90\n- Forehead ratio: 0.33 - normal orantılı alın (oran: 0.33)\n- Chin ratio: 0.26 - normal orantılı çene (oran: 0.26)\n- Nose/face ratio: 0.14 - ortalama burun\n- Eye distance ratio: 0.31 - ortalama göz mesafesi\n- Eye size ratio: 0.12\n- Mouth width ratio: 0.22 - ortalama ağız\n- Upper lip ratio: 0.08\n\n## GENDER FEATURES\nyumuşak ve yuvarlak hatlar, ince kaşlar, küçük burun\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ },
+ {
+  "name": "hafta-40",
+  "bio": {
+   "bpd": 95.5,
+   "hc": 341.5,
+   "ac": 352.5,
+   "fl": 74.5,
+   "ofd": 117.5
+  },
+  "week": 40,
+  "gender": "male",
+  "analysis": {
+   "input_measurements": {
+    "bpd": 95.5,
+    "hc": 341.5,
+    "ac": 352.5,
+    "fl": 74.5,
+    "ofd": 117.5,
+    "nasal_bone": 0.0,
+    "iod": 0.0,
+    "fromen": 0.0,
+    "eye_diameter": 0.0,
+    "bioc_cap": 0.0,
+    "mouth_diameter": 0.0,
+    "upper_lip": 0.0,
+    "chin": 0.0
+   },
+   "calculated_indices": {
+    "cephalic_index": 81.28
+   },
+   "calculated_ratios": {
+    "hc_ac_ratio": 0.969,
+    "fl_hc_ratio": 0.218,
+    "fl_ac_ratio": 0.211
+   },
+   "head_shape": {
+    "category": "brachycephalic",
+    "description": "Yuvarlak/geniş baş şekli"
+   },
+   "face_proportions": {},
+   "estimated_face_ratios": {
+    "face_width_ratio": 0.95,
+    "forehead_ratio": 0.3,
+    "chin_ratio": 0.24,
+    "nose_to_face": 0.14,
+    "eye_distance_ratio": 0.31,
+    "eye_size_ratio": 0.12,
+    "mouth_ratio": 0.22,
+    "upper_lip_ratio": 0.08
+   }
+  },
+  "prompt": "Transform this 3D/4D ultrasound image into a CLEAN, FRONTAL VIEW of the baby's face.\n\n## CRITICAL VIEW REQUIREMENT - STRICTLY FRONTAL\nYou MUST generate the baby face as a COMPLETELY FRONTAL (straight-on) view.\n- The face MUST be looking DIRECTLY at the camera/viewer\n- BOTH eyes must be GENTLY CLOSED (fetuses have closed eyes in the womb - this is critical for realism)\n- The nose must be centered, pointing straight at the viewer\n- The mouth/lips must be centered and symmetrical\n- ZERO profile angle - absolutely NO side view\n- Even if the input ultrasound shows a SIDE/PROFILE view, you MUST reconstruct the face as FRONTAL\n- Imagine rotating the baby's face to look straight at you, then render it\n- The eyelids must be smooth and naturally closed - NO open eyes\n\n## BABY INFORMATION\n- Gestational Age: 40 weeks\n- Gender: ERKEK\n- Development Stage: tam gelişim, dolgun yanaklar ve belirgin yüz hatları\n\n## HEAD AND FACE STRUCTURE (FROM BIOMETRIC DATA)\n- Head Shape: Yuvarlak/geniş baş şekli (brachycephalic)\n- BPD: 95.5mm, HC: 341.5mm\n- Face Structure: geniş ve yuvarlak yüz yapısı\n\n## FACIAL PROPORTIONS (use these to guide the frontal face)\n- Face width ratio: 0.95 - yüz genişlik oranı 0.95\n- Forehead ratio: 0.30 - kısa ve geniş alın (oran: 0.30)\n- Chin ratio: 0.24 - kısa ve yuvarlak çene (oran: 0.24)\n- Nose/face ratio: 0.14 - ortalama burun\n- Eye distance ratio: 0.31 - ortalama göz mesafesi\n- Eye size ratio: 0.12\n- Mouth width ratio: 0.22 - ortalama ağız\n- Upper lip ratio: 0.08\n\n## GENDER FEATURES\ndaha belirgin hatlar, geniş alın, güçlü çene hattı\n\n## ENHANCEMENT RULES\n1. Output MUST be a FRONTAL face view - directly facing the viewer\n2. The baby's eyes MUST be GENTLY CLOSED (natural fetal state in the womb)\n3. Keep the 3D ultrasound texture and appearance (warm orange/amber tones)\n4. AGGRESSIVELY clean up noise, blur, and artifacts\n5. SHARPEN and clarify all facial features\n6. Find ALL dark patches, shadow voids, black spots and FILL with matching skin texture\n7. Dark holes near ears, cheeks, chin, forehead must be filled with natural fetal skin/tissue\n8. NO dark spots or voids on or near the baby's face\n9. Seamlessly blend repaired areas with surrounding tissue\n10. DO NOT make it photorealistic - keep the 3D ultrasound look\n11. Use the biometric data to guide proportions of the frontal face\n12. Remove machine UI elements\n13. Background should be dark/black\n\nABSOLUTE RULE: The output MUST show the baby's face from a STRAIGHT FRONTAL angle. Eyes GENTLY CLOSED. This is NON-NEGOTIABLE."
+ }
+]

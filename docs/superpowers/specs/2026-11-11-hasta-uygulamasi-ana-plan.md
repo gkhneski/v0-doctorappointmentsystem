@@ -496,3 +496,50 @@ Bebek yüzü, hafta içeriği, Bakanlık takvimi, günlük kayıtlar ve klinik g
 - **Deneme numarası kısıtı kaldırıldı (kullanıcı kararı, 12.11.2026 akşam):** avukat metinleri iş bittikten sonra, en sonda inceleyecek; kullanıcı uygulamayı 2-3 kişiyle deneyecek ve adresi başka kimse bilmiyor. Vercel canlı ortamına `ANNE_ACIK=1` eklendi; her TR cep numarası SMS koduyla girebilir. Bu, bölüm 4'teki "Deneme kullanıcıları" kararının yerine geçer. Onay metinleri hâlâ taslak (`taslak-1`); uygulama duyurulmadan önce avukat incelemesi ve gerçek metinler şarttır. Kapatmak için değişken silinir ve yeniden yayımlanır.
 
 **Avukata eklenecek soru (S1 ile birlikte):** klinik kaydındaki ad ve gebelik tarihinin, hasta açık rıza ekranını geçmeden önce uygulama hesabına kopyalanması aydınlatma metninde nasıl yer almalı?
+
+## 9d. 12 Kasım 2026 (gece): bebek yüzü üretimi taşındı
+
+**Karar (kullanıcı).** Üretim hattı eski sistemden (`nbreeda`) buraya taşınır ve **oradaki üretimin aynısı olur; başka bir yol uydurulmaz.** Bu, bölüm 4'teki "çerçevede doktorun adı ve site adresi olmayacak" ile bölüm 6'daki "çerçeve uygulama markalı olur, düşük kalitede otomatik yeniden denenir" kararlarının yerine geçer: çerçeve ve akış eskisiyle aynıdır.
+
+**Ekran:** `/anne/yuz` (Bugün ve Bebeğim ekranlarından açılır). Hasta 1) ölçüm kâğıdının fotoğrafını çeker (iki kâğıda kadar üst üste okunur), 2) ultrason görüntüsünü çeker, 3) cinsiyeti seçer, onay verir ve üretir. Yaklaşık yarım dakikada resim gelir; indirilebilir ve paylaşılabilir.
+
+**Eski sistemle aynı olanlar** (`lib/anne/generation/`, her biri eski Python dosyasının satır satır karşılığı):
+
+| Parça | Eski dosya | Aynılığın kanıtı |
+|---|---|---|
+| Ölçüm analizi (baş şekli, yüz oranları) | `biometric_analyzer.py` | 10 ölçüm setinde eski kodun çıktısıyla birebir |
+| Üretim yönergesi ve sistem mesajları | `ultrasound_4k.py` | 10 ölçüm setinde harfi harfine aynı metin |
+| Model ve yedek | `gemini-3-pro-image-preview`, yedek Replicate `google/nano-banana` | aynı model adları, aynı istek biçimi (önce görüntü, sonra metin) |
+| Yeniden deneme | 503 / UNAVAILABLE / Deadline için 3 deneme, 3-6-9 sn | sınamayla denetleniyor |
+| Kâğıt okuma | `biometric_ocr.py` (`gemini-2.5-flash`, 5 deneme) | metinler harfi harfine aynı |
+| Görüntü denetimi | `image_validator.py` (ultrason + yüz + kalite ≥ 30) | metinler harfi harfine aynı |
+| Çizgi temizleme | `scan_line_filter.py` | piksel piksel aynı |
+| Çerçeve | `polaroid_frame.py` ("Ultrason 4K", ad, "Prof. Dr. Eray Caliskan \| neobreedai.com") | yazı bandı dışında piksel piksel aynı; yazıların yeri ve boyutu aynı, yalnızca harf kenarı yumuşatması farklı |
+| Hangi veriler | Hızlı muayene sihirbazındaki 13 ölçüm, hesaptaki hafta, seçilen cinsiyet, ana (profil) görüntü | — |
+| Kurallar | 18. hafta alt sınırı; hak yalnızca başarıda düşer; durumlar `processing → generated \| failed` | sınamayla denetleniyor |
+
+Kanıt şöyle üretildi: eski Python kodu **hiç değiştirilmeden** çalıştırılıp çıktıları `tests/anne/generation/fixtures/` altına kaydedildi (betikler `scripts/anne/referans/`); `tests/anne/generation/parity.test.ts` yeni kodu bu çıktılarla karşılaştırır. Sınama kırılırsa üretim eski sistemden sapmış demektir.
+
+**Eski sistemden bilinçli olarak alınmayanlar** (üretilen resmi etkilemedikleri eski kodda da yazılı):
+- OpenCV yüz analizi, oran karşılaştırma raporu ve çakıştırma görüntüsü: yalnızca doktor ekranındaki rapor içindi; yönergeye girmiyordu.
+- İkinci (önden) görüntü ve "aynı bebek mi" karşılaştırması: eski kodda üretime yalnızca ana görüntü gidiyordu. Hastadan tek görüntü istenir.
+- Personelin ölçümleri elle düzeltebilmesi: uygulama hastaya ölçüm değeri göstermez (5.3); yalnızca kaç ölçüm okunduğunu söyler.
+
+**Eski sistemde olmayan, hasta kendi başına ürettiği için eklenenler:**
+- Görüntü denetimi geçmezse üretim başlamaz (eski hızlı sihirbazda yalnızca uyarıydı; eski tam ekranda engeldi).
+- Görüntünün üzerinde 18. haftadan küçük bir gebelik haftası yazıyorsa üretim başlamaz.
+- Hesap başına üretim hakkı (`app_users.generation_allowance`, varsayılan 1) ve saatlik deneme sınırı.
+- Görüntünün yurt dışındaki yapay zekâ hizmetine gönderilmesine ayrı onay (`app_consents`, tür `bebek_resmi`). Metni taslak.
+- Yüklenen fotoğraflar hiç saklanmaz; yalnızca üretilen resim, herkese kapalı `anne-uretim` deposunda durur.
+
+**Yeni tablolar** (`scripts/anne/03_uretim.sql`, canlı veritabanına uygulandı): `app_generations`, `app_users.generation_allowance`, `anne-uretim` deposu.
+
+**Denendi (12.11.2026):** gerçek modelle iki üretim (biri sunucu kodundan, biri tarayıcıdaki ekrandan uçtan uca; 18–37 saniye), kâğıt okuma (10 ölçümden 10'u, cm→mm çevrimi doğru), ultrason olmayan fotoğrafın reddi (hak düşmedi). Deneme hesabı ve dosyası silindi.
+
+**Açık noktalar.**
+- **Yedek sağlayıcı kapalı:** Vercel'de `REPLICATE_API_TOKEN` yok. Google başarısız olursa üretim "başarısız" biter (hak düşmez). Eski depodaki anahtar açığa çıktığı için kullanılmadı; yeni anahtar gerekir (G3).
+- **Çerçevede ad ile doktor yazısı üst üste biniyor:** dikey (dar) resimlerde ortadaki ad, sağdaki "Prof. Dr. …" yazısının üstüne geliyor. Bu eski sistemin kendi davranışıdır ve aynen taşındı. Düzeltmek tek satırlık bir iştir ama eski sistemden sapmadır; karar kullanıcının.
+- **Çerçevedeki site adresi** hâlâ `neobreedai.com` (bırakılan eski sistemin adresi) ve doktorun adı yazıyor; bölüm 5.1'deki tanıtım yönetmeliği kaygısı geçerli. Avukat incelemesinde ele alınmalı.
+- **Ödeme yok:** ilk haktan sonra "yeni haklar yakında" yazar. Bir hesaba hak eklemek için şimdilik veritabanında `generation_allowance` artırılır.
+- **Yurt dışı aktarım sözleşmesi** (5.2) imzalanmadı; avukat en sonda inceleyecek (9c).
+- Yerel `next build`, bu işten bağımsız olarak `/_global-error` ön işlemesinde hata veriyor (değişikliklerden önce de veriyordu); Vercel'de derleme sorunsuz.

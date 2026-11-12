@@ -6,6 +6,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Bebek yüzü çerçevesindeki yazı tipi dosyası sunucu paketine eklenir
+  // (lib/anne/generation/postprocess.ts çalışma anında okur).
+  outputFileTracingIncludes: {
+    '/api/anne/uretim/baslat': ['./lib/anne/generation/fonts/DejaVuSans-Bold.ttf'],
+  },
   // Performans iyileştirmeleri
   compress: true,
   poweredByHeader: false,

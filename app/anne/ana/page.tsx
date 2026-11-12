@@ -3,6 +3,7 @@ import { requireReadyUser } from "@/lib/anne/server"
 import { personalSchedule } from "@/lib/anne/content/schedule"
 import { sizeComparison } from "@/lib/anne/content/sizes"
 import { babyImage } from "@/lib/anne/images"
+import { MIN_GENERATION_WEEK } from "@/lib/anne/generation/limits"
 import { Screen, Slot, Tabs, TopBar } from "@/components/anne/chrome"
 
 export const dynamic = "force-dynamic"
@@ -58,6 +59,13 @@ export default async function AnneBugunPage() {
               <i style={{ width: `${age.progressPercent}%` }} />
             </div>
           </div>
+        </Link>
+
+        <Link className="nb-card nb-row-card" data-tone="peach" href="/anne/yuz">
+          <h3>Bebeğinin yüzünü gör</h3>
+          <span className="nb-chip" data-on="">
+            {age.weeks >= MIN_GENERATION_WEEK ? "Üret" : `${MIN_GENERATION_WEEK}. haftada`}
+          </span>
         </Link>
 
         <div className="nb-two">

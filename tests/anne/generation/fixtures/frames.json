@@ -1,0 +1,75 @@
+[
+ {
+  "name": "kucuk",
+  "width": 320,
+  "height": 240,
+  "baby": "",
+  "boxes": {
+   "label": [
+    0,
+    2,
+    74,
+    11
+   ],
+   "baby": null,
+   "right": [
+    0,
+    2,
+    258,
+    14
+   ]
+  }
+ },
+ {
+  "name": "kare",
+  "width": 1024,
+  "height": 1024,
+  "baby": "Ayşe",
+  "boxes": {
+   "label": [
+    0,
+    4,
+    139,
+    20
+   ],
+   "baby": [
+    0,
+    4,
+    51,
+    22
+   ],
+   "right": [
+    0,
+    3,
+    422,
+    21
+   ]
+  }
+ },
+ {
+  "name": "dikey",
+  "width": 896,
+  "height": 1152,
+  "baby": "Gülşah Çağlayan Yıldız",
+  "boxes": {
+   "label": [
+    0,
+    5,
+    154,
+    22
+   ],
+   "baby": [
+    0,
+    4,
+    286,
+    26
+   ],
+   "right": [
+    0,
+    4,
+    478,
+    24
+   ]
+  }
+ }
+]
