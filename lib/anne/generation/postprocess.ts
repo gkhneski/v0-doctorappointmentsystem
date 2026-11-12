@@ -279,6 +279,11 @@ export type FrameOptions = {
   doctorName?: string
   websiteUrl?: string
   babyName?: string
+  /**
+   * false ise çerçevenin altına hiçbir yazı konmaz; çerçevenin kendisi ve ölçüleri aynı kalır.
+   * Hasta uygulaması yazısız üretir (kullanıcı kararı, ana plan 9e).
+   */
+  withText?: boolean
 }
 
 /** Üretilen görüntüyü polaroid çerçeveye yerleştirir ve altına yazıları koyar. */
@@ -333,23 +338,25 @@ export async function addPolaroidFrame(image: Buffer, options: FrameOptions = {}
   const textY = borderTop + imgH + Math.trunc(borderBottom * 0.45)
   const marginX = borderSide + Math.trunc(borderSide * 0.3)
 
-  // Sol alt: "Ultrason 4K"
-  const labelText = "Ultrason 4K"
-  const labelSize = Math.max(11, Math.trunc(borderBottom * 0.16))
-  await pasteGradientText(canvas, marginX, textY, layoutText(labelText, labelSize))
+  if (options.withText !== false) {
+    // Sol alt: "Ultrason 4K"
+    const labelText = "Ultrason 4K"
+    const labelSize = Math.max(11, Math.trunc(borderBottom * 0.16))
+    await pasteGradientText(canvas, marginX, textY, layoutText(labelText, labelSize))
 
-  // Orta: hasta adı
-  if (babyName) {
-    const babySize = Math.max(11, Math.trunc(borderBottom * 0.15))
-    const layout = layoutText(babyName, babySize)
-    await pasteGradientText(canvas, Math.floor((canvasW - layout.width) / 2), textY, layout)
+    // Orta: hasta adı
+    if (babyName) {
+      const babySize = Math.max(11, Math.trunc(borderBottom * 0.15))
+      const layout = layoutText(babyName, babySize)
+      await pasteGradientText(canvas, Math.floor((canvasW - layout.width) / 2), textY, layout)
+    }
+
+    // Sağ: doktor adı + site
+    const rightText = `${doctorName}  |  ${websiteUrl}`
+    const rightSize = Math.max(11, Math.trunc(borderBottom * 0.14))
+    const rightLayout = layoutText(rightText, rightSize)
+    await pasteGradientText(canvas, canvasW - marginX - rightLayout.width, textY, rightLayout)
   }
-
-  // Sağ: doktor adı + site
-  const rightText = `${doctorName}  |  ${websiteUrl}`
-  const rightSize = Math.max(11, Math.trunc(borderBottom * 0.14))
-  const rightLayout = layoutText(rightText, rightSize)
-  await pasteGradientText(canvas, canvasW - marginX - rightLayout.width, textY, rightLayout)
 
   // Kartonu gölgeli zemine yapıştır (kendi saydamlığıyla)
   const cx = Math.floor((finalW - canvasW) / 2)

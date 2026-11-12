@@ -37,7 +37,11 @@ export type EnhanceOptions = {
 
 async function finish(raw: Buffer, patientName: string): Promise<Buffer> {
   const cleaned = await removeScanLines(raw)
-  return addPolaroidFrame(cleaned, { babyName: patientName })
+  // Eski sistem çerçevenin altına "Ultrason 4K", hastanın adını ve doktor adı + site adresini
+  // yazıyordu. Kullanıcı 12.11.2026'da bu yazıların kaldırılmasını istedi (ana plan 9e);
+  // çerçeve aynı, altı boş.
+  void patientName
+  return addPolaroidFrame(cleaned, { withText: false })
 }
 
 export async function enhanceUltrasoundScientific(
