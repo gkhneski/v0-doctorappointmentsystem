@@ -6,7 +6,8 @@ import { StartForm } from "@/components/anne/start-form"
 
 export const dynamic = "force-dynamic"
 
-// İlk girişten sonra bir kez doldurulur. Bilgileri hasta kendisi girer; klinik kaydından alınmaz.
+// Yalnızca klinik kaydından tanınamayan (ya da kaydında tarih olmayan) hasta görür;
+// tanınan hasta bu ekranı atlar (lib/anne/clinic-match.ts).
 export default async function AnneBaslangicPage() {
   const user = await getAppUser()
   if (!user) redirect("/anne/giris")
@@ -25,7 +26,12 @@ export default async function AnneBaslangicPage() {
         <p className="nb-note nb-on-color" style={{ marginTop: 10, fontSize: 15 }}>
           Haftanı hesaplamak için bir tarih yeter. İkisini de sonradan Hesap ekranından değiştirebilirsin.
         </p>
-        <StartForm today={todayInIstanbul()} submitLabel="Devam" next="/anne/onay" />
+        <StartForm
+          today={todayInIstanbul()}
+          initial={user.display_name ? { displayName: user.display_name, kind: "lmp", value: "" } : undefined}
+          submitLabel="Devam"
+          next="/anne/onay"
+        />
         <p className="nb-note" style={{ marginTop: 14, fontSize: 13 }}>
           Doktorun ultrasonla farklı bir tarih verdiyse &quot;Tahmini doğum&quot;u seç.
         </p>

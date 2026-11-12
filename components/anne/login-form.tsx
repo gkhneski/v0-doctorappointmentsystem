@@ -45,7 +45,7 @@ export function LoginForm() {
   async function verify(value: string) {
     setBusy(true)
     setError("")
-    const result = await send<{ profile?: { onboarded?: boolean } }>(
+    const result = await send<{ profile?: { onboarded?: boolean }; recognized?: boolean }>(
       "/api/anne/giris/dogrula",
       "POST",
       { phone, code: value },
@@ -58,7 +58,10 @@ export function LoginForm() {
       codeInput.current?.focus()
       return
     }
-    router.replace(result.data.profile?.onboarded ? "/anne/ana" : "/anne/baslangic")
+    // Klinik kaydından tanınan hasta formu atlar; onay ekranında karşılanır.
+    router.replace(
+      result.data.recognized ? "/anne/onay?tanindi=1" : result.data.profile?.onboarded ? "/anne/ana" : "/anne/baslangic",
+    )
     router.refresh()
   }
 
@@ -76,7 +79,7 @@ export function LoginForm() {
           <b>numaran</b>
         </h1>
         <p className="nb-note" style={{ marginTop: 12, fontSize: 15 }}>
-          6 haneli bir giriş kodu göndereceğiz. Şifre yok.
+          Klinikte kayıtlı numaranı yaz, seni tanıyalım. 6 haneli bir giriş kodu göndereceğiz. Şifre yok.
         </p>
         <label className="nb-label" htmlFor="anne-telefon">
           Cep telefonu
