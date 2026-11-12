@@ -98,7 +98,7 @@ Genel uygulamalar (Flo, BabyCenter, Pregnancy+ vb.) hastanın gerçek klinik ver
 - **Kliniğin gönderimleri:** Admin paneline ayrı bir "uygulama gönderimleri" ekranı eklenir; klinik buradan tüm kullanıcılara ya da seçtiği gruba (örneğin gebelik haftasına göre) bildirim ve içerik gönderir. Bilgilendirme serbesttir; fiyat, indirim ve kampanya içeren gönderimler tanıtım yönetmeliği ve ticari ileti izni nedeniyle ayrı ele alınır (bkz. 5.1).
 - **Deneme kullanıcıları:** Hukuki metinler (Faz 1) hazır olana kadar uygulamayı yalnızca ekip üyeleri ve uydurma deneme kayıtları kullanır; gerçek hasta alınmaz.
 - **Ücretsiz hakkın onayı:** Admin panelindeki uygulama ekranında klinik bir hesabı "onaylı" işaretler; ücretsiz ilk üretim hakkı o hesaba sunucudan tanımlanır. Hasta kod yazmaz (Apple kuralına uygun). Onayın hangi bilgiyle verileceği (telefon numarası, hastanın klinikte gösterdiği bir ekran vb.) Faz 3 planında belirlenir. Bu, personelin tek dokunuşluk bir işidir.
-- **Hasta girişi:** Telefona gelen SMS koduyla kayıt ve giriş; hesap klinik hasta kaydıyla eşleştirilmez. Hasta hesapları personel giriş sistemine (Supabase Auth) eklenmez; ayrı bir oturum sistemiyle yönetilir. Gerekçe: bugünkü veritabanı kuralları "giriş yapmış kullanıcı = personel" varsayıyor; hastalar aynı sisteme alınırsa her hasta herkesin verisini görebilir.
+- **Hasta girişi:** Telefona gelen SMS koduyla kayıt ve giriş; hesap klinik hasta kaydıyla eşleştirilmez (**12.11.2026'da değişti:** ilk girişte ad ve gebelik tarihi klinik kaydından alınır, bkz. 9c). Hasta hesapları personel giriş sistemine (Supabase Auth) eklenmez; ayrı bir oturum sistemiyle yönetilir. Gerekçe: bugünkü veritabanı kuralları "giriş yapmış kullanıcı = personel" varsayıyor; hastalar aynı sisteme alınırsa her hasta herkesin verisini görebilir.
 - **Veri erişimi:** Hastanın telefonu veritabanına hiç doğrudan bağlanmaz. Her istek sunucudan geçer ve oturumdaki hastanın kendi kaydına süzülür.
 - **Hasta tarafı tabloları:** Tümü yeni ve ayrı ön ekli (`app_*`). Hasta uygulaması mevcut klinik tablolarını ne okur ne yazar.
 - **Ölçümlerin rolü:** Ölçümler resmi geometrik olarak belirlemiyor; bugün modele yazılı ipucu olarak gidiyor ve uyulup uyulmadığı denetlenmiyor. Faz 3'te ölçümlü/ölçümsüz ve tek/çift görüntülü üretim karşılaştırılacak; tanıtım dili sonuca göre yazılacak.
@@ -208,7 +208,7 @@ Aynı Next.js uygulaması, aynı Supabase projesi
 - Yeni alanın adresi `/patient` ya da `/admin` ile başlamaz (ara katman bu iki ön eki yakalıyor).
 - Ara katmana yeni alan için ayrı bir dal eklenir; mevcut dallar değişmez.
 - `app_*` tablolarında satır düzeyi güvenlik açık, hiçbir herkese-açık ya da giriş-yapmış-kullanıcı kuralı yok: yalnızca sunucu erişir.
-- Hasta alanı mevcut klinik tablolarına (`patients`, `appointments`, `pregnancy_*` vb.) hiç erişmez; ne okur ne yazar. İki taraf aynı projede durur ama veri olarak birbirinden bağımsızdır.
+- Hasta alanı mevcut klinik tablolarına (`patients`, `appointments`, `pregnancy_*` vb.) hiç erişmez; ne okur ne yazar. İki taraf aynı projede durur ama veri olarak birbirinden bağımsızdır. **Tek istisna (9c):** `lib/anne/clinic-match.ts` ilk girişte `patients` ve `pregnancy_episodes` tablolarını okur; yazmaz.
 - Hesap telefon numarasına bağlıdır; hasta bilgilerini kendisi girer. Kliniğin gönderim ekranı yalnızca `app_*` tablolarını kullanır.
 - Sitenin genelindeki yapay zekâ randevu düğmesi hasta alanında gösterilmez.
 - Yeni kod için derlemede tip hataları yok sayılmaz.
@@ -477,3 +477,22 @@ Bebek yüzü, hafta içeriği, Bakanlık takvimi, günlük kayıtlar ve klinik g
 - Girişsiz hafta hesaplayıcısı kaldırıldı; hafta artık giriş sonrasında gösteriliyor.
 
 **Dr. Eray'ın onayını bekleyen yeni içerik:** günün soruları (7 soru), boy benzetmeleri (36 hafta), isim listesi.
+
+## 9c. 12 Kasım 2026 (akşam): klinik kaydından tanıma
+
+**Karar (kullanıcı).** Randevu alanların neredeyse hepsi gebe ve numaraları sistemde kayıtlı; hasta yalnızca numarasını girsin, sistem onu tanısın. Bu, bölüm 4'teki "hesap klinik hasta kaydıyla eşleştirilmez" ve bölüm 6'daki "hasta alanı klinik tablolarını ne okur ne yazar" kararlarını **dar bir istisnayla** değiştirir.
+
+**Nasıl çalışır.**
+- Hasta numarasını yazar, SMS kodunu girer. Kod doğrulanınca sunucu numarayı `patients` tablosunda arar ve etkin gebelik kaydına (`pregnancy_episodes`, `status = 'active'`) bakar.
+- Bulunursa ilk ad ("AYŞE NUR YILMAZ" → "Ayşe") ve gebelik tarihi hesaba kopyalanır; "Seni tanıyalım" formu atlanır, hasta onay ekranında "Seni tanıdık, Ayşe! Klinik kaydına göre bugün 23 hafta 3 gün" ile karşılanır.
+- Tarih olarak doktorun girdiği tahmini doğum tarihi önceliklidir, yoksa son adet tarihi.
+- Kayıt var ama etkin gebelik (ya da kullanılabilir tarih) yoksa yalnızca ad dolu gelir; hasta tarihi kendisi girer. Kayıt hiç yoksa akış eskisi gibidir.
+
+**Sınırlar (benim kararlarım).**
+- **SMS kodu kaldırılmadı.** Kod olmadan tanıma, numarayı bilen herkese hastanın adını ve gebelik haftasını gösterirdi. Tanıma yalnızca kod doğrulandıktan sonra yapılır.
+- **Yalnızca okur, yalnızca iki tablo, yalnızca tek dosya:** `lib/anne/clinic-match.ts`. Klinik tablolarına hiçbir şey yazılmaz; koruma testi (`tests/guards/anne-routes.test.ts`) başka hiçbir hasta kodunun klinik tablosuna dokunmadığını ve bu dosyanın yazmadığını denetler.
+- **Belirsizse tanımaz:** aynı numarayı birden çok hasta kaydı paylaşıyorsa (aile üyeleri) yalnızca içlerinden tek biri etkin gebelikse eşleşir; aksi halde hasta bilgilerini kendisi girer.
+- **Yalnızca ilk girişte:** başlangıcı tamamlamış hesap yeniden eşlenmez; hastanın Hesap ekranından yaptığı düzeltme ezilmez. Doktor tarihi sonradan değiştirirse uygulamaya kendiliğinden yansımaz.
+- **Deneme numarası kısıtı kaldırıldı (kullanıcı kararı, 12.11.2026 akşam):** avukat metinleri iş bittikten sonra, en sonda inceleyecek; kullanıcı uygulamayı 2-3 kişiyle deneyecek ve adresi başka kimse bilmiyor. Vercel canlı ortamına `ANNE_ACIK=1` eklendi; her TR cep numarası SMS koduyla girebilir. Bu, bölüm 4'teki "Deneme kullanıcıları" kararının yerine geçer. Onay metinleri hâlâ taslak (`taslak-1`); uygulama duyurulmadan önce avukat incelemesi ve gerçek metinler şarttır. Kapatmak için değişken silinir ve yeniden yayımlanır.
+
+**Avukata eklenecek soru (S1 ile birlikte):** klinik kaydındaki ad ve gebelik tarihinin, hasta açık rıza ekranını geçmeden önce uygulama hesabına kopyalanması aydınlatma metninde nasıl yer almalı?

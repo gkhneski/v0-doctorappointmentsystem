@@ -2,19 +2,24 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { appDb, getAppUser } from "@/lib/anne/server"
 import { hasRequired, latestConsents } from "@/lib/anne/consents"
+import { formatGestationalAge, gestationalAge, todayInIstanbul } from "@/lib/anne/pregnancy"
 import { Blob, Screen, TopBar } from "@/components/anne/chrome"
 import { ConsentForm } from "@/components/anne/consent-form"
 
 export const dynamic = "force-dynamic"
 
 // Onaylar. İlk girişte başlangıç formundan sonra gelir; sonradan Hesap ekranından da açılır.
-export default async function AnneOnayPage() {
+export default async function AnneOnayPage({ searchParams }: { searchParams: Promise<{ tanindi?: string }> }) {
   const user = await getAppUser()
   if (!user) redirect("/anne/giris")
   if (!user.onboarded_at) redirect("/anne/baslangic")
 
   const state = await latestConsents(appDb(), user.id)
   const returning = hasRequired(state)
+
+  // Klinik kaydından tanınan hasta başlangıç formunu görmedi; ne bulduğumuzu burada söyleriz.
+  const recognized = !returning && (await searchParams).tanindi === "1"
+  const age = recognized && user.lmp_date ? gestationalAge(user.lmp_date, todayInIstanbul()) : null
 
   return (
     <Screen>
@@ -27,7 +32,18 @@ export default async function AnneOnayPage() {
         )}
       </TopBar>
       <main className="nb-main">
-        <h1 style={{ marginTop: 50 }}>
+        {age && (
+          <div className="nb-card" style={{ marginTop: 28 }}>
+            <p style={{ fontSize: 20, fontWeight: 700 }}>
+              Seni tanıdık{user.display_name ? `, ${user.display_name}` : ""}!
+            </p>
+            <p className="nb-note" style={{ marginTop: 6, fontSize: 15 }}>
+              Klinik kaydına göre bugün <b>{formatGestationalAge(age)}</b>. Yanlışsa Hesap ekranından
+              düzeltebilirsin.
+            </p>
+          </div>
+        )}
+        <h1 style={{ marginTop: age ? 24 : 50 }}>
           Verilerin
           <br />
           <b>senin</b>
