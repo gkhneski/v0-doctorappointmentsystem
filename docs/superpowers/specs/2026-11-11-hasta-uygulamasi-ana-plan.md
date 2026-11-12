@@ -289,7 +289,7 @@ Kural: her adım önce ön izleme ortamında, hem herkese açık randevu akış�
 
 **Adım 0.7 — Roller ve sertleştirme**
 
-> **Durum (11.11.2026):** **S7 kararı verildi:** hemşire ile sekreter aynı haklara sahip. Yalnızca doktora ait olanlar: personel yönetimi, hasta silme, SMS şablonu oluşturma/düzenleme/silme. Randevu silme ve belge işlemleri sekreterlerin günlük işi olduğu için tüm personele açık bırakıldı. **G28** ve **G29** (çerçeve engeli ve temel başlıklar; tam içerik güvenlik politikası hariç) kodu yazıldı; **G31**'in herkese açık iki yoldaki kısmı yazıldı. Bunlar 12.11.2026'da canlıya alındı. **G30** 12.11.2026'da yazıldı ve kullanıcının kararıyla aynı gün canlıya alındı: dokuz gönderim yeri `lib/sms.ts` içindeki tek işleve bağlandı, şifre adres satırı yerine yetki başlığında gidiyor (sağlayıcının `rest/v2` yolu). Canlıya alınırken gerçek gönderim denenmemişti; ilk gerçek SMS (Türkçe karakterli bir şablon dahil) canlıda doğrulanmalı, sorun çıkarsa bu commit geri alınır. **Bekleyen:** G31'in kalanı (tip hataları, diğer yollar), tam içerik güvenlik politikası.
+> **Durum (11.11.2026):** **S7 kararı verildi:** hemşire ile sekreter aynı haklara sahip. Yalnızca doktora ait olanlar: personel yönetimi, hasta silme, SMS şablonu oluşturma/düzenleme/silme. Randevu silme ve belge işlemleri sekreterlerin günlük işi olduğu için tüm personele açık bırakıldı. **G28** ve **G29** (çerçeve engeli ve temel başlıklar; tam içerik güvenlik politikası hariç) kodu yazıldı; **G31**'in herkese açık iki yoldaki kısmı yazıldı. Bunlar 12.11.2026'da canlıya alındı. **G30** 12.11.2026'da yazıldı ve kullanıcının kararıyla aynı gün canlıya alındı: dokuz gönderim yeri `lib/sms.ts` içindeki tek işleve bağlandı, şifre adres satırı yerine yetki başlığında gidiyor (sağlayıcının `rest/v2` yolu). Canlıya alınırken gerçek gönderim denenmemişti; 12.11.2026'da kullanıcı admin panelinden Türkçe karakterli bir şablon SMS'i gönderdi, mesaj ulaştı ve harfler düzgün çıktı (serbest SMS yolu doğrulandı; randevu doğrulama ve hatırlatma yolları aynı işlevi kullanıyor ama ayrıca gözlenmedi). **Bekleyen:** G31'in kalanı (tip hataları, diğer yollar), tam içerik güvenlik politikası.
 
 | No | Bulgu | Yapılacak |
 |---|---|---|
@@ -391,6 +391,37 @@ Sizin kararınız: Emergent tamamen bırakılıyor ve planlamada hesaba katılm�
 - Türkiye'de mağaza dışı ödeme için bir izin programı bulunamadı; Rekabet Kurumu'nun Apple (Mayıs 2024) ve Google (Ağustos 2025) soruşturmalarının sonucu bulunamadı.
 - Üretim maliyeti için eldeki tek rakam eski sistemin Mart 2026 iç tahmini (resim başına 0,03–0,05 dolar); düşük olabilir, Faz 3'te ölçülecek.
 
+## 9a. 12 Kasım 2026 kararları ve Faz 2'nin durumu
+
+**Sizin kararlarınız:** uygulama `dreraycaliskan.com/anne` adresinde açılır; sağlık içerikleri Sağlık Bakanlığı'nın resmî yayınlarından alınır; özellik seçimini ben yaparım.
+
+**Özellik araştırmasının dürüst sonucu.** Listedeki on özelliğin hiçbiri *tür olarak* dünyada tek değil (yaklaşık 40 arama; uygulamalar kurulup denenmedi, "bulunamadı" kesin "yok" demek değildir):
+- Ultrasondan bebek yüzü: onlarca uygulama ve en az üç klinik ürünü yapıyor. "Kimsede yok" denemez.
+- Bakanlığın kendi ücretsiz uygulaması var: **Annelik Yolculuğu** (Mayıs 2025; hafta hafta takip, test ve aşı hatırlatıcıları, kilo takibi, isimler, doğum çantası). Hafta içeriği ve hatırlatma bizi ayırmaz.
+- Doktora gösterilen özet, aile paylaşımı, basılı albüm, haftaya göre klinik gönderimi: hepsinin örneği var.
+
+**Bu yüzden imza özellikler şunlar** (karşı örneği bulunamayanlar; hepsi kliniğin tek sahip olduğu şeye, yani hastanın birkaç haftada bir aynı profesöre gelmesine dayanır):
+
+| # | Özellik | Neden başkası yapamıyor | Faz |
+|---|---|---|---|
+| İ1 | **Soru döngüsü.** Hasta soru yazar; yanıt yalnızca doktorun onayladığı yanıt bankasından gelir. Bankada yoksa yapay zekâ yanıt uydurmaz: soru hastanın "vizitede soracaklarım" listesine düşer, adsız olarak sayılır, doktor her hafta en çok sorulan yanıtsız soruya tek bir genel yanıt kaydeder ve soran herkese bildirim gider. Hastalar sıradaki yanıtlanacak soruyu oylar. | Adı bilinen bir doktor ve onun hasta topluluğu gerekir; kişiye özel yanıt olmadığı için uzaktan sağlık hizmeti sayılmaz | 2 |
+| İ2 | **Bekleme odası kodu.** Klinikteki karekodu okutan hasta "bugün buradayım" demiş olur: (a) personel tek dokunuşla hesabı onaylar (ücretsiz ilk üretim hakkı), (b) o haftaya ait "bugünkü vizitede genellikle neler olur" içeriği ve soru listesi açılır, (c) vizite, hatıra sayfasına işlenir. Kod yazılmaz, klinik kaydına bağlanmaz. | Fiziksel vizite gerekir | 2–3 |
+| İ3 | **Kendiliğinden dizilen ultrason albümü ve yüz serisi.** Hasta her ultrason çıktısının fotoğrafını çeker; uygulama görüntüdeki gebelik haftasını okuyup zaman çizelgesine yerleştirir. Aynı görüntülerden üretilen yüzler zaman içinde bir seri oluşturur; doğumdan sonra gerçek fotoğrafla yan yana gelir. | Aynı klinikte yinelenen gerçek çekimler ve üretim hattı gerekir | 3, 6 |
+| İ4 | **Klinik hastalarının soru destesi.** "Sizin haftanızdaki hastaların en çok sorduğu sorular"; tek dokunuşla kendi listesine ekler. İ1'in verisinden üretilir. | Aynı kliniğin hasta topluluğu gerekir | 2 |
+| İ5 | **İki dilli aile odası.** Hasta Türkçe yazar; Bulgaristan'daki büyükanne aynı notu Bulgarca görür. | Bu dil çifti ve kliniğin Bulgar hastaları | 6 |
+| İ6 | **Vizite sesli notu.** Her viziteden sonra 30 saniyelik ses kaydı o günün ultrason görüntüsüne iliştirilir; basılı albümde her vizitenin karekodu sesi çalar. | Parçaları ayrı ayrı var, viziteye bağlı birleşimi bulunamadı (en zayıf iddia) | 6 |
+
+Bebek yüzü, hafta içeriği, Bakanlık takvimi, günlük kayıtlar ve klinik gönderimleri uygulamada kalır; ama tanıtımda "kimsede yok" diye sunulmaz.
+
+**Faz 2'de yapılanlar (12.11.2026, `feat/anne-temel` dalı):**
+- Tablolar canlı veritabanında: `app_users`, `app_login_codes`, `app_sessions`, `app_consents` (`scripts/anne/01_temel.sql`; satır güvenliği açık, politika yok, anon ve authenticated yetkisi yok).
+- Telefon + SMS koduyla giriş, sunucuda tutulan oturum, çıkış, hesap silme; başlangıç formu; hafta ve tahmini doğum tarihi hesabı.
+- Ekranlar: `/anne` (girişsiz hafta hesabı), `/anne/giris`, `/anne/baslangic`, `/anne/ana`, `/anne/hesap`, `/anne/tehlike-isaretleri`.
+- İçerik (kendi cümlelerimizle, her bölümde kaynak gösterilerek): 5–40. haftalarda bebeğin gelişimi (Gebe Okulu Eğitim Kitabı, 2025), Bakanlık izlem takvimi ve tehlike işaretleri (Doğum Öncesi Bakım Yönetim Rehberi, 2026). **Dr. Eray'ın onayı bekleniyor.**
+- Giriş yalnızca `ANNE_DENEME_TELEFONLARI` ayarındaki numaralara açık; ayar yoksa kimse giremez. Herkese açmak için `ANNE_ACIK=1` (hukuki metinler hazır olmadan kullanılmaz).
+
+**Bilinen eksikler:** rıza ekranları (tablo var, ekran yok); bildirimler; günlük kayıtlar; İ1, İ2, İ4; klinik gönderim ekranı. `/anne` sayfalarının HTML'inde sitenin genel yapısal verisi (doktor adı) hâlâ bulunuyor; ekranda görünmüyor ama mağaza sürümünden önce ayrılmalı. Kaynak yayınların künyesi "kısmen dahi olsa alınamaz" diyor; metinler bu yüzden yeniden yazıldı, birebir kullanım için HSGM'den izin gerekir.
+
 ## 10. Kaynaklar
 
 **Mağaza kuralları**
@@ -424,3 +455,25 @@ Sizin kararınız: Emergent tamamen bırakılıyor ve planlamada hesaba katılm�
 - Mozilla gizlilik incelemesi: https://www.mozillafoundation.org/en/research/library/in-post-roe-v-wade-era-mozilla-labels-18-of-25-popular-period-and-pregnancy-tracking-tech-with-privacy-not-included-warning/
 - Abonelik kıyaslamaları: https://adapty.io/state-of-in-app-subscriptions/
 - Hatıra ultrasonu (FDA): https://www.fiercehealthcare.com/it/fda-issues-update-discouraging-keepsake-ultrasounds
+
+## 9b. 12 Kasım 2026 (öğleden sonra): tasarım kararı ve 16 ekran
+
+**Tasarım kararı.** İlk üç deneme (siyah-beyaz "Cetvel", toprak tonlu "Bahçe", renkli "Şenlik") kullanıcı tarafından reddedildi: uygulama kılavuz gibi değil, eğlenceli bir tüketici uygulaması gibi görünmeli. Kullanıcı örnek olarak bir Dribbble çalışmasını gösterdi (Pregnancy And Period Tracker Onboarding, SK Radwoan / Kites Design) ve şu kuralları koydu: bütün ekranlar o dile uyacak, en fazla iki yazı tipi, yapay zekâ işi görünen hiçbir şey olmayacak. Uygulanan dil: kırık beyaz zemin, düz pembe ve lila şekiller, siyah hap düğmeler, tek yazı ailesi (Urbanist), ince-kalın karışık başlıklar, büyük görsel üstte kısa metin altta. Hitap "sen".
+
+**Görseller.** Örnekteki 3B karakterler o tasarımcıya aittir, kopyalanmadı. Kullanıcı kendi görsellerini verecek. Yuvalar `lib/anne/images.ts` içinde tanımlı; görsel gelene kadar ekranda kesikli çerçeve görünür. Dosyalar `public/anne/gorsel/` altına konup yol o dosyaya yazılır.
+
+**Kurulan ekranlar (16).** Karşılama, tanıtım, giriş (telefon ve kod), başlangıç, onaylar, bugün, bebeğim, yolculuk, tekme, isim bulucu, günün sorusu (oyun), albüm, sor, hafta kartı, tehlike işaretleri, hesap.
+
+**Yeni tablolar** (`scripts/anne/02_ekranlar.sql`, canlı veritabanına uygulandı): `app_kick_sessions`, `app_name_likes`, `app_visit_questions`, `app_photos` ve herkese kapalı `anne-album` dosya deposu. Onaylar `app_consents` tablosuna yazılıyor; zorunlu iki onay olmadan ana ekranlar açılmıyor ve sağlık verisi saklanmıyor.
+
+**Bilinçli sınırlar.**
+- Sor ekranı yanıt üretmez: onaylı yanıt bankası boş olduğu için her soru vizite listesine eklenir (İ1'in ilk yarısı). Bankanın ve doktor ekranının kurulması sırada.
+- Tekme sayısı yalnızca saklanır; hedef ya da değerlendirme gösterilmez.
+- Albümde hafta elle yazılır; ultrason çıktısından haftayı okuma (İ3) ve 40 haftalık video yapılmadı.
+- İsim bulucuda eş daveti ve eşleşme yapılmadı; liste 24 isimle başladı.
+- Boy benzetmeleri (`lib/anne/content/sizes.ts`) Bakanlık kaynağında yoktur, bize aittir; ekranda bu açıkça yazar.
+- Onay metinleri (KVKK aydınlatma, açık rıza) hâlâ yok; yerleri köşeli parantezle belli, sürüm `taslak-1`.
+- Bildirim onayı kaydediliyor ama bildirim gönderen bir düzenek henüz yok.
+- Girişsiz hafta hesaplayıcısı kaldırıldı; hafta artık giriş sonrasında gösteriliyor.
+
+**Dr. Eray'ın onayını bekleyen yeni içerik:** günün soruları (7 soru), boy benzetmeleri (36 hafta), isim listesi.

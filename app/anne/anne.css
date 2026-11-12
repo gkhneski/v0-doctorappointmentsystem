@@ -1,0 +1,832 @@
+/* Hasta uygulaması (/anne) görsel dili.
+   Kırık beyaz zemin, düz pastel şekiller, siyah hap düğmeler, tek yazı ailesi (Urbanist).
+   Renk geçişi, parıltı ve gölge kullanılmaz. Kurallar .anne altına kapatılmıştır;
+   sitenin geri kalanını etkilemez. */
+
+.anne {
+  --ink: #1f1f1f;
+  --ink-2: #5f5f5f;
+  --ground: #f4f5f5;
+  --card: #ffffff;
+  --rule: #e2e2e4;
+  --pink: #fbd3dc;
+  --lilac: #eadcf6;
+  --peach: #fce3d4;
+  --outer: #e6d8e0;
+
+  min-height: 100dvh;
+  background: var(--outer);
+  color: var(--ink);
+  font-family: var(--font-anne), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+.anne *,
+.anne *::before,
+.anne *::after {
+  box-sizing: border-box;
+}
+
+.anne a {
+  color: inherit;
+}
+
+.anne h1,
+.anne h2,
+.anne h3,
+.anne p {
+  margin: 0;
+}
+
+.anne h1 {
+  font-size: 34px;
+  line-height: 1.12;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.anne h1 b {
+  font-weight: 800;
+}
+
+.anne h2 {
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.anne h3 {
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+/* Ekran: telefonda tam genişlik, geniş ekranda ortada tek sütun */
+.nb-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow-x: clip;
+  background: var(--ground);
+}
+
+.nb-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top) + 24px) 22px 0;
+}
+
+.nb-brand {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+}
+
+.nb-skip {
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink-2);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nb-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 0 22px 26px;
+}
+
+.nb-grow {
+  flex: 1;
+  min-height: 16px;
+}
+
+.nb-note {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.nb-on-color {
+  color: var(--ink);
+}
+
+/* Arkadaki düz şekiller */
+.nb-blob {
+  position: absolute;
+  z-index: 0;
+  background: var(--pink);
+  border-radius: 46% 54% 58% 42% / 52% 44% 56% 48%;
+  pointer-events: none;
+}
+
+.nb-blob[data-tone="lilac"] {
+  background: var(--lilac);
+  border-radius: 58% 42% 44% 56% / 46% 58% 42% 54%;
+}
+
+.nb-blob[data-tone="coral"] {
+  background: #f0766a;
+}
+
+.nb-letters {
+  font-size: 150px;
+  line-height: 0.84;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Görsel yuvası: görsel gelene kadar kesikli çerçeve */
+.nb-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border: 1.5px dashed var(--ink);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.nb-slot[data-round] {
+  border-radius: 50%;
+}
+
+.nb-image {
+  display: block;
+  object-fit: contain;
+}
+
+/* Düğmeler */
+.nb-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  margin-top: 14px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 29px;
+  background: var(--ink);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.anne a.nb-btn {
+  color: #fff;
+}
+
+.nb-btn[data-kind="light"],
+.anne a.nb-btn[data-kind="light"] {
+  background: var(--card);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+}
+
+.nb-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.nb-btn:not(:disabled):active,
+.nb-round:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.nb-round {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.nb-round[data-kind="dark"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.nb-round:disabled {
+  opacity: 0.45;
+}
+
+.nb-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.nb-link:disabled {
+  color: var(--ink-2);
+  text-decoration: none;
+  cursor: default;
+}
+
+.anne :is(a, button, input, textarea, select):focus-visible {
+  outline: 3px solid #7a3ff2;
+  outline-offset: 2px;
+}
+
+/* Kartlar ve çipler */
+.nb-card {
+  display: block;
+  margin-top: 12px;
+  padding: 18px;
+  border-radius: 28px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nb-card[data-tone="pink"] {
+  background: var(--pink);
+}
+
+.nb-card[data-tone="lilac"] {
+  background: var(--lilac);
+}
+
+.nb-card[data-tone="peach"] {
+  background: var(--peach);
+}
+
+.nb-card[data-tone="dark"],
+.anne a.nb-card[data-tone="dark"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.nb-row-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.nb-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nb-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nb-chip[data-on],
+.anne a.nb-chip[data-on] {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Form */
+.nb-label {
+  display: block;
+  margin-top: 22px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.nb-field {
+  display: block;
+  width: 100%;
+  height: 58px;
+  margin-top: 8px;
+  padding: 0 22px;
+  border: 1.5px solid var(--ink);
+  border-radius: 29px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  /* 16 pikselin altı iPhone'da sayfayı yakınlaştırır. */
+  font-size: 18px;
+  appearance: none;
+}
+
+.nb-field::placeholder {
+  color: #6b6b6b;
+}
+
+.nb-field[data-code] {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
+.nb-seg {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 22px;
+  padding: 4px;
+  border-radius: 29px;
+  background: var(--card);
+}
+
+.nb-seg button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nb-seg button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.nb-error {
+  margin-top: 14px !important;
+  padding: 12px 18px;
+  border-radius: 20px;
+  background: var(--pink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.nb-check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 10px;
+  padding: 16px 18px;
+  border-radius: 24px;
+  background: var(--card);
+  font-size: 15px;
+}
+
+.nb-check input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--ink);
+}
+
+/* Alt gezinme */
+.nb-tabs {
+  position: sticky;
+  bottom: calc(env(safe-area-inset-bottom) + 14px);
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0 16px calc(env(safe-area-inset-bottom) + 14px);
+  padding: 6px;
+  border-radius: 34px;
+  background: var(--ink);
+}
+
+.anne .nb-tabs a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  border-radius: 28px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+}
+
+.anne .nb-tabs a[aria-current="page"] {
+  background: #fff;
+  color: var(--ink);
+}
+
+.nb-tabs svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* Bugün */
+.nb-stories {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.nb-story {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 64px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.nb-story i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--card);
+  font-style: normal;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.nb-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.nb-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ink);
+}
+
+.nb-big {
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bebeğim: hafta şeridi */
+.nb-weeks {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.nb-weeks .nb-chip[data-on] {
+  min-height: 40px;
+  padding: 4px 18px;
+  font-size: 16px;
+}
+
+/* Yolculuk */
+.nb-stop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.nb-stop i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--card);
+  font-style: normal;
+  font-size: 19px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.nb-stop[data-status="past"] i {
+  background: var(--ink);
+  color: #fff;
+}
+
+.nb-stop[data-status="now"] i {
+  width: 72px;
+  height: 72px;
+  background: var(--pink);
+  border: 3px solid var(--ink);
+  font-size: 28px;
+}
+
+.nb-stop > div {
+  min-width: 0;
+  padding: 10px 16px;
+  border-radius: 20px;
+  background: var(--card);
+  font-size: 14px;
+}
+
+.nb-stop[data-status="now"] > div {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Oyunlar */
+.nb-opt {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  margin-top: 10px;
+  padding: 0 20px;
+  border: 1.5px solid var(--ink);
+  border-radius: 28px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nb-opt[data-state="ok"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.nb-opt[data-state="no"] {
+  background: var(--pink);
+}
+
+.nb-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.nb-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--rule);
+}
+
+.nb-dot[data-on] {
+  background: var(--ink);
+}
+
+.nb-count {
+  margin-top: 14px !important;
+  font-size: 96px;
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.nb-kick {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 280px;
+  height: 280px;
+  margin-top: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 46% 54% 58% 42% / 52% 44% 56% 48%;
+  background: var(--pink);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.nb-kick:active {
+  transform: scale(0.97);
+}
+
+.nb-name {
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+/* Sor */
+.nb-bub {
+  max-width: 84%;
+  margin-top: 10px;
+  padding: 12px 16px;
+  border-radius: 22px;
+  border-bottom-left-radius: 6px;
+  background: var(--card);
+  font-size: 15px;
+}
+
+.nb-bub[data-me] {
+  margin-left: auto;
+  border-bottom-left-radius: 22px;
+  border-bottom-right-radius: 6px;
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Albüm */
+.nb-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.nb-photo {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--pink);
+}
+
+.nb-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nb-photo span {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.nb-photo button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 26px 18px;
+  border: 1.5px dashed var(--ink);
+  border-radius: 24px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Listeler */
+.nb-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.nb-row:last-child {
+  border-bottom: 0;
+}
+
+.nb-row > span:first-child {
+  color: var(--ink-2);
+}
+
+.nb-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: n;
+}
+
+.nb-list li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  padding: 6px 0;
+  counter-increment: n;
+  font-size: 15px;
+}
+
+.nb-list li::before {
+  content: counter(n);
+  font-weight: 800;
+}
+
+/* Hafta kartı */
+.nb-sharecard {
+  position: relative;
+  height: 420px;
+  margin-top: 22px;
+  padding: 22px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: var(--pink);
+}
+
+.nb-swatches {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.nb-swatches button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.nb-swatches button[aria-pressed="true"] {
+  border: 3px solid var(--ink);
+}
+
+.nb-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-btn:not(:disabled):active,
+  .nb-round:not(:disabled):active,
+  .nb-kick:active {
+    transform: none;
+  }
+}
