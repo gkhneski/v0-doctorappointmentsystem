@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto"
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto"
 import { normalizePhone } from "@/lib/phone"
 
 // Hasta uygulamasının giriş mantığı: telefona SMS kodu, ardından sunucuda tutulan oturum.
@@ -63,6 +63,24 @@ export function isPhoneAllowed(phone: string, env: Record<string, string | undef
     .map((p) => normalizePhone(p))
     .filter(Boolean)
   return allowed.includes(phone)
+}
+
+/** Her yeni hesabın ücretsiz bebek yüzü üretim hakkı (app_users.generation_allowance varsayılanı). */
+export const FREE_GENERATIONS = 1
+
+/**
+ * Numaranın, silinen hesaplardan kalan kullanım kaydındaki anahtarı. Numara saklanmaz;
+ * sunucu sırrıyla anahtarlanmış özeti saklanır, sır olmadan numaraya geri dönülemez.
+ */
+export function phoneUsageKey(phone: string, env: Record<string, string | undefined> = process.env): string {
+  const secret = env.SUPABASE_JWT_SECRET || env.SUPABASE_SERVICE_ROLE_KEY || ""
+  return createHmac("sha256", secret).update(`anne-uretim:${phone}`).digest("hex")
+}
+
+/** Bu numaranın daha önce silinmiş hesaplarında kullandığı üretim sayısı. */
+async function usedBefore(db: Db, phone: string): Promise<number> {
+  const { data } = await db.from("app_phone_usage").select("generations_used").eq("phone_key", phoneUsageKey(phone)).maybeSingle()
+  return typeof data?.generations_used === "number" ? data.generations_used : 0
 }
 
 export type IssuedCode = { code: string }
@@ -146,9 +164,15 @@ export async function findOrCreateUser(db: Db, phone: string, now: Date = new Da
     return existing.data
   }
 
+  // Hesabını silip aynı numarayla yeniden açan kişi ücretsiz üretim hakkını yeniden kazanmaz.
+  const carried = await usedBefore(db, phone)
   const created = await db
     .from("app_users")
-    .insert({ phone, last_login_at: now.toISOString() })
+    .insert({
+      phone,
+      last_login_at: now.toISOString(),
+      ...(carried > 0 ? { generation_allowance: Math.max(0, FREE_GENERATIONS - carried) } : {}),
+    })
     .select(USER_COLUMNS)
     .single()
   if (!created.error) return created.data
@@ -200,6 +224,21 @@ export async function destroySession(db: Db, token: string | undefined | null): 
 
 /** Hesabı ve ona bağlı her şeyi siler (oturumlar ve rızalar veritabanında zincirleme silinir). */
 export async function deleteAccount(db: Db, user: Pick<AppUser, "id" | "phone">): Promise<boolean> {
+  // Silinen hesaptan geriye kalan tek şey: numaranın anahtarlı özeti ve kullandığı üretim sayısı.
+  const { data: generated } = await db.from("app_generations").select("id").eq("user_id", user.id).eq("status", "generated")
+  const used = (generated ?? []).length
+  if (used > 0) {
+    const key = phoneUsageKey(user.phone)
+    const previous = await usedBefore(db, user.phone)
+    const row = { generations_used: previous + used, updated_at: new Date().toISOString() }
+    const saved =
+      previous > 0
+        ? await db.from("app_phone_usage").update(row).eq("phone_key", key).select("phone_key")
+        : await db.from("app_phone_usage").insert({ phone_key: key, ...row }).select("phone_key")
+    // Kayıt yazılamadıysa hesap silinmez; yoksa hak sıfırlanmış olurdu.
+    if (saved.error) return false
+  }
+
   const { error } = await db.from("app_users").delete().eq("id", user.id)
   if (error) return false
   // Giriş kodları hesaba değil numaraya bağlıdır; onlar da gitsin.

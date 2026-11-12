@@ -2,7 +2,14 @@ import { NextResponse, after } from "next/server"
 import { CONSENT_VERSION } from "@/lib/anne/consents"
 import { gestationalAge, todayInIstanbul } from "@/lib/anne/pregnancy"
 import { consentBlock, requireAppUser } from "@/lib/anne/server"
-import { MIN_GENERATION_WEEK, failGeneration, runGeneration, startGeneration } from "@/lib/anne/generation/service"
+import {
+  MIN_GENERATION_WEEK,
+  expireStale,
+  failGeneration,
+  readAllowance,
+  runGeneration,
+  startGeneration,
+} from "@/lib/anne/generation/service"
 import { readJpegUpload } from "@/lib/anne/generation/upload"
 import { validateUltrasoundImage } from "@/lib/anne/generation/validator"
 import { checkRateLimit } from "@/lib/rate-limit"
@@ -43,6 +50,12 @@ export async function POST(request: Request) {
 
   const upload = await readJpegUpload(form?.get("file"))
   if (!upload.ok) return NextResponse.json({ error: upload.error }, { status: 400 })
+
+  // Hak yoksa ya da bir üretim sürüyorsa, ücretli denetim çağrısı hiç yapılmaz.
+  await expireStale(gate.db, gate.user.id)
+  const allowance = await readAllowance(gate.db, gate.user.id)
+  if (allowance.processing) return NextResponse.json({ error: "Bir resim şu anda üretiliyor. Bitmesini bekle." }, { status: 409 })
+  if (allowance.remaining < 1) return NextResponse.json({ error: "Üretim hakkın kalmadı." }, { status: 402 })
 
   // Denetim ve üretim ücretli çağrılardır: sınır denetlenemiyorsa yapılmaz.
   if (!(await checkRateLimit(`anne-uretim:${gate.user.id}`, 8, 3600, { failClosed: true }))) {

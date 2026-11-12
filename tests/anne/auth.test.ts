@@ -185,4 +185,31 @@ describe("hesap ve oturum", () => {
     expect(db.tables.app_users.map((u: any) => u.phone)).toEqual([OTHER])
     expect(db.tables.app_login_codes.map((c: any) => c.phone)).toEqual([OTHER])
   })
+
+  it("hesabını silip aynı numarayla yeniden açan, kullandığı ücretsiz hakkı yeniden kazanmaz", async () => {
+    const db = freshDb()
+    const a = (await findOrCreateUser(db, PHONE, now))!
+    db.tables.app_generations = [
+      { id: "g1", user_id: a.id, status: "generated" },
+      { id: "g2", user_id: a.id, status: "failed" },
+    ]
+    expect(await deleteAccount(db, a)).toBe(true)
+    // Geriye numaranın kendisi değil, anahtarlı özeti ve sayı kalır.
+    expect(db.tables.app_phone_usage).toHaveLength(1)
+    expect(db.tables.app_phone_usage[0].generations_used).toBe(1)
+    expect(JSON.stringify(db.tables.app_phone_usage)).not.toContain(PHONE)
+
+    const again = (await findOrCreateUser(db, PHONE, now))!
+    expect(db.tables.app_users.find((u: any) => u.id === again.id).generation_allowance).toBe(0)
+    // Hiç üretmemiş başka numara varsayılan hakla açılır (sütun varsayılanı; değer yazılmaz).
+    const other = (await findOrCreateUser(db, OTHER, now))!
+    expect(db.tables.app_users.find((u: any) => u.id === other.id).generation_allowance).toBeUndefined()
+  })
+
+  it("hiç üretmemiş hesap silinince geriye kayıt kalmaz", async () => {
+    const db = freshDb()
+    const a = (await findOrCreateUser(db, PHONE, now))!
+    expect(await deleteAccount(db, a)).toBe(true)
+    expect(db.tables.app_phone_usage ?? []).toHaveLength(0)
+  })
 })

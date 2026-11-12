@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, UserCog, LayoutDashboard, Menu, MessageSquare, Pill, BellRing, Users } from "lucide-react"
+import { Baby, Calendar, UserCog, LayoutDashboard, Menu, MessageSquare, Pill, BellRing, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -29,6 +29,7 @@ const navigation = [
     icon: BellRing,
     roles: ["doktor", "sekreter", "hemsire"],
   },
+  { name: "Hasta Uygulaması", href: "/admin/uygulama", icon: Baby, roles: ["doktor", "sekreter", "hemsire"] },
   { name: "Personel", href: "/admin/staff", icon: UserCog, roles: ["doktor"] }, // Only doctors
 ]
 

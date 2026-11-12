@@ -553,3 +553,31 @@ Kanıt şöyle üretildi: eski Python kodu **hiç değiştirilmeden** çalışt�
 - Yazılı çerçeve kodu ve aynılık sınamaları duruyor; yazılar istenirse tek satırla geri gelir.
 - O ana kadar üretilmiş resim (1 adet) depoda yazısız haliyle değiştirildi.
 - Böylece 9d'deki iki açık nokta kapandı: adın doktor yazısının üstüne binmesi ve resimde doktor adı ile eski site adresinin yer alması (5.1).
+
+## 9f. 12–13 Kasım 2026 (gece): canlı deneme, klinik hak ekranı, albüm
+
+Kullanıcı "kalan ne varsa yap, kendin dene, doğruysa yayımla" dedi. Yapılanlar:
+
+**Canlı sitede uçtan uca deneme.** Veritabanında geçici bir deneme hesabı ve oturumu açılıp gerçek adrese (dreraycaliskan.com) istek atıldı; sonunda hesap ve dosyaları silindi. Sonuç: kâğıt okuma (10/10 ölçüm, 7 sn), ultrason olmayan fotoğrafın reddi (hak düşmedi), onaysız isteğin reddi, üretim (27 sn, `gemini-3-pro-image-preview`), yazısız çerçeve, resmin oturumsuz istekte verilmemesi (401), silme ve silindikten sonra 404. Hepsi beklendiği gibi.
+
+**Klinik için "Hasta Uygulaması" ekranı** (`/admin/uygulama`, yan menüde). Uygulamaya giren hesapları (ad, telefon, hafta, kayıt, son giriş, üretilen resim sayısı) listeler; personel bir hesaba tek dokunuşla üretim hakkı verir ya da kullanılmamış hakkı geri alır. Hak veren personel hesaba yazılır (`clinic_approved_by`). Bu, bölüm 4'teki "ücretsiz hakkın onayı" kararının karşılığıdır; farkı, her hesabın ilk hakkının onay beklemeden tanımlı olmasıdır. Ekran yalnızca `app_*` tablolarını kullanır.
+
+**Albüm.** Üretilen bebek yüzü resimleri Albüm ekranının başında da görünür.
+
+**Yapılmayanlar ve nedeni.**
+- *Yedek sağlayıcı (Replicate):* anahtar gerekir; eski depodaki anahtarlar açıkta olduğu için kullanılmadı.
+- *Ödeme / kredi satışı:* şirket, ödeme sağlayıcısı ve fatura gerektirir (bölüm 5.4).
+- *Onay metinleri:* avukat en sonda inceleyecek (9c); yerleri köşeli parantezle belli.
+- *Bildirim gönderimi, eş daveti, Sor ekranının yanıt bankası, doktor için vizite öncesi özet:* her biri ayrı bir iş; içerik ya da karar gerektiriyor.
+- *Albümde haftayı ultrason çıktısından okuma (İ3):* görüntünün yapay zekâ hizmetine gönderilmesi demek; bebek yüzündeki gibi ayrı onay ister, karar bekliyor.
+- *Klinik ekranının tarayıcıda denenmesi:* personel girişi gerektirir; mantığı sınamalarla, yetkisiz erişimin reddi canlıda denendi.
+
+**Bağımsız kod incelemesi ve düzeltmeler (aynı gece).** Yeni kod ayrı bir incelemeden geçirildi. Hastalar arası veri erişimi, oturumsuz resim erişimi ve yetki tarafında bulgu çıkmadı. Düzeltilenler:
+- Hesabını silip aynı numarayla yeniden açan kişi ücretsiz hakkı yeniden kazanıyordu. Artık hesap silinirken numaranın sunucu sırrıyla anahtarlanmış özeti ve kullanılan üretim sayısı kalır (`app_phone_usage`, `scripts/anne/04_kullanim_kaydi.sql`, canlıya uygulandı); numaranın kendisi saklanmaz. **Aydınlatma metninde yer almalı** (avukat listesine eklendi).
+- Hak yokken ya da bir üretim sürerken ücretli görüntü denetimi yapılmıyor.
+- Kâğıt okuma ve yedek sağlayıcı indirmesi sunucunun 300 saniyelik süresini aşamıyor.
+- Üretilen resim tarayıcıda saklanmıyor (`no-store`); silinen resim ortak cihazda kalmaz.
+- Üretim başka sekmede ya da bağlantı koptuktan sonra başladıysa ekran bekleme durumuna geçiyor.
+- Yarıda kalan üretimde okunan ölçümler kaybolmuyor; eski başarısız denemeler resimleri listeden itmiyor.
+
+Bilinen, düzeltilmeyen küçük nokta: personel bir hakkı geri alırken hasta aynı anda üretim başlatırsa bir üretim fazladan yapılabilir (nadir, etkisi bir resim).
