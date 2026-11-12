@@ -51,6 +51,7 @@ export function createFakeSupabase(
       update: (p: any) => ((op = "update"), (payload = p), api),
       delete: () => ((op = "delete"), api),
       eq: (k: string, v: any) => (filters.push((r) => r[k] === v), api),
+      is: (k: string, v: any) => (filters.push((r) => (r[k] ?? null) === v), api),
       in: (k: string, vs: any[]) => (filters.push((r) => vs.includes(r[k])), api),
       lt: (k: string, v: any) => (filters.push((r) => r[k] < v), api),
       order: (k: string, o?: { ascending?: boolean }) => ((orderKey = k), (ascending = o?.ascending ?? true), api),
