@@ -27,7 +27,8 @@ export async function POST(request: Request) {
   const upload = await readJpegUpload(form?.get("file"))
   if (!upload.ok) return NextResponse.json({ error: upload.error }, { status: 400 })
 
-  const ocr = await extractBiometricsFromImage(upload.bytes)
+  // Deneme başına 40 saniye: 5 deneme ve aradaki beklemeler sunucunun süresine sığar.
+  const ocr = await extractBiometricsFromImage(upload.bytes, { timeoutMs: 40_000 })
   if (!ocr.success) {
     if (ocr.found_count === 0) {
       return NextResponse.json(

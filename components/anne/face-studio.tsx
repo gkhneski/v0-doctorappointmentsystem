@@ -203,13 +203,11 @@ export function FaceStudio({ initial, week }: { initial: FaceState; week: number
     form.set("gender", gender)
     form.set("onay", "1")
     const result = await send<{ id: string }>("/api/anne/uretim/baslat", "POST", form, "Üretim başlatılamadı. Lütfen yeniden dene.")
-    if (!result.ok) {
-      setStarting(false)
-      setError(result.error)
-      return
-    }
+    // Başarısız olsa da durum yeniden okunur: üretim başka bir sekmede ya da bağlantı
+    // koptuktan sonra sunucuda başlamış olabilir; o zaman bekleme ekranına geçilir.
     const next = await send<FaceState>("/api/anne/uretim", "GET")
     if (next.ok) setState(next.data)
+    if (!result.ok && !(next.ok && next.data.items.some((item) => item.status === "processing"))) setError(result.error)
     setStarting(false)
   }
 

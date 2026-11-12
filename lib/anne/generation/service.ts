@@ -95,12 +95,16 @@ export async function resetDraft(db: Db, userId: string): Promise<void> {
 /** Yarıda kalmış üretimleri başarısız sayar; böylece hak geri gelir ve yeni üretim başlatılabilir. */
 export async function expireStale(db: Db, userId: string, now: Date = new Date()): Promise<void> {
   const cutoff = new Date(now.getTime() - STALE_PROCESSING_MS).toISOString()
-  await db
+  const { data: stale } = await db
     .from("app_generations")
-    .update({ status: "failed", error: GENERIC_FAILURE, error_detail: "stale: no result within limit", completed_at: now.toISOString() })
+    .select("id, user_id")
     .eq("user_id", userId)
     .eq("status", "processing")
     .lt("started_at", cutoff)
+  // Başarısızlık yolundan geçer: okunan ölçümler yeni taslağa taşınır.
+  for (const row of (stale ?? []) as Pick<GenerationRow, "id" | "user_id">[]) {
+    await failGeneration(db, row, "stale: no result within limit")
+  }
 }
 
 export type Allowance = { total: number; used: number; remaining: number; processing: boolean }
@@ -233,10 +237,19 @@ export async function listGenerations(db: Db, userId: string): Promise<PublicGen
     .eq("user_id", userId)
     .in("status", ["processing", "generated", "failed"])
     .order("created_at", { ascending: false })
-    .limit(30)
+    .limit(200)
+  let failedSeen = false
   return ((data ?? []) as GenerationRow[])
     // Resmi silinmiş başarılı üretim listede görünmez (kaydı hak hesabı için durur).
     .filter((row) => row.status !== "generated" || row.storage_path)
+    // Başarısız denemelerden yalnızca en sonuncusu gösterilir; eskileri resimleri listeden itmesin.
+    .filter((row) => {
+      if (row.status !== "failed") return true
+      if (failedSeen) return false
+      failedSeen = true
+      return true
+    })
+    .slice(0, 60)
     .map((row) => ({
     id: row.id,
     status: row.status as PublicGeneration["status"],

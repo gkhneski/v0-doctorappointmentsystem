@@ -76,7 +76,7 @@ export async function enhanceUltrasoundScientific(
         lastError = error
         if (isTransient(error)) {
           console.warn(`[Ultrasound4K Scientific] 503 retry ${attempt + 1}/3`)
-          await wait(3000 * (attempt + 1))
+          await wait(within(3000 * (attempt + 1), options.deadlineAt))
           continue
         }
         // Geçici olmayan hata: yedeğe geç
@@ -179,14 +179,15 @@ async function replicateFallback(image: Buffer, params: AiParameters, options: E
     let lastDownloadError: unknown = null
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const file = await doFetch(outputUrl, { signal: AbortSignal.timeout(60_000) })
+        if (options.deadlineAt && Date.now() >= options.deadlineAt) break
+        const file = await doFetch(outputUrl, { signal: AbortSignal.timeout(within(60_000, options.deadlineAt)) })
         if (!file.ok) throw new Error(`HTTP ${file.status}`)
         generated = Buffer.from(await file.arrayBuffer())
         break
       } catch (error) {
         lastDownloadError = error
         console.warn(`[Replicate Fallback] download retry ${attempt + 1}/3: ${describe(error)}`)
-        await wait(2000 * (attempt + 1))
+        await wait(within(2000 * (attempt + 1), options.deadlineAt))
       }
     }
     if (!generated) return { success: false, error: `Replicate çıktı indirilemedi: ${describe(lastDownloadError)}` }

@@ -33,7 +33,8 @@ export async function GET(request: Request) {
   return new NextResponse(file.stream(), {
     headers: {
       "Content-Type": "image/png",
-      "Cache-Control": "private, max-age=3600",
+      // Silinen resim tarayıcıda (özellikle ortak cihazda) kalmasın diye saklanmaz.
+      "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
       ...(download ? { "Content-Disposition": 'attachment; filename="bebegimin-yuzu.png"' } : {}),
     },
