@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { deleteAccount } from "@/lib/anne/auth"
 import { resolvePregnancyStart, todayInIstanbul } from "@/lib/anne/pregnancy"
-import { clearSessionCookie, publicProfile, requireAppUser } from "@/lib/anne/server"
+import { ALBUM_BUCKET, clearSessionCookie, publicProfile, requireAppUser } from "@/lib/anne/server"
 
 // Hastanın kendi hesabı. Her işlem oturumdaki hesabın kimliğiyle süzülür;
 // istekten hesap kimliği okunmaz.
@@ -63,6 +63,16 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   const gate = await requireAppUser(request)
   if (!gate.ok) return gate.response
+
+  // Fotoğraf dosyaları veritabanı zincirinin dışında durur; önce onlar silinir.
+  const { data: photos } = await gate.db.from("app_photos").select("storage_path").eq("user_id", gate.user.id)
+  const paths = (photos ?? []).map((p) => p.storage_path)
+  if (paths.length > 0) {
+    const removal = await gate.db.storage.from(ALBUM_BUCKET).remove(paths)
+    if (removal.error) {
+      return NextResponse.json({ error: "Hesap silinemedi. Lütfen yeniden deneyin." }, { status: 500 })
+    }
+  }
 
   if (!(await deleteAccount(gate.db, gate.user))) {
     return NextResponse.json({ error: "Hesap silinemedi. Lütfen yeniden deneyin." }, { status: 500 })

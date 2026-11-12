@@ -3,17 +3,22 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { resolvePregnancyStart } from "@/lib/anne/pregnancy"
-import { DateChoice, type DateKind } from "@/components/anne/date-choice"
+import { send } from "@/components/anne/api"
 
-/** Başlangıç formu; aynı form sonradan bilgileri düzeltmek için de kullanılır. */
+export type DateKind = "lmp" | "due"
+
+/** Başlangıç formu; aynı form Hesap ekranında bilgileri düzeltmek için de kullanılır. */
 export function StartForm({
   today,
   initial,
   submitLabel,
+  next,
 }: {
   today: string
   initial?: { displayName: string; kind: DateKind; value: string }
   submitLabel: string
+  /** Kaydedince gidilecek ekran. */
+  next: string
 }) {
   const router = useRouter()
   const [name, setName] = useState(initial?.displayName ?? "")
@@ -28,31 +33,31 @@ export function StartForm({
       setError(check.error)
       return
     }
-
     setBusy(true)
     setError("")
-    try {
-      const response = await fetch("/api/anne/ben", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName: name, ...(kind === "lmp" ? { lmp: value } : { dueDate: value }) }),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (response.status === 401) {
+    const result = await send(
+      "/api/anne/ben",
+      "PUT",
+      { displayName: name, ...(kind === "lmp" ? { lmp: value } : { dueDate: value }) },
+      "Kaydedilemedi. Lütfen yeniden deneyin.",
+    )
+    if (!result.ok) {
+      if (result.status === 401) {
         router.replace("/anne/giris")
         return
       }
-      if (!response.ok) {
-        setBusy(false)
-        setError(data.error ?? "Kaydedilemedi. Lütfen yeniden deneyin.")
-        return
-      }
-      router.replace("/anne/ana")
-      router.refresh()
-    } catch {
       setBusy(false)
-      setError("Bağlantı kurulamadı. İnternetinizi kontrol edip yeniden deneyin.")
+      setError(result.error)
+      return
     }
+    router.replace(next)
+    router.refresh()
+  }
+
+  function pick(nextKind: DateKind) {
+    setKind(nextKind)
+    setValue("")
+    setError("")
   }
 
   return (
@@ -62,41 +67,53 @@ export function StartForm({
         void save()
       }}
     >
-      <label className="anne-field">
-        <span>Adınız</span>
-        <input
-          className="anne-input"
-          type="text"
-          autoComplete="given-name"
-          maxLength={60}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <small>İsteğe bağlı. Yalnızca size hitap etmek için kullanılır.</small>
+      <label className="nb-label" htmlFor="anne-ad">
+        Sana nasıl hitap edelim? (isteğe bağlı)
       </label>
+      <input
+        id="anne-ad"
+        className="nb-field"
+        type="text"
+        autoComplete="given-name"
+        maxLength={60}
+        placeholder="Adın"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
-      <DateChoice
-        kind={kind}
+      <div className="nb-seg" role="group" aria-label="Hangi tarihi biliyorsun?">
+        <button type="button" aria-pressed={kind === "lmp"} onClick={() => pick("lmp")}>
+          Son adet tarihi
+        </button>
+        <button type="button" aria-pressed={kind === "due"} onClick={() => pick("due")}>
+          Tahmini doğum
+        </button>
+      </div>
+
+      <label className="nb-label" htmlFor="anne-tarih" style={{ marginTop: 16 }}>
+        {kind === "lmp" ? "Son adetinin ilk günü" : "Sana söylenen tahmini doğum tarihi"}
+      </label>
+      <input
+        id="anne-tarih"
+        className="nb-field"
+        type="date"
         value={value}
-        today={today}
-        onKind={(next) => {
-          setKind(next)
-          setValue("")
+        max={kind === "lmp" ? today : undefined}
+        min={kind === "due" ? today : undefined}
+        onChange={(e) => {
+          setValue(e.target.value)
           setError("")
         }}
-        onValue={(next) => {
-          setValue(next)
-          setError("")
-        }}
+        required
       />
 
       {error && (
-        <p className="anne-error" role="alert">
+        <p className="nb-error" role="alert">
           {error}
         </p>
       )}
-      <button className="anne-button" type="submit" disabled={busy || !value}>
-        <span>{busy ? "Kaydediliyor" : submitLabel}</span>
+      <button className="nb-btn" type="submit" disabled={busy || !value}>
+        {busy ? "Kaydediliyor" : submitLabel}
       </button>
     </form>
   )

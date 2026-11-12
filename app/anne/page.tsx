@@ -1,54 +1,41 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getAppUser } from "@/lib/anne/server"
-import { todayInIstanbul } from "@/lib/anne/pregnancy"
-import { WeekCalculator } from "@/components/anne/week-calculator"
+import { IMAGES } from "@/lib/anne/images"
+import { Blob, Screen, Slot, TopBar } from "@/components/anne/chrome"
 
 export const dynamic = "force-dynamic"
 
-// Girişsiz açılan sayfa: hafta hesabı herkes için çalışır; kayıtlar giriş ister.
-export default async function AnnePage() {
+// Karşılama. Giriş yapmış hasta doğrudan uygulamaya geçer.
+export default async function AnneKarsilamaPage() {
   const user = await getAppUser()
   if (user) redirect(user.onboarded_at ? "/anne/ana" : "/anne/baslangic")
 
   return (
-    <main>
-      <header className="anne-bar">
-        <span className="anne-brand">NeoBreed</span>
-        <Link href="/anne/giris">Giriş yap</Link>
-      </header>
-
-      <h1>Gebeliğinizin kaçıncı haftasındasınız?</h1>
-      <p className="anne-lead">
-        Son adet tarihinizi ya da size söylenen tahmini doğum tarihini girin. Girdiğiniz tarih bu telefondan dışarı
-        çıkmaz.
-      </p>
-
-      <WeekCalculator today={todayInIstanbul()} />
-
-      <section className="anne-section">
-        <h2>Haftanızı kaydedin</h2>
-        <p>Giriş yaparsanız haftanız her açılışta hazır olur; tarihi yeniden girmeniz gerekmez.</p>
-        <Link className="anne-button" data-kind="signal" href="/anne/giris">
-          <span>Telefon numarasıyla giriş yap</span>
+    <Screen>
+      <Blob tone="lilac" style={{ left: 150, top: -40, width: 330, height: 380 }} />
+      <Blob style={{ left: -70, top: 150, width: 520, height: 440 }} />
+      <TopBar>
+        <Link className="nb-skip" href="/anne/giris">
+          Geç
         </Link>
-      </section>
-
-      <section className="anne-section">
-        <h2>Ne zaman beklemeden başvurmalı</h2>
-        <p>Kanama, su gelmesi, bebek hareketlerinde azalma ve diğer işaretler tek sayfada.</p>
-        <Link className="anne-button" data-kind="plain" href="/anne/tehlike-isaretleri">
-          <span>Tehlike işaretleri</span>
+      </TopBar>
+      <main className="nb-main">
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 60 }}>
+          <Slot image={IMAGES.welcomeMother} width={250} height={325} />
+        </div>
+        <div className="nb-grow" />
+        <h1>
+          Bebeğin bu hafta
+          <br />
+          <b>ne kadar</b>
+          <br />
+          büyüdü?
+        </h1>
+        <Link className="nb-btn" href="/anne/tanitim" style={{ marginTop: 22 }}>
+          Başla
         </Link>
-      </section>
-
-      <footer className="anne-foot">
-        <p>
-          Bu hesap yalnızca takvim hesabıdır. Gebelik haftanızı ve tahmini doğum tarihinizi muayenede doktorunuz
-          belirler.
-        </p>
-        <p>Acil bir durumda 112 numarasını arayın.</p>
-      </footer>
-    </main>
+      </main>
+    </Screen>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { send } from "@/components/anne/api"
 
 /** Çıkış ve hesabı silme. Silme iki adımlıdır: önce sor, sonra sil. */
 export function AccountActions() {
@@ -13,69 +14,55 @@ export function AccountActions() {
   async function call(url: string, method: "POST" | "DELETE", failure: string) {
     setBusy(true)
     setError("")
-    try {
-      const response = await fetch(url, { method })
-      if (!response.ok && response.status !== 401) {
-        const data = await response.json().catch(() => ({}))
-        setBusy(false)
-        setError(data.error ?? failure)
-        return
-      }
-      router.replace("/anne")
-      router.refresh()
-    } catch {
+    const result = await send(url, method, undefined, failure)
+    if (!result.ok && result.status !== 401) {
       setBusy(false)
-      setError("Bağlantı kurulamadı. İnternetinizi kontrol edip yeniden deneyin.")
+      setError(result.error)
+      return
     }
+    router.replace("/anne")
+    router.refresh()
   }
 
   return (
     <div>
       {error && (
-        <p className="anne-error" role="alert">
+        <p className="nb-error" role="alert">
           {error}
         </p>
       )}
 
       <button
-        className="anne-button"
-        data-kind="plain"
+        className="nb-btn"
+        data-kind="light"
         type="button"
         disabled={busy}
         onClick={() => void call("/api/anne/cikis", "POST", "Çıkış yapılamadı. Lütfen yeniden deneyin.")}
       >
-        <span>Çıkış yap</span>
+        Çıkış yap
       </button>
 
       {!confirming ? (
-        <p className="anne-note" style={{ marginTop: 28 }}>
-          <button className="anne-linkbutton" type="button" disabled={busy} onClick={() => setConfirming(true)}>
-            Hesabımı sil
+        <p style={{ marginTop: 16, textAlign: "center", fontSize: 14 }}>
+          <button className="nb-link" type="button" disabled={busy} onClick={() => setConfirming(true)}>
+            Hesabımı ve tüm verilerimi sil
           </button>
         </p>
       ) : (
-        <div style={{ marginTop: 28 }}>
+        <div className="nb-card" data-tone="pink" style={{ marginTop: 16 }}>
           <p>
-            <strong>Hesabınız ve girdiğiniz bütün bilgiler kalıcı olarak silinecek.</strong> Bu işlem geri alınamaz.
+            <b>Hesabın, kayıtların ve fotoğrafların kalıcı olarak silinecek.</b> Bu işlem geri alınamaz.
           </p>
           <button
-            className="anne-button"
-            data-kind="signal"
+            className="nb-btn"
             type="button"
             disabled={busy}
             onClick={() => void call("/api/anne/ben", "DELETE", "Hesap silinemedi. Lütfen yeniden deneyin.")}
           >
-            <span>{busy ? "Siliniyor" : "Evet, hesabımı sil"}</span>
+            {busy ? "Siliniyor" : "Evet, hesabımı sil"}
           </button>
-          <button
-            className="anne-button"
-            data-kind="plain"
-            style={{ marginTop: 12 }}
-            type="button"
-            disabled={busy}
-            onClick={() => setConfirming(false)}
-          >
-            <span>Vazgeç</span>
+          <button className="nb-btn" data-kind="light" type="button" disabled={busy} onClick={() => setConfirming(false)}>
+            Vazgeç
           </button>
         </div>
       )}

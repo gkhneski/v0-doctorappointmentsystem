@@ -1,7 +1,10 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { redirect } from "next/navigation"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { SESSION_COOKIE, resolveSession, type AppUser } from "@/lib/anne/auth"
+import { hasRequiredConsents } from "@/lib/anne/consents"
+import { gestationalAge, todayInIstanbul, type GestationalAge } from "@/lib/anne/pregnancy"
 
 // Hasta uygulamasının sunucu tarafı kapısı. /api/anne altındaki her yol (giriş yolları
 // dışında) işe requireAppUser ile başlar; tests/guards/anne-routes.test.ts bunu denetler.
@@ -76,4 +79,31 @@ export function publicProfile(user: AppUser) {
     dueDateSource: user.due_date_source,
     onboarded: Boolean(user.onboarded_at),
   }
+}
+
+/** Albüm fotoğraflarının durduğu, herkese kapalı depo. */
+export const ALBUM_BUCKET = "anne-album"
+
+export type ReadyUser = { user: AppUser & { lmp_date: string; due_date: string }; today: string; age: GestationalAge }
+
+/**
+ * Giriş yapmış, başlangıç formunu doldurmuş ve zorunlu onayları vermiş hasta.
+ * Eksik adım varsa ilgili ekrana yönlendirir. Sayfalarda (sunucu bileşenleri) kullanılır.
+ */
+export async function requireReadyUser(): Promise<ReadyUser> {
+  const user = await getAppUser()
+  if (!user) redirect("/anne/giris")
+  if (!user.onboarded_at || !user.lmp_date || !user.due_date) redirect("/anne/baslangic")
+  if (!(await hasRequiredConsents(appDb(), user.id))) redirect("/anne/onay")
+
+  const today = todayInIstanbul()
+  const age = gestationalAge(user.lmp_date, today)
+  if (!age) redirect("/anne/hesap")
+  return { user: { ...user, lmp_date: user.lmp_date, due_date: user.due_date }, today, age }
+}
+
+/** Sağlık verisi saklayan yollar için: zorunlu onaylar yoksa 403. */
+export async function consentBlock(gate: Extract<AppGate, { ok: true }>): Promise<NextResponse | null> {
+  if (await hasRequiredConsents(gate.db, gate.user.id)) return null
+  return NextResponse.json({ error: "Önce onayları tamamlamanız gerekiyor." }, { status: 403 })
 }

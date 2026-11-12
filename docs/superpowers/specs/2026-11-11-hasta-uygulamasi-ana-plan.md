@@ -455,3 +455,25 @@ Bebek yüzü, hafta içeriği, Bakanlık takvimi, günlük kayıtlar ve klinik g
 - Mozilla gizlilik incelemesi: https://www.mozillafoundation.org/en/research/library/in-post-roe-v-wade-era-mozilla-labels-18-of-25-popular-period-and-pregnancy-tracking-tech-with-privacy-not-included-warning/
 - Abonelik kıyaslamaları: https://adapty.io/state-of-in-app-subscriptions/
 - Hatıra ultrasonu (FDA): https://www.fiercehealthcare.com/it/fda-issues-update-discouraging-keepsake-ultrasounds
+
+## 9b. 12 Kasım 2026 (öğleden sonra): tasarım kararı ve 16 ekran
+
+**Tasarım kararı.** İlk üç deneme (siyah-beyaz "Cetvel", toprak tonlu "Bahçe", renkli "Şenlik") kullanıcı tarafından reddedildi: uygulama kılavuz gibi değil, eğlenceli bir tüketici uygulaması gibi görünmeli. Kullanıcı örnek olarak bir Dribbble çalışmasını gösterdi (Pregnancy And Period Tracker Onboarding, SK Radwoan / Kites Design) ve şu kuralları koydu: bütün ekranlar o dile uyacak, en fazla iki yazı tipi, yapay zekâ işi görünen hiçbir şey olmayacak. Uygulanan dil: kırık beyaz zemin, düz pembe ve lila şekiller, siyah hap düğmeler, tek yazı ailesi (Urbanist), ince-kalın karışık başlıklar, büyük görsel üstte kısa metin altta. Hitap "sen".
+
+**Görseller.** Örnekteki 3B karakterler o tasarımcıya aittir, kopyalanmadı. Kullanıcı kendi görsellerini verecek. Yuvalar `lib/anne/images.ts` içinde tanımlı; görsel gelene kadar ekranda kesikli çerçeve görünür. Dosyalar `public/anne/gorsel/` altına konup yol o dosyaya yazılır.
+
+**Kurulan ekranlar (16).** Karşılama, tanıtım, giriş (telefon ve kod), başlangıç, onaylar, bugün, bebeğim, yolculuk, tekme, isim bulucu, günün sorusu (oyun), albüm, sor, hafta kartı, tehlike işaretleri, hesap.
+
+**Yeni tablolar** (`scripts/anne/02_ekranlar.sql`, canlı veritabanına uygulandı): `app_kick_sessions`, `app_name_likes`, `app_visit_questions`, `app_photos` ve herkese kapalı `anne-album` dosya deposu. Onaylar `app_consents` tablosuna yazılıyor; zorunlu iki onay olmadan ana ekranlar açılmıyor ve sağlık verisi saklanmıyor.
+
+**Bilinçli sınırlar.**
+- Sor ekranı yanıt üretmez: onaylı yanıt bankası boş olduğu için her soru vizite listesine eklenir (İ1'in ilk yarısı). Bankanın ve doktor ekranının kurulması sırada.
+- Tekme sayısı yalnızca saklanır; hedef ya da değerlendirme gösterilmez.
+- Albümde hafta elle yazılır; ultrason çıktısından haftayı okuma (İ3) ve 40 haftalık video yapılmadı.
+- İsim bulucuda eş daveti ve eşleşme yapılmadı; liste 24 isimle başladı.
+- Boy benzetmeleri (`lib/anne/content/sizes.ts`) Bakanlık kaynağında yoktur, bize aittir; ekranda bu açıkça yazar.
+- Onay metinleri (KVKK aydınlatma, açık rıza) hâlâ yok; yerleri köşeli parantezle belli, sürüm `taslak-1`.
+- Bildirim onayı kaydediliyor ama bildirim gönderen bir düzenek henüz yok.
+- Girişsiz hafta hesaplayıcısı kaldırıldı; hafta artık giriş sonrasında gösteriliyor.
+
+**Dr. Eray'ın onayını bekleyen yeni içerik:** günün soruları (7 soru), boy benzetmeleri (36 hafta), isim listesi.
