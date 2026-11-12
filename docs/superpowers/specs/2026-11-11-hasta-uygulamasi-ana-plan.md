@@ -542,4 +542,14 @@ Kanıt şöyle üretildi: eski Python kodu **hiç değiştirilmeden** çalışt�
 - **Çerçevedeki site adresi** hâlâ `neobreedai.com` (bırakılan eski sistemin adresi) ve doktorun adı yazıyor; bölüm 5.1'deki tanıtım yönetmeliği kaygısı geçerli. Avukat incelemesinde ele alınmalı.
 - **Ödeme yok:** ilk haktan sonra "yeni haklar yakında" yazar. Bir hesaba hak eklemek için şimdilik veritabanında `generation_allowance` artırılır.
 - **Yurt dışı aktarım sözleşmesi** (5.2) imzalanmadı; avukat en sonda inceleyecek (9c).
+- **9e ile kapandı:** çerçevedeki yazılarla ilgili iki madde (üst üste binme, site adresi ve doktor adı).
 - Yerel `next build`, bu işten bağımsız olarak `/_global-error` ön işlemesinde hata veriyor (değişikliklerden önce de veriyordu); Vercel'de derleme sorunsuz.
+
+## 9e. 12 Kasım 2026 (gece): çerçevedeki yazılar kaldırıldı
+
+**Karar (kullanıcı).** İlk canlı üretimi gören kullanıcı çerçevenin altındaki yazıların ("Ultrason 4K", ad, "Prof. Dr. Eray Caliskan | neobreedai.com") kaldırılmasını istedi. Bu, 9d'deki "eskisiyle aynı" kuralından kullanıcının kendi verdiği tek sapmadır.
+
+- Çerçevenin kendisi, ölçüleri ve gölgesi aynıdır; yalnızca alt bant boştur (`addPolaroidFrame(..., { withText: false })`). Sınama, yazısız çerçevenin bant dışında eski çıktıyla piksel piksel aynı olduğunu ve bandın tek renk olduğunu denetler.
+- Yazılı çerçeve kodu ve aynılık sınamaları duruyor; yazılar istenirse tek satırla geri gelir.
+- O ana kadar üretilmiş resim (1 adet) depoda yazısız haliyle değiştirildi.
+- Böylece 9d'deki iki açık nokta kapandı: adın doktor yazısının üstüne binmesi ve resimde doktor adı ile eski site adresinin yer alması (5.1).

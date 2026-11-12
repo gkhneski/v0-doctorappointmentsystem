@@ -145,5 +145,24 @@ describe("çerçeve", () => {
       expect(inside.differing).toBeLessThan(0.15)
       expect(inside.meanDelta).toBeLessThan(3)
     })
+
+    it(`${f.name}: yazısız çerçeve aynı çerçevedir, yalnızca alt bant boştur`, async () => {
+      const plain = await addPolaroidFrame(file(`frame-${f.name}-input.png`), { withText: false })
+      const expected = file(`frame-${f.name}-output.png`)
+      const meta = await sharp(plain).metadata()
+      const shadow = Math.max(6, Math.trunc(f.width * 0.008))
+      const side = Math.trunc(f.width * 0.045)
+      const bandTop = shadow + Math.trunc(f.height * 0.045) + f.height + 2
+      const band = { x: 0, y: bandTop, width: meta.width!, height: meta.height! - bandTop }
+
+      expect(await diffImages(plain, expected, { ...band, outside: true })).toEqual({ sameSize: true, differing: 0, maxDelta: 0, meanDelta: 0 })
+
+      // Kartonun alt bandı tek renktir: hiçbir yazı yok.
+      const inner = { left: shadow + side, top: bandTop + 2, width: f.width, height: Math.trunc(f.height * 0.13) - 6 }
+      const { data } = await sharp(plain).extract(inner).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+      for (let i = 0; i < data.length; i += 3) {
+        if (data[i] !== 242 || data[i + 1] !== 242 || data[i + 2] !== 240) throw new Error("alt bantta yazı ya da leke var")
+      }
+    })
   }
 })
