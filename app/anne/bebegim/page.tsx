@@ -4,6 +4,7 @@ import { WEEKS_SOURCE, weekContent } from "@/lib/anne/content/weeks"
 import { sizeComparison } from "@/lib/anne/content/sizes"
 import { SOURCES } from "@/lib/anne/content/sources"
 import { babyImage } from "@/lib/anne/images"
+import { MIN_GENERATION_WEEK } from "@/lib/anne/generation/limits"
 import { Blob, Screen, Slot, Tabs, TopBar } from "@/components/anne/chrome"
 
 export const dynamic = "force-dynamic"
@@ -82,6 +83,11 @@ export default async function AnneBebegimPage({ searchParams }: { searchParams: 
             )}
           </div>
         )}
+
+        <Link className="nb-card nb-row-card" data-tone="dark" href="/anne/yuz">
+          <h3>Bebeğinin yüzünü gör</h3>
+          <span className="nb-chip">{age.weeks >= MIN_GENERATION_WEEK ? "Üret" : `${MIN_GENERATION_WEEK}. haftada`}</span>
+        </Link>
 
         {content && (
           <div className="nb-card" style={{ padding: "16px 18px" }}>
