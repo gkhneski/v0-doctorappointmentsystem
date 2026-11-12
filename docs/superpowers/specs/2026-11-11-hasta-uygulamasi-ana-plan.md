@@ -274,7 +274,7 @@ Kural: her adım önce ön izleme ortamında, hem herkese açık randevu akış�
 
 **Adım 0.6 — Veritabanı kuralları ve dosyalar**
 
-> **Durum (Plan 3, `scripts/rls/`):** 11.11.2026'da canlıya uygulandı ve dışarıdan doğrulandı: **G21** (01), form belirteçleri + girişsiz randevu ekleme (02, ek bulgu), **G25** (03), **G26** (04). **G20** (05), **G22** (06), **G23** (07), **G24** (08). Girişsiz erişilebilen yalnızca `doctors`, `doctor_schedules` ve `doctor_weekly_patterns` okuması kaldı. **Bekleyen:** admin ekranlarının personel oturumuyla denenmesi (gebelik sekmesi, not ekleme, hasta düzenleme ve fotoğraf, belge yükleme/görme, SMS şablonları, serbest SMS); sorun çıkarsa ilgili `NN_geri_al.sql`. **G27** kodu yazıldı, canlıya alınmayı bekliyor.
+> **Durum (Plan 3, `scripts/rls/`):** 11.11.2026'da canlıya uygulandı ve dışarıdan doğrulandı: **G21** (01), form belirteçleri + girişsiz randevu ekleme (02, ek bulgu), **G25** (03), **G26** (04). **G20** (05), **G22** (06), **G23** (07), **G24** (08). Girişsiz erişilebilen yalnızca `doctors`, `doctor_schedules` ve `doctor_weekly_patterns` okuması kaldı. **Bekleyen:** admin ekranlarının personel oturumuyla denenmesi (gebelik sekmesi, not ekleme, hasta düzenleme ve fotoğraf, belge yükleme/görme, SMS şablonları, serbest SMS); sorun çıkarsa ilgili `NN_geri_al.sql`. **G27** 12.11.2026'da canlıya alındı.
 
 | No | Bulgu | Yapılacak | Bozulma riski ve önlemi |
 |---|---|---|---|
@@ -289,7 +289,7 @@ Kural: her adım önce ön izleme ortamında, hem herkese açık randevu akış�
 
 **Adım 0.7 — Roller ve sertleştirme**
 
-> **Durum (11.11.2026):** **S7 kararı verildi:** hemşire ile sekreter aynı haklara sahip. Yalnızca doktora ait olanlar: personel yönetimi, hasta silme, SMS şablonu oluşturma/düzenleme/silme. Randevu silme ve belge işlemleri sekreterlerin günlük işi olduğu için tüm personele açık bırakıldı. **G28** ve **G29** (çerçeve engeli ve temel başlıklar; tam içerik güvenlik politikası hariç) kodu yazıldı; **G31**'in herkese açık iki yoldaki kısmı yazıldı. Hepsi ön izleme ve canlıya alma bekliyor. **G30** kodu yazıldı (12.11.2026): dokuz gönderim yeri `lib/sms.ts` içindeki tek işleve bağlandı, şifre adres satırı yerine yetki başlığında gidiyor (sağlayıcının `rest/v2` yolu). Gerçek giriş bilgileriyle gönderim yalnızca ön izlemede denenebilir; canlıya almadan önce en az bir gerçek SMS (Türkçe karakterli bir şablon dahil) denenmeli. **Bekleyen:** G31'in kalanı (tip hataları, diğer yollar), tam içerik güvenlik politikası.
+> **Durum (11.11.2026):** **S7 kararı verildi:** hemşire ile sekreter aynı haklara sahip. Yalnızca doktora ait olanlar: personel yönetimi, hasta silme, SMS şablonu oluşturma/düzenleme/silme. Randevu silme ve belge işlemleri sekreterlerin günlük işi olduğu için tüm personele açık bırakıldı. **G28** ve **G29** (çerçeve engeli ve temel başlıklar; tam içerik güvenlik politikası hariç) kodu yazıldı; **G31**'in herkese açık iki yoldaki kısmı yazıldı. Bunlar 12.11.2026'da canlıya alındı. **G30** 12.11.2026'da yazıldı ve kullanıcının kararıyla aynı gün canlıya alındı: dokuz gönderim yeri `lib/sms.ts` içindeki tek işleve bağlandı, şifre adres satırı yerine yetki başlığında gidiyor (sağlayıcının `rest/v2` yolu). Canlıya alınırken gerçek gönderim denenmemişti; ilk gerçek SMS (Türkçe karakterli bir şablon dahil) canlıda doğrulanmalı, sorun çıkarsa bu commit geri alınır. **Bekleyen:** G31'in kalanı (tip hataları, diğer yollar), tam içerik güvenlik politikası.
 
 | No | Bulgu | Yapılacak |
 |---|---|---|
