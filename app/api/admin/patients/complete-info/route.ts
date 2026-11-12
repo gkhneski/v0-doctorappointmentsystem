@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
+import { sendSms } from "@/lib/sms"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
-import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
+import { normalizePhone } from "@/lib/phone"
 import { requireAdmin } from "@/lib/require-admin"
 import { generateVerificationCode } from "@/lib/secure-random"
 
@@ -79,42 +80,28 @@ export async function POST(request: Request) {
       )
     }
 
-    // Netgsm API'sine SMS gönder
-    const netgsmUser = process.env.NETGSM_USER
-    const netgsmPassword = process.env.NETGSM_PASSWORD
-    const netgsmHeader = process.env.NETGSM_HEADER || "SAGLIK"
+    const smsMessage = `KVKK Onay Kodunuz: ${verificationCode}
 
-    if (!netgsmUser || !netgsmPassword) {
-      return NextResponse.json({
-        success: true,
-        message: "Development mode - Kod konsola yazdırıldı",
-        code: verificationCode, // Sadece development için
-      })
-    }
+Kod 5 dakika geçerlidir.
+Prof. Dr. Eray Caliskan`
+    const sms = await sendSms(phone, smsMessage)
 
-    const smsMessage = `KVKK Onay Kodunuz: ${verificationCode}\n\nKod 5 dakika geçerlidir.\nProf. Dr. Eray Caliskan`
-
-    const netgsmUrl = `https://api.netgsm.com.tr/sms/send/get/?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${toNetgsmNumber(phone) ?? phone}&message=${encodeURIComponent(smsMessage)}&msgheader=${netgsmHeader}`
-
-    const response = await fetch(netgsmUrl)
-    const responseText = await response.text()
-
-    if (responseText.startsWith("00") || responseText.startsWith("01")) {
+    if (sms.sent) {
       return NextResponse.json({
         success: true,
         message: "SMS gönderildi",
       })
-    } else {
-      // SMS gönderilemedi ama kod oluşturuldu - development için
-      if (responseText === "30") {
-        return NextResponse.json({
-          success: true,
-          message: "Development mode - Kod konsola yazdırıldı",
-          code: verificationCode,
-        })
-      }
-      throw new Error(`Netgsm error: ${responseText}`)
     }
+
+    // SMS ayarı yoksa ya da giriş bilgisi reddedildiyse (geliştirme ortamı) kod personele gösterilir
+    if (sms.code === "credentials_missing" || sms.code === "30") {
+      return NextResponse.json({
+        success: true,
+        message: "Development mode - Kod konsola yazdırıldı",
+        code: verificationCode,
+      })
+    }
+    throw new Error(`SMS not sent: ${sms.code}`)
   } catch (error) {
     console.error("Complete patient info error:", error)
     return NextResponse.json(

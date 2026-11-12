@@ -1,31 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
-import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
+import { sendSms } from "@/lib/sms"
+import { normalizePhone, phoneVariants } from "@/lib/phone"
 import { SITE_URL } from "@/lib/site-url"
 import { requireAdmin } from "@/lib/require-admin"
 
 const GOOGLE_MAPS_LINK = "https://maps.google.com/?q=Prof+Dr+Eray+Caliskan+Kadin+Hastaliklari+Istanbul"
-
-async function sendSMS(phone: string, message: string): Promise<boolean> {
-  const netgsmUser = process.env.NETGSM_USER
-  const netgsmPassword = process.env.NETGSM_PASSWORD
-  const netgsmHeader = process.env.NETGSM_HEADER || "SAGLIK"
-
-  if (!netgsmUser || !netgsmPassword) return false
-
-  const cleanPhone = toNetgsmNumber(phone) ?? phone.replace(/\D/g, "")
-
-  const url = `https://api.netgsm.com.tr/sms/send/get/?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${cleanPhone}&message=${encodeURIComponent(message)}&msgheader=${netgsmHeader}`
-
-  try {
-    const res = await fetch(url)
-    const result = await res.text()
-    return result.trim().startsWith("00") || result.trim().startsWith("01")
-  } catch {
-    return false
-  }
-}
 
 export async function POST(request: Request) {
   const gate = await requireAdmin()
@@ -88,7 +69,7 @@ export async function POST(request: Request) {
       `Online randevu icin web sitemiz:\n${SITE_URL}\n\n` +
       `Klinigimizin konumu icin:\n${GOOGLE_MAPS_LINK}`
 
-    const smsSent = await sendSMS(phone, smsMessage)
+    const smsSent = (await sendSms(phone, smsMessage)).sent
 
     // sent_messages tablosuna kaydet
     await supabaseAdmin.from("sent_messages").insert({

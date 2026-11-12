@@ -1,55 +1,16 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { sendSms } from "@/lib/sms"
 import { SITE_URL } from "@/lib/site-url"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
 import { recordAppointmentAudit } from "@/lib/appointment-audit"
-import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
+import { normalizePhone } from "@/lib/phone"
 import { generateUrlToken } from "@/lib/secure-random"
 
 function getTomorrowInIstanbul() {
   const istanbulNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }))
   istanbulNow.setDate(istanbulNow.getDate() + 1)
   return `${istanbulNow.getFullYear()}-${String(istanbulNow.getMonth() + 1).padStart(2, "0")}-${String(istanbulNow.getDate()).padStart(2, "0")}`
-}
-
-async function sendSMS(phone: string, message: string) {
-  const netgsmUser = process.env.NETGSM_USER
-  const netgsmPassword = process.env.NETGSM_PASSWORD
-  const netgsmHeader = process.env.NETGSM_HEADER || "SAGLIK"
-
-  if (!netgsmUser || !netgsmPassword) {
-    console.error("NETGSM credentials not found")
-    return { sent: false, providerReference: "credentials_missing" }
-  }
-
-  // "+90 532...", "90532...", "532..." hepsi kabul edilir
-  const cleanPhone = toNetgsmNumber(phone)
-  if (!cleanPhone) {
-    console.error("Invalid patient phone format")
-    return { sent: false, providerReference: "invalid_phone" }
-  }
-
-  const params = new URLSearchParams({
-    usercode: netgsmUser,
-    password: netgsmPassword,
-    gsmno: cleanPhone,
-    message,
-    msgheader: netgsmHeader,
-  })
-
-  try {
-    const response = await fetch(`https://api.netgsm.com.tr/sms/send/get/?${params}`, {
-      signal: AbortSignal.timeout(15_000),
-    })
-    const result = (await response.text()).trim()
-    const sent = response.ok && (result.startsWith("00") || result.startsWith("01"))
-
-    if (!sent) console.error("NETGSM rejected reminder:", result)
-    return { sent, providerReference: result.slice(0, 200) }
-  } catch (error) {
-    console.error("SMS send error:", error)
-    return { sent: false, providerReference: "network_error" }
-  }
 }
 
 export async function GET(request: Request) {
@@ -121,7 +82,7 @@ export async function GET(request: Request) {
 
       const message = `Merhaba ${appointment.patients?.full_name},\n\nYarinki randevunuzu hatirlatmak isteriz.\nTarih: ${new Date(appointment.appointment_date).toLocaleDateString("tr-TR")}\nSaat: ${appointment.appointment_time}\n${documentSection}\nRandevunuza gelip gelmeyeceginizi lutfen bildirin:\n${confirmUrl}`
 
-      const smsResult = await sendSMS(appointment.patients?.phone || "", message)
+      const smsResult = await sendSms(appointment.patients?.phone, message, { strictPhone: true })
 
       if (smsResult.sent) {
         // Mark as sent
@@ -150,12 +111,12 @@ export async function GET(request: Request) {
           messageText: message,
           channel: "sms",
           deliveryStatus: "accepted_by_provider",
-          providerReference: smsResult.providerReference,
+          providerReference: smsResult.reference,
         })
 
         successCount++
       } else {
-        console.error("Reminder SMS failed for appointment:", appointment.id, smsResult.providerReference)
+        console.error("Reminder SMS failed for appointment:", appointment.id, smsResult.reference)
       }
     }
 

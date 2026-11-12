@@ -1,5 +1,5 @@
 import { getDocumentListByType } from "./send-document-list-sms"
-import { toNetgsmNumber } from "@/lib/phone"
+import { sendSms } from "@/lib/sms"
 
 export async function sendRescheduleSMS(
   phone: string,
@@ -36,34 +36,5 @@ Not: Evraklar zorunlu degildir ama onerilir.
 Prof. Dr. Eray Caliskan
 Kadin Hastaliklari ve Dogum Uzmani`
 
-  const params = new URLSearchParams({
-    usercode: process.env.NETGSM_USER || "",
-    password: process.env.NETGSM_PASSWORD || "",
-    gsmno: toNetgsmNumber(phone) ?? phone.replace(/\D/g, ""),
-    message: message,
-    msgheader: process.env.NETGSM_HEADER || "SAGLIK",
-  })
-
-  try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 saniye timeout
-
-    const response = await fetch(
-      `https://api.netgsm.com.tr/sms/send/get/?${params}`,
-      { 
-        method: "GET",
-        signal: controller.signal 
-      }
-    )
-
-    clearTimeout(timeoutId)
-
-    const result = await response.text()
-
-    return result.startsWith("00") || result.includes("ID:")
-  } catch (error) {
-    // Hata loglama ama throw etme - SMS hatasi kritik degil
-    console.error("Reschedule SMS sending error:", error)
-    return false
-  }
+  return (await sendSms(phone, message, { timeoutMs: 10_000 })).sent
 }

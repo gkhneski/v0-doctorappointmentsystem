@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { sendSms } from "@/lib/sms"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { resolvePatient, PENDING_PATIENT_KEY } from "@/lib/resolve-patient"
@@ -10,7 +11,7 @@ import {
   smsOutcome,
 } from "@/lib/public-booking"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import { normalizePhone, phoneVariants, toNetgsmNumber } from "@/lib/phone"
+import { normalizePhone, phoneVariants } from "@/lib/phone"
 import { validatePublicBooking } from "@/lib/validate-booking"
 import { generateUrlToken, generateVerificationCode } from "@/lib/secure-random"
 
@@ -271,28 +272,15 @@ export async function POST(request: Request) {
 
     if (smsError) throw smsError
 
-    let smsStatus = "sent"
-
-    try {
-      const netgsmUser = process.env.NETGSM_USER
-      const netgsmPassword = process.env.NETGSM_PASSWORD
-      const netgsmHeader = process.env.NETGSM_HEADER
-
-      if (netgsmUser && netgsmPassword && netgsmHeader) {
-        const formattedPhone = toNetgsmNumber(patient_phone) ?? patient_phone.replace(/\D/g, "")
-        const smsMessage = `Dogrulama kodunuz: ${verificationCode}. Bu kodu randevu islemini tamamlamak icin kullanin.`
-        const smsUrl = `https://api.netgsm.com.tr/sms/send/get?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${formattedPhone}&message=${encodeURIComponent(smsMessage)}&msgheader=${netgsmHeader}`
-        const smsResponse = await fetch(smsUrl)
-        const smsResult = await smsResponse.text()
-        if (!smsResult.startsWith("00") && !smsResult.startsWith("01")) {
-          smsStatus = "failed"
-        }
-      } else {
-        smsStatus = "dev_mode"
-      }
-    } catch {
-      smsStatus = "error"
-    }
+    const smsMessage = `Dogrulama kodunuz: ${verificationCode}. Bu kodu randevu islemini tamamlamak icin kullanin.`
+    const sms = await sendSms(patient_phone, smsMessage)
+    const smsStatus = sms.sent
+      ? "sent"
+      : sms.code === "credentials_missing"
+        ? "dev_mode"
+        : sms.code === "network_error"
+          ? "error"
+          : "failed"
 
     const outcome = smsOutcome(isVerifiedAdmin, smsStatus === "sent", verificationCode)
     if (outcome.action === "rollback") {

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { sendSms } from "@/lib/sms"
 import { normalizePhone, toNetgsmNumber } from "@/lib/phone"
 import { requireAdmin } from "@/lib/require-admin"
 
@@ -25,33 +26,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Gerekli alanlar eksik" }, { status: 400 })
     }
 
-    const cleanPhone = toNetgsmNumber(patientPhone)
-    if (!cleanPhone) {
+    if (!toNetgsmNumber(patientPhone)) {
       return NextResponse.json({ error: "Geçerli bir cep telefonu numarası yok" }, { status: 400 })
     }
 
-    // NETGSM credentials from environment
-    const netgsmUser = process.env.NETGSM_USER
-    const netgsmPassword = process.env.NETGSM_PASSWORD
-    const netgsmHeader = process.env.NETGSM_HEADER
+    const sms = await sendSms(patientPhone, message, { strictPhone: true })
 
-    if (!netgsmUser || !netgsmPassword || !netgsmHeader) {
+    if (sms.code === "credentials_missing") {
       return NextResponse.json({ error: "NETGSM yapılandırması eksik" }, { status: 500 })
     }
-
-    // Send SMS via NETGSM API
-    const netgsmUrl = `https://api.netgsm.com.tr/sms/send/get/?usercode=${netgsmUser}&password=${netgsmPassword}&gsmno=${cleanPhone}&message=${encodeURIComponent(message)}&msgheader=${netgsmHeader}`
-
-    const netgsmResponse = await fetch(netgsmUrl)
-    const netgsmResult = await netgsmResponse.text()
-
-    // NETGSM returns response codes: 00, 01, 02, etc.
-    // 00 or 01 = success
-    const isSuccess = netgsmResult.trim().startsWith("00") || netgsmResult.trim().startsWith("01")
-
-    if (!isSuccess) {
-      console.error("NETGSM Error:", netgsmResult)
-      return NextResponse.json({ error: `SMS gönderilemedi: ${netgsmResult}` }, { status: 400 })
+    if (!sms.sent) {
+      return NextResponse.json({ error: `SMS gönderilemedi: ${sms.code}` }, { status: 400 })
     }
 
     // Save to sent_messages table

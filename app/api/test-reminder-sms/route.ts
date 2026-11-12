@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
 import { NextResponse } from "next/server"
+import { sendSms } from "@/lib/sms"
 import { SITE_URL } from "@/lib/site-url"
 import { getDocumentListByType } from "@/lib/send-document-list-sms"
 import { getAdminAuth } from "@/lib/admin-auth"
@@ -42,21 +43,10 @@ export async function POST(request: Request) {
     const message = `Merhaba ${appointment.patients?.full_name},\n\nYarinki randevunuzu hatirlatmak isteriz.\nTarih: ${new Date(appointment.appointment_date).toLocaleDateString("tr-TR")}\nSaat: ${appointment.appointment_time}\n${documentSection}\nRandevunuza gelip gelmeyeceginizi lutfen bildirin:\n${confirmUrl}`
 
     // Send SMS
-    const smsResponse = await fetch(
-      "https://api.netgsm.com.tr/sms/send/get?" +
-        new URLSearchParams({
-          usercode: process.env.NETGSM_USER || "",
-          password: process.env.NETGSM_PASSWORD || "",
-          gsmno: appointment.patients?.phone || "",
-          message: message,
-          msgheader: process.env.NETGSM_HEADER || "",
-        })
-    )
+    const sms = await sendSms(appointment.patients?.phone, message)
 
-    const smsResult = await smsResponse.text()
-
-    if (!smsResult.startsWith("00")) {
-      return NextResponse.json({ error: "SMS gonderilemedi: " + smsResult }, { status: 500 })
+    if (!sms.sent) {
+      return NextResponse.json({ error: "SMS gonderilemedi: " + sms.code }, { status: 500 })
     }
 
     const sentAt = new Date().toISOString()
@@ -73,7 +63,7 @@ export async function POST(request: Request) {
       messageText: message,
       channel: "sms",
       deliveryStatus: "sent",
-      providerReference: smsResult.trim(),
+      providerReference: sms.reference,
     })
 
     return NextResponse.json({

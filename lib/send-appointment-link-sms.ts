@@ -1,4 +1,4 @@
-import { toNetgsmNumber } from "@/lib/phone"
+import { sendSms } from "@/lib/sms"
 // Randevu tipi slug -> okunabilir isim
 const APPOINTMENT_TYPE_NAMES: Record<string, string> = {
   "asilama-tup-bebek": "Asilama/Tup Bebek",
@@ -45,23 +45,5 @@ export async function sendAppointmentLinkSMS(
 
   const message = `Sayin ${patientName}, randevunuz basariyla olusturuldu.${dateTimeInfo} Randevu Tipi: ${typeName}.${nonFetalWarning} Randevu saatinizden once lutfen klinige geliniz.`
 
-  const params = new URLSearchParams({
-    usercode: process.env.NETGSM_USER || "",
-    password: process.env.NETGSM_PASSWORD || "",
-    gsmno: toNetgsmNumber(phone) ?? phone.replace(/\D/g, ""),
-    message: message,
-    msgheader: process.env.NETGSM_HEADER || "SAGLIK",
-  })
-
-  try {
-    const response = await fetch(`https://api.netgsm.com.tr/sms/send/get/?${params}`, {
-      method: "GET",
-    })
-
-    const result = await response.text()
-    return result.startsWith("00") || result.includes("ID:")
-  } catch (error) {
-    console.error("SMS sending error:", error)
-    return false
-  }
+  return (await sendSms(phone, message)).sent
 }
