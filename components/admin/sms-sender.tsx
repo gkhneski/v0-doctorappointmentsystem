@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { MessageSquare } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
+import { EMPTY_SELECTION, applyItemsBlock, buildItemsBlock, toggleItem, type SelectedItems } from "@/lib/sms-item-list"
 
 type Template = {
   id: string
@@ -47,72 +48,27 @@ export function SmsSender({ patientId, patientName, patientPhone }: Props) {
   const [message, setMessage] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [predefinedLists, setPredefinedListsState] = useState<PredefinedList[]>([])
-  const [selectedItems, setSelectedItems] = useState<{
-    medication: string[]
-    vitamin: string[]
-    test: string[]
-  }>({
-    medication: [],
-    vitamin: [],
-    test: [],
-  })
+  const [selectedItems, setSelectedItems] = useState<SelectedItems>(EMPTY_SELECTION)
+  // Mesajın içinde şu an duran, kutucuklardan üretilmiş bölüm.
+  const [itemsBlock, setItemsBlock] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState<string>("")
   const [selectedPredefinedLists, setSelectedPredefinedLists] = useState<Record<string, boolean>>({})
   const [listContents, setListContents] = useState<Record<string, string>>({})
 
-  const handleItemToggle = (category: "medication" | "vitamin" | "test", item: string) => {
-    setSelectedItems((prev) => {
-      const categoryItems = prev[category]
-      const isSelected = categoryItems.includes(item)
-      
-      return {
-        ...prev,
-        [category]: isSelected
-          ? categoryItems.filter((i) => i !== item)
-          : [...categoryItems, item],
-      }
-    })
+  // Kutucuk işaretlendiği anda mesaj güncellenir; ayrı bir ekleme adımı yoktur.
+  const handleItemToggle = (category: keyof SelectedItems, item: string) => {
+    const nextSelection = toggleItem(selectedItems, category, item)
+    const nextBlock = buildItemsBlock(nextSelection)
+    setSelectedItems(nextSelection)
+    setMessage(applyItemsBlock(message, itemsBlock, nextBlock, patientName))
+    setItemsBlock(nextBlock)
   }
 
-  const handleAddSelectedToMessage = () => {
-    const { medication, vitamin, test } = selectedItems
-    
-    if (medication.length === 0 && vitamin.length === 0 && test.length === 0) {
-      toast({
-        title: "Uyarı",
-        description: "Lütfen en az bir öğe seçin",
-        variant: "destructive",
-      })
-      return
-    }
-
-    let newContent = ""
-    
-    if (medication.length > 0) {
-      newContent += `İlaçlarınız:\n${medication.map(item => `- ${item}`).join("\n")}\n\n`
-    }
-    
-    if (vitamin.length > 0) {
-      newContent += `Vitaminleriniz:\n${vitamin.map(item => `- ${item}`).join("\n")}\n\n`
-    }
-    
-    if (test.length > 0) {
-      newContent += `Tahlilleriniz:\n${test.map(item => `- ${item}`).join("\n")}\n\n`
-    }
-
-    if (message.trim()) {
-      setMessage(message + "\n\n" + newContent.trim())
-    } else {
-      setMessage(`Merhaba ${patientName},\n\n${newContent.trim()}`)
-    }
-
-    // Reset selections
-    setSelectedItems({ medication: [], vitamin: [], test: [] })
-
-    toast({
-      title: "Başarılı",
-      description: "Seçili öğeler mesaja eklendi",
-    })
+  const resetForm = () => {
+    setMessage("")
+    setSelectedTemplate("")
+    setSelectedItems(EMPTY_SELECTION)
+    setItemsBlock("")
   }
 
   useEffect(() => {
@@ -150,30 +106,11 @@ export function SmsSender({ patientId, patientName, patientPhone }: Props) {
     setSelectedTemplate(templateId)
     const template = templates.find((t) => t.id === templateId)
     if (template) {
-      let personalizedMessage = template.content.replace(/{isim}/g, patientName)
-      
-      // Automatically add selected items to the message
-      const { medication, vitamin, test } = selectedItems
-      
-      if (medication.length > 0 || vitamin.length > 0 || test.length > 0) {
-        let itemsContent = "\n\n"
-        
-        if (medication.length > 0) {
-          itemsContent += `İlaçlarınız:\n${medication.map(item => `- ${item}`).join("\n")}\n\n`
-        }
-        
-        if (vitamin.length > 0) {
-          itemsContent += `Vitaminleriniz:\n${vitamin.map(item => `- ${item}`).join("\n")}\n\n`
-        }
-        
-        if (test.length > 0) {
-          itemsContent += `Tahlilleriniz:\n${test.map(item => `- ${item}`).join("\n")}\n\n`
-        }
-        
-        personalizedMessage += itemsContent.trim()
-      }
-      
-      setMessage(personalizedMessage)
+      const personalizedMessage = template.content.replace(/{isim}/g, patientName)
+      // Daha önce işaretlenmiş öğeler şablonun altına taşınır.
+      const block = buildItemsBlock(selectedItems)
+      setMessage(applyItemsBlock(personalizedMessage, "", block, patientName))
+      setItemsBlock(block)
     }
   }
 
@@ -255,8 +192,7 @@ export function SmsSender({ patientId, patientName, patientPhone }: Props) {
       })
 
       setIsOpen(false)
-      setMessage("")
-      setSelectedTemplate("")
+      resetForm()
     } catch (error) {
       toast({
         title: "Hata",
@@ -303,11 +239,9 @@ export function SmsSender({ patientId, patientName, patientPhone }: Props) {
 
             {predefinedLists.length > 0 && (
               <div className="space-y-3 rounded-lg border p-4">
-                <div className="flex items-center justify-between">
+                <div>
                   <Label>İlaç/Vitamin/Tahlil Seç</Label>
-                  <Button variant="outline" size="sm" onClick={handleAddSelectedToMessage}>
-                    Seçilenleri Ekle
-                  </Button>
+                  <p className="text-xs text-gray-500">İşaretlediğiniz öğeler mesaja kendiliğinden eklenir.</p>
                 </div>
 
                 {/* Get all unique items from all lists by category */}
@@ -381,7 +315,7 @@ export function SmsSender({ patientId, patientName, patientPhone }: Props) {
                       {/* Tests */}
                       {testItems.length > 0 && (
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Tahliller</Label>
+                          <Label className="text-sm font-medium">Tahliller ve Evraklar</Label>
                           <div className="grid grid-cols-1 gap-2">
                             {testItems.map((item) => (
                               <div key={item} className="flex items-center gap-2">
@@ -421,8 +355,7 @@ export function SmsSender({ patientId, patientName, patientPhone }: Props) {
               variant="outline"
               onClick={() => {
                 setIsOpen(false)
-                setMessage("")
-                setSelectedTemplate("")
+                resetForm()
               }}
             >
               İptal
