@@ -1,33 +1,46 @@
 import Link from "next/link"
 import { requireReadyUser } from "@/lib/anne/server"
-import { questionOfDay } from "@/lib/anne/content/quiz"
-import { SOURCES } from "@/lib/anne/content/sources"
-import { Blob, Screen, Tabs, TopBar } from "@/components/anne/chrome"
-import { QuizCard } from "@/components/anne/quiz-card"
+import { mythsOfDay } from "@/lib/anne/content/myths"
+import { Icon, Screen, Tabs, TopBar, type ICONS } from "@/components/anne/chrome"
 
 export const dynamic = "force-dynamic"
 
-// Oyun: günün sorusu ve diğer oyunlara geçiş.
+const GAMES: { href: string; icon: keyof typeof ICONS; title: string; note: string; tone?: "dark" | "accent" }[] = [
+  { href: "/anne/ses", icon: "mic", title: "Beni böyle duyuyor", note: "Sesini karnından dinle", tone: "accent" },
+  { href: "/anne/tat", icon: "taste", title: "Havuç mu, lahana mı?", note: "Yediğine tepkisini gör", tone: "dark" },
+  { href: "/anne/tekme", icon: "kick", title: "Tekme", note: "Dokun, say, kaydet" },
+  { href: "/anne/isimler", icon: "letters", title: "İsim bulucu", note: "Beğen ya da geç" },
+]
+
+// Oyun: günün efsane kartları ve diğer oyunlar.
 export default async function AnneOyunPage() {
   const { today } = await requireReadyUser()
-  const question = questionOfDay(today)
+  const first = mythsOfDay(today)[0]
 
   return (
     <Screen>
-      <Blob tone="lilac" style={{ left: -80, top: 70, width: 540, height: 470 }} />
       <TopBar title="Oyun" />
       <main className="nb-main">
-        <QuizCard key={question.id} question={question} sourceTitle={SOURCES[question.source].citation} />
-        <div className="nb-two" style={{ marginTop: 34 }}>
-          <Link className="nb-card" data-tone="pink" href="/anne/tekme">
-            <h3>Tekme</h3>
-            <p style={{ marginTop: 4, fontSize: 14 }}>Dokun, say, kaydet</p>
+        <Link className="nb-card" data-tone="dark" href="/anne/efsane" style={{ marginTop: 18, padding: 22 }}>
+          <p style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.04em", opacity: 0.8 }}>DOĞRU MU, EFSANE Mİ?</p>
+          <h2 style={{ marginTop: 10 }}>{first.text}</h2>
+          <span className="nb-chip" style={{ marginTop: 16 }}>
+            Bugünün 5 kartını aç
+          </span>
+        </Link>
+
+        {GAMES.map((game) => (
+          <Link key={game.href} className="nb-card nb-row-card" href={game.href} style={{ padding: 14 }}>
+            <span className="nb-thumb" data-tone={game.tone}>
+              <Icon name={game.icon} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <b style={{ display: "block", fontSize: 17, fontWeight: 800 }}>{game.title}</b>
+              <span className="nb-note">{game.note}</span>
+            </span>
+            <Icon name="next" />
           </Link>
-          <Link className="nb-card" data-tone="peach" href="/anne/isimler">
-            <h3>İsim bulucu</h3>
-            <p style={{ marginTop: 4, fontSize: 14 }}>Beğen ya da geç</p>
-          </Link>
-        </div>
+        ))}
         <div className="nb-grow" />
       </main>
       <Tabs current="oyun" />

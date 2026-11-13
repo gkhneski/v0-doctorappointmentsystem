@@ -675,3 +675,29 @@ Bilinen, düzeltilmeyen küçük nokta: personel bir hakkı geri alırken hasta 
 - İkiz gebelik için ayrı tema yok; anne temayı kendisi seçer.
 - Kayıp ya da anomali durumunda klinik durdurma düğmesi yapıldığında tema da sadeye dönmeli (9h'deki açık madde ile birlikte).
 - Aksesuar yerleri tek bir yüz resmine göre tutulur; anne yeni bir yüz üretirse aksesuarlar aynı oranlarda kalır, yüz farklı kadrajdaysa yeniden yerleştirmesi gerekir.
+
+## 9j. 13 Kasım 2026 (akşam): ikinci görünüm ve üç bilim oyunu
+
+**Karar (kullanıcı).** Uygulama çok renksiz bulundu. Kullanıcı önce doygun düz renkli bir örneği, sonra "gerçekçi, Instagram tarzı" bir örneği gördü; ikincisini beğendi ama Instagram'a fazla benzediği için ayrıştırılmasını istedi. Onaylanan hâl bütün uygulamaya uygulandı. Tasarım örnekleri: https://claude.ai/artifact/GJfeZHiew1Q29x5nK8Zfeg
+
+**Görünüm.**
+- Zemin beyaza yakın, yazı siyah, tek vurgu rengi (`--accent`: kız temasında pembe, erkek temasında mavi, sade temada kiremit). Rengi arayüz değil resim ve video taşır.
+- Instagram'dan ayrışan parçalar: hikâyeler yuvarlak ve gökkuşağı halkalı değil, dikey ve köşeleri yumuşak kutular; alt gezinme yüzen koyu çubuk, seçili bölüm etiketli; ana ekranda kenardan kenara kare gönderi yerine yuvarlak köşeli büyük kart; beğen, yorum, gönder, kaydet sırası yok; marka yazısı küçük harfli ve noktalı.
+- Kurallar `app/anne/anne.css` dosyasının sonundaki "İkinci görünüm" bölümündedir; ortak parçaların biçimini orada değiştirir.
+- Ana ekran: kutular (Canlı, Sesim, Efsane, Tat, Tekme, İsimler, Randevu, Belgeler, Albüm), bebeğin yüzünün durduğu büyük kart (günün sözü, hafta, kalan gün, boy benzetmesi), günün efsanesi, randevu, sıradaki durak.
+- Kutularda ve oyunlarda gerçek fotoğraf yok; simge kullanıldı. Fotoğraf üretimi denenmedi (kullanıcının görsel üretim hesabında kredi yok).
+
+**Oyunlar** (alt gezinmedeki "Oyun" bölümünden ve ana ekrandaki kutulardan açılır).
+- **Beni böyle duyuyor (`/anne/ses`).** Anne en çok 15 saniye konuşur ya da ninni söyler; kayıt önce olduğu gibi, sonra 500 Hz altı bırakılarak çalınır ("Dışarıdan / Karnından"). Süzülmüş hâli ses dosyası olarak paylaşılır. Ses telefondan çıkmaz, sunucuya gönderilmez, saklanmaz. Ek maliyeti yok.
+- **Doğru mu, efsane mi? (`/anne/efsane`).** Günde beş kart; sağa kaydırmak "doğru", sola kaydırmak "efsane". Yanıttan sonra açıklama ve kaynağı görünür. 12 kart var (`lib/anne/content/myths.ts`); dokuzu Bakanlık kaynaklı içeriğe, üçü hakemli araştırmalara dayanır. Eski "günün sorusu" ekrandan kalktı (içeriği `quiz.ts` içinde duruyor).
+- **Havuç mu, lahana mı? (`/anne/tat`).** Anne yediğini seçer, bebeğin üretilmiş yüzü tepki verir. "Canlı bebeğim"de kıkırdama, gülümseme ya da somurtma anı açılmışsa o video oynar; açılmamışsa duran resim kıpırdar. Yeni video üretilmez, ek maliyeti yok.
+
+**Yeni kaynaklar** (`lib/anne/content/sources.ts`): Spence ve Freeman 1996 (süzülmüş anne sesi), Ustun ve ark. 2022 (havuç ve lahana), Costigan ve ark. 2006 (mide yanması ve saç).
+
+**Açık kalanlar.**
+- Oyunlardaki bütün metinler Dr. Eray'ın onayını bekliyor. Üç araştırmanın künyesi basın özetlerinden yazıldı; makalelerin kendisinden doğrulanmalı.
+- "Diğer annelerin yüzde kaçı bildi" gösterilmiyor; yanıtlar saklanmıyor.
+- Ses oyunu gerçek telefonda (özellikle iPhone) denenmedi; tarayıcıda sahte mikrofonla denendi.
+- Kutular için gerçek fotoğraflar gelince `Icon` yerine resim konmalı.
+- Görsel benzerlik konusu avukat listesine eklenmeli.
+- Ailenin tahmin oyunu ("Tahmin havuzu") yapılmadı.

@@ -32,6 +32,24 @@ export const SOURCES = {
     citation: "“Gebelere Nutrisyonel Destek Programı”, T.C. Sağlık Bakanlığı Halk Sağlığı Genel Müdürlüğü",
     url: "https://hsgm.saglik.gov.tr/tr/programlar-2/gebelere-nutrisyonel-destek-programi.html",
   },
+  // Oyunlarda kullanılan hakemli araştırmalar (13.11.2026'da basın özetleri üzerinden okundu;
+  // künyeler doğrulanmalı ve Dr. Eray onaylamalıdır).
+  rahimdeSes: {
+    id: "spence-freeman-1996",
+    citation:
+      "Spence ve Freeman, “Newborn infants prefer the maternal low-pass filtered voice, but not the maternal whispered voice”, Infant Behavior and Development, 1996",
+    url: "https://doi.org/10.1016/S0163-6383(96)90019-3",
+  },
+  tatDurham: {
+    id: "ustun-2022",
+    citation: "Ustun ve ark., “Flavor Sensing in Utero and Emerging Discriminative Behaviors in the Human Fetus”, Psychological Science, 2022",
+    url: "https://doi.org/10.1177/09567976221105460",
+  },
+  mideYanmasi: {
+    id: "costigan-2006",
+    citation: "Costigan, Sipsma ve DiPietro, “Pregnancy Folklore Revisited: The Case of Heartburn and Hair”, Birth, 2006",
+    url: "https://doi.org/10.1111/j.1523-536X.2006.00128.x",
+  },
 } as const satisfies Record<string, Source>
 
 export type SourceKey = keyof typeof SOURCES
