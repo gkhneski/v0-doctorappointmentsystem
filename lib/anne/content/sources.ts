@@ -45,6 +45,17 @@ export const SOURCES = {
     citation: "Ustun ve ark., “Flavor Sensing in Utero and Emerging Discriminative Behaviors in the Human Fetus”, Psychological Science, 2022",
     url: "https://doi.org/10.1177/09567976221105460",
   },
+  tatDerleme: {
+    id: "spahn-2019",
+    citation:
+      "Spahn ve ark., “Influence of maternal diet on flavor transfer to amniotic fluid and breast milk and children’s responses: a systematic review”, American Journal of Clinical Nutrition, 2019",
+    url: "https://pubmed.ncbi.nlm.nih.gov/30982867/",
+  },
+  kafein: {
+    id: "efsa-kafein",
+    citation: "Avrupa Gıda Güvenliği Otoritesi (EFSA), kafein değerlendirmesi",
+    url: "https://www.efsa.europa.eu/en/topics/topic/caffeine",
+  },
   mideYanmasi: {
     id: "costigan-2006",
     citation: "Costigan, Sipsma ve DiPietro, “Pregnancy Folklore Revisited: The Case of Heartburn and Hair”, Birth, 2006",

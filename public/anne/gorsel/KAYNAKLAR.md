@@ -17,3 +17,38 @@ Dosyalar 240×240 piksele kırpıldı.
 - yemek-sarimsak.jpg: File:Garlic Bulbs (Unsplash).jpg (CC0) https://commons.wikimedia.org/wiki/File:Garlic_Bulbs_(Unsplash).jpg
 - yemek-biber.jpg: File:Peppers in Vientiane.jpg (CC0) https://commons.wikimedia.org/wiki/File:Peppers_in_Vientiane.jpg
 - yemek-elma.jpg: File:Apples in basket 2018 G1.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Apples_in_basket_2018_G1.jpg
+- yemek-erik.jpg: File:Green plums (1).jpg (CC0) https://commons.wikimedia.org/wiki/File:Green_plums_(1).jpg
+- yemek-seftali.jpg: File:White-Peaches-Bunch.jpg (CC0) https://commons.wikimedia.org/wiki/File:White-Peaches-Bunch.jpg
+- yemek-ayva.jpg: File:Quinces 2017 A.jpg (CC0) https://commons.wikimedia.org/wiki/File:Quinces_2017_A.jpg
+- yemek-nar.jpg: File:Soft seed pomegranate.jpg (CC0) https://commons.wikimedia.org/wiki/File:Soft_seed_pomegranate.jpg
+- yemek-portakal.jpg: File:Ambersweet oranges.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Ambersweet_oranges.jpg
+- yemek-uzum.jpg: File:A bunch of grapes on a vine.jpg (CC0) https://commons.wikimedia.org/wiki/File:A_bunch_of_grapes_on_a_vine.jpg
+- yemek-incir.jpg: File:Feigen.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Feigen.jpg
+- yemek-kiraz.jpg: File:Fruit cherries cherry.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Fruit_cherries_cherry.jpg
+- yemek-domates.jpg: File:Tomatoes for sale.jpg (CC0) https://commons.wikimedia.org/wiki/File:Tomatoes_for_sale.jpg
+- yemek-salatalik.jpg: File:ARS cucumber.jpg (Public domain) https://commons.wikimedia.org/wiki/File:ARS_cucumber.jpg
+- yemek-ispanak.jpg: File:Spinach Plant Nourishment Meal Fresh Healthy Bio.jpg (CC0) https://commons.wikimedia.org/wiki/File:Spinach_Plant_Nourishment_Meal_Fresh_Healthy_Bio.jpg
+- yemek-kebap.jpg: File:Lule Kabob Plate (Zankou Chicken).JPG (CC0) https://commons.wikimedia.org/wiki/File:Lule_Kabob_Plate_(Zankou_Chicken).JPG
+- yemek-balik.jpg: File:Plated grilled fish (cropped).jpg (CC0) https://commons.wikimedia.org/wiki/File:Plated_grilled_fish_(cropped).jpg
+- yemek-corba.jpg: File:Bowl of Tasty Bite Madras Lentils.jpg (CC0) https://commons.wikimedia.org/wiki/File:Bowl_of_Tasty_Bite_Madras_Lentils.jpg
+- yemek-makarna.jpg: File:Spaghetti alla Carbonara (cropped).jpg (Public domain) https://commons.wikimedia.org/wiki/File:Spaghetti_alla_Carbonara_(cropped).jpg
+- yemek-sarma.jpg: File:Sarmas et dolmas (poivron vert et courgettes) - 3.jpg (CC0) https://commons.wikimedia.org/wiki/File:Sarmas_et_dolmas_(poivron_vert_et_courgettes)_-_3.jpg
+- yemek-peynir.jpg: File:Greek feta.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Greek_feta.jpg
+- yemek-dondurma.jpg: File:Ice cream cone with spoon.jpg (CC0) https://commons.wikimedia.org/wiki/File:Ice_cream_cone_with_spoon.jpg
+- yemek-baklava.jpg: File:Baklava - Turkish special, 80-ply.JPEG (Public domain) https://commons.wikimedia.org/wiki/File:Baklava_-_Turkish_special,_80-ply.JPEG
+- yemek-kek.jpg: File:Baileys Chocolate Cake - Cafe Coho 2026-01-08.jpg (CC0) https://commons.wikimedia.org/wiki/File:Baileys_Chocolate_Cake_-_Cafe_Coho_2026-01-08.jpg
+- yemek-cips.jpg: File:Potato-Chips.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Potato-Chips.jpg
+- yemek-sut.jpg: File:Milk bottle and two doughnuts.jpg (CC0) https://commons.wikimedia.org/wiki/File:Milk_bottle_and_two_doughnuts.jpg
+- yemek-ayran.jpg: File:Naneli ayran - Dara.jpg (CC0) https://commons.wikimedia.org/wiki/File:Naneli_ayran_-_Dara.jpg
+- yemek-su.jpg: File:Glass of water ouside.jpg (CC0) https://commons.wikimedia.org/wiki/File:Glass_of_water_ouside.jpg
+- yemek-meyvesuyu.jpg: File:Orange juice 1 edit1.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Orange_juice_1_edit1.jpg
+- yemek-cay.jpg: File:Turkish tea with classical glass.jpg (CC0) https://commons.wikimedia.org/wiki/File:Turkish_tea_with_classical_glass.jpg
+- yemek-kola.jpg: File:Glass cola.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Glass_cola.jpg
+- yemek-baharat.jpg: File:Cumin seed whole.JPG (Public domain) https://commons.wikimedia.org/wiki/File:Cumin_seed_whole.JPG
+- yemek-tursu.jpg: File:Yonghui pickled cucumber.jpg (CC0) https://commons.wikimedia.org/wiki/File:Yonghui_pickled_cucumber.jpg
+- yemek-zeytin.jpg: File:Olives, illustration from The Encyclopedia of Food by Artemas Ward.jpg (Public domain) https://commons.wikimedia.org/wiki/File:Olives,_illustration_from_The_Encyclopedia_of_Food_by_Artemas_Ward.jpg
+- yemek-ceviz.jpg: File:Californian walnut kernel within a half-broken shell, photographed in West Bengal, India, on January 14, 2024.jpg (CC0) https://commons.wikimedia.org/wiki/File:Californian_walnut_kernel_within_a_half-broken_shell,_photographed_in_West_Bengal,_India,_on_January_14,_2024.jpg
+- yemek-limonata.jpg: File:Nopa Fish - August 2025 - Sarah Stierch 01.jpg (CC0) https://commons.wikimedia.org/wiki/File:Nopa_Fish_-_August_2025_-_Sarah_Stierch_01.jpg
+- yemek-kahve.jpg: File:Turkish coffee - Olea 2025-08-17.jpg (CC0) https://commons.wikimedia.org/wiki/File:Turkish_coffee_-_Olea_2025-08-17.jpg
+- yemek-yogurt.jpg: File:Yoghurt and spoon.jpg (CC0) https://commons.wikimedia.org/wiki/File:Yoghurt_and_spoon.jpg
+- yemek-pide.jpg: File:Nazilli-kiymali-pide-20240417 175435.jpg (CC0) https://commons.wikimedia.org/wiki/File:Nazilli-kiymali-pide-20240417_175435.jpg

@@ -701,3 +701,25 @@ Bilinen, düzeltilmeyen küçük nokta: personel bir hakkı geri alırken hasta 
 - Kutular için gerçek fotoğraflar gelince `Icon` yerine resim konmalı.
 - Görsel benzerlik konusu avukat listesine eklenmeli.
 - Ailenin tahmin oyunu ("Tahmin havuzu") yapılmadı.
+
+## 9k. 13 Kasım 2026 (gece): tat oyununun listesi genişledi, kutular resimlendi, hız
+
+**Karar (kullanıcı).** Tat oyununda dört renkli kutu yetersiz bulundu: gerçek resimler ve geniş bir liste istendi ("insan her gün aynı şeyleri mi yiyecek"). Liste araştırılarak kurulsun dendi.
+
+**Araştırma (üç ayrı tarama).**
+- *Bilim:* bebeğin yüz ifadesi yalnızca havuç ve kara lahanayla ölçüldü (Ustun 2022). Sarımsak, anason ve havuç tadının amniyon sıvısına geçtiği derlemede (Spahn 2019) "sınırlı ama tutarlı" kanıt olarak geçiyor. "Tatlı ya da soğuk içince bebek tekmeler" iddiası desteklenmiyor; bu yüzden oyunda hareket vaat edilmez.
+- *Forumlar* (çoğu kadinlarkulubu.com ve annelertoplandik.com, yaklaşık 150 ileti): en çok anılanlar yeşil erik, turşu, limon, karpuz, çikolata; ardından çağla, çilek, şeftali, ayva, nar, portakal, dondurma, baklava, kebap, balık, tarhana, makarna, yoğurt, süt.
+- *Güvenlik* (NHS, EFSA, WHO, HSGM kitapçığı): alkol, çiğ ya da az pişmiş et, çiğ balık, rafadan yumurta, çiğ süt ürünleri, ciğer, pişmemiş işlenmiş etler, enerji içeceği ve önerilmeyen bitki çayları listeye alınmadı. Kafeinli içecekler günlük 200 mg notuyla gösterilir.
+
+**Yapılan.**
+- 49 yiyecek ve içecek, altı grupta (meyve, sebze, yemek, tatlı, atıştırmalık, içecek): `lib/anne/content/foods.ts`. Açılan grup ve grubun içindeki sıra her gün değişir.
+- Üç tepki: tatlı (kıkırdama ya da gülümseme anı), acı-ekşi-keskin (somurtma anı), sade (agu ya da mışıl anı). An açılmamışsa duran resim kıpırdar.
+- "Bilim ne diyor?" metni seçilen yiyeceğe göre değişir ve tahmin olanı tahmin diye söyler; araştırmada denenmiş üç yiyecek mavi noktayla işaretlidir.
+- Fotoğraflar Wikimedia Commons'tan, kamu malı ya da CC0; kaynakları `public/anne/gorsel/KAYNAKLAR.md`.
+- Ana ekrandaki kutular çizim resimlerle değiştirildi (`public/anne/gorsel/kutu-*.svg`).
+- Hız: işlevler veritabanının yanına (`sfo1`) alındı, ekranlar arası geçişe bekleme ekranı kondu, alt gezinme ekranın altına sabitlendi.
+
+**Açık kalanlar.**
+- Tat eşleştirmesi (hangi yiyecek hangi tepki), kafein notu ve liste Dr. Eray'ın onayını bekliyor. Bal için resmî kaynaklarda açık bir "gebelikte olur" ifadesi bulunamadı.
+- Forumlarda çok anılan çağla, tarhana, sütlaç ve çiğ köfte listede yok: ilk üçü için serbest lisanslı düzgün fotoğraf bulunamadı, çiğ köfte güvenlik nedeniyle alınmadı.
+- Forumlardan çıkan inanışlar ("ekşi aşeren kız doğurur", "ayva yiyenin çocuğu gamzeli olur") efsane kartı olarak eklenmedi; karşılarına konacak güvenilir kaynak gerekiyor.
