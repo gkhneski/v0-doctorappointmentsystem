@@ -2589,3 +2589,19 @@
     animation: none;
   }
 }
+
+/* Alt gezinme sayfaya değil ekrana sabitlenir: iPhone'da sayfa ekrandan kısa ya da uzun
+   hesaplansa da altında boşluk kalmaz. Altındaki gölge, sayfa esnediğinde açılan yeri de kapatır. */
+.nb-tabs {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  max-width: 430px;
+  transform: translateX(-50%);
+  box-shadow: 0 60px 0 var(--ink);
+}
+
+.nb-screen:has(.nb-tabs) {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 72px);
+}
