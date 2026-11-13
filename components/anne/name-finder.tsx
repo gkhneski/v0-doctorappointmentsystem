@@ -1,82 +1,161 @@
 "use client"
 
-import { useState } from "react"
-import { KIND_LABEL, NAMES } from "@/lib/anne/content/names"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { KIND_LABEL, NAMES, namesFor, type BabyName, type NameFilter } from "@/lib/anne/content/names"
 import { send } from "@/components/anne/api"
 
-/** İsim bulucu: beğen ya da geç. Beğenilenler hesaba kaydedilir. */
-export function NameFinder({ initialLiked }: { initialLiked: string[] }) {
+const FILTERS: { id: NameFilter; label: string }[] = [
+  { id: "kiz", label: "Kız" },
+  { id: "erkek", label: "Erkek" },
+  { id: "hepsi", label: "Hepsi" },
+]
+/** Çark dönerken iki isim arasındaki süre (ms). */
+const SPIN_MS = 70
+/** Durdurulduktan sonra çark kaç adımda yavaşlayıp durur. */
+const SLOW_STEPS = 9
+
+type Phase = "idle" | "spinning" | "slowing" | "stopped"
+
+function pickIndex(length: number, not: number): number {
+  if (length < 2) return 0
+  let next = Math.floor(Math.random() * length)
+  if (next === not) next = (next + 1) % length
+  return next
+}
+
+/**
+ * İsim çarkı: isimler sayaç gibi hızla döner, anne düğmeye basınca yavaşlayıp birinde durur;
+ * ismin anlamı ve kökeni görünür. Beğenilen isimler hesaba kaydedilir.
+ */
+export function NameFinder({ initialLiked, initialFilter }: { initialLiked: string[]; initialFilter: NameFilter }) {
+  const [filter, setFilter] = useState<NameFilter>(initialFilter)
   const [liked, setLiked] = useState<string[]>(initialLiked)
-  const [index, setIndex] = useState(() => {
-    const first = NAMES.findIndex((n) => !initialLiked.includes(n.name))
-    return first === -1 ? 0 : first
-  })
+  const [phase, setPhase] = useState<Phase>("idle")
+  const [index, setIndex] = useState(0)
   const [showList, setShowList] = useState(false)
   const [error, setError] = useState("")
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const current = NAMES[index % NAMES.length]
+  const pool = useMemo(() => namesFor(filter), [filter])
+  const current: BabyName = pool[index % pool.length]
+  const before = pool[(index - 1 + pool.length) % pool.length]
+  const after = pool[(index + 1) % pool.length]
   const isLiked = liked.includes(current.name)
+  const moving = phase === "spinning" || phase === "slowing"
 
-  function next() {
-    setIndex((i) => i + 1)
+  const clear = () => {
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = null
+  }
+  useEffect(() => clear, [])
+
+  function spin() {
+    clear()
+    setError("")
+    // Hareketi azalt ayarı açıksa çark dönmez; doğrudan bir isim gelir.
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setIndex((i) => pickIndex(pool.length, i))
+      setPhase("stopped")
+      return
+    }
+    setPhase("spinning")
+    const tick = () => {
+      setIndex((i) => pickIndex(pool.length, i))
+      timer.current = setTimeout(tick, SPIN_MS)
+    }
+    tick()
   }
 
-  async function like() {
-    setError("")
-    if (!isLiked) {
-      setLiked((prev) => [...prev, current.name])
-      const result = await send("/api/anne/isimler", "POST", { name: current.name, liked: true }, "Beğeni kaydedilemedi.")
-      if (!result.ok) {
-        setLiked((prev) => prev.filter((n) => n !== current.name))
-        setError(result.error)
+  function stop() {
+    clear()
+    setPhase("slowing")
+    let step = 0
+    const tick = () => {
+      setIndex((i) => pickIndex(pool.length, i))
+      step += 1
+      if (step >= SLOW_STEPS) {
+        setPhase("stopped")
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.([10, 40, 18])
         return
       }
+      // Her adım bir öncekinden uzun sürer; çark yavaşlayarak durur.
+      timer.current = setTimeout(tick, SPIN_MS + step * step * 9)
     }
-    next()
+    tick()
   }
 
-  async function remove(name: string) {
+  function choose(next: NameFilter) {
+    clear()
+    setFilter(next)
+    setIndex(0)
+    setPhase("idle")
+  }
+
+  async function toggleLike(name: string, value: boolean) {
     setError("")
-    const before = liked
-    setLiked((prev) => prev.filter((n) => n !== name))
-    const result = await send("/api/anne/isimler", "POST", { name, liked: false }, "Kaldırılamadı.")
+    const previous = liked
+    setLiked((list) => (value ? [...list.filter((n) => n !== name), name] : list.filter((n) => n !== name)))
+    const result = await send("/api/anne/isimler", "POST", { name, liked: value }, value ? "Beğeni kaydedilemedi." : "Kaldırılamadı.")
     if (!result.ok) {
-      setLiked(before)
+      setLiked(previous)
       setError(result.error)
     }
   }
 
   return (
     <>
-      <div style={{ width: "100%", marginTop: 24 }}>
-        <div className="nb-card" data-tone="lilac" style={{ margin: "0 28px", height: 40, borderRadius: "28px 28px 0 0" }} />
-        <div className="nb-card" data-tone="peach" style={{ margin: "-22px 14px 0", height: 40, borderRadius: "28px 28px 0 0" }} />
-        <div
-          className="nb-card"
-          data-tone="pink"
-          style={{ marginTop: -22, minHeight: 300, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
-          aria-live="polite"
-        >
-          <p className="nb-name">{current.name}</p>
-          <p style={{ marginTop: 10, fontSize: 17 }}>Anlamı: {current.meaning}</p>
-          <span className="nb-chip" style={{ marginTop: 18 }}>
-            {KIND_LABEL[current.kind]}
-          </span>
-        </div>
+      <div className="nb-seg" role="group" aria-label="Kimin için isim" style={{ width: "100%", gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+        {FILTERS.map((item) => (
+          <button key={item.id} type="button" aria-pressed={filter === item.id} disabled={moving} onClick={() => choose(item.id)}>
+            {item.label}
+          </button>
+        ))}
       </div>
 
-      <div style={{ display: "flex", gap: 28, marginTop: 24 }}>
-        <button className="nb-round" type="button" onClick={next} aria-label="Geç">
-          <svg viewBox="0 0 24 24" aria-hidden="true" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-        <button className="nb-round" data-kind="dark" type="button" onClick={() => void like()} aria-label="Beğen">
-          <svg viewBox="0 0 24 24" aria-hidden="true" width="30" height="30" fill="currentColor">
-            <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />
-          </svg>
-        </button>
+      <div className="nb-wheel" data-phase={phase} aria-live={phase === "stopped" ? "polite" : "off"}>
+        <span className="nb-wheel-side" aria-hidden="true">
+          {phase === "idle" ? "" : before.name}
+        </span>
+        <p className="nb-wheel-name" key={phase === "stopped" ? `son-${current.name}` : "donuyor"}>
+          {phase === "idle" ? "?" : current.name}
+        </p>
+        <span className="nb-wheel-side" aria-hidden="true">
+          {phase === "idle" ? "" : after.name}
+        </span>
       </div>
+
+      <div className="nb-wheel-info">
+        {phase === "stopped" ? (
+          <>
+            <p style={{ fontSize: 18, lineHeight: 1.35 }}>
+              <b>Anlamı:</b> {current.meaning}
+            </p>
+            <p style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
+              <span className="nb-chip">{KIND_LABEL[current.kind]}</span>
+              {current.origin && <span className="nb-chip">Köken: {current.origin}</span>}
+            </p>
+          </>
+        ) : (
+          <p className="nb-note" style={{ fontSize: 15 }}>
+            {phase === "idle" ? `${pool.length} isim hazır. Çarkı çevir, istediğin anda durdur.` : "İsimler dönüyor. Durdur, bakalım hangisi çıkacak."}
+          </p>
+        )}
+      </div>
+
+      {phase === "stopped" ? (
+        <div style={{ display: "flex", gap: 8, width: "100%" }}>
+          <button className="nb-btn" data-kind="light" type="button" style={{ flex: 1 }} onClick={spin}>
+            Yeniden çevir
+          </button>
+          <button className="nb-btn" data-kind="accent" type="button" style={{ flex: 1 }} aria-pressed={isLiked} onClick={() => void toggleLike(current.name, !isLiked)}>
+            {isLiked ? "Beğenildi" : "Beğen"}
+          </button>
+        </div>
+      ) : (
+        <button className="nb-btn" data-kind={phase === "idle" ? undefined : "accent"} type="button" disabled={phase === "slowing"} onClick={phase === "spinning" ? stop : spin}>
+          {phase === "idle" ? "Çarkı çevir" : phase === "spinning" ? "Durdur" : "Duruyor"}
+        </button>
+      )}
 
       {error && (
         <p className="nb-error" role="alert">
@@ -97,8 +176,13 @@ export function NameFinder({ initialLiked }: { initialLiked: string[] }) {
           ) : (
             liked.map((name) => (
               <div className="nb-row" key={name}>
-                <b>{name}</b>
-                <button className="nb-link" type="button" onClick={() => void remove(name)}>
+                <span style={{ minWidth: 0 }}>
+                  <b style={{ color: "var(--ink)" }}>{name}</b>
+                  <span className="nb-note" style={{ display: "block", fontSize: 13 }}>
+                    {NAMES.find((n) => n.name === name)?.meaning}
+                  </span>
+                </span>
+                <button className="nb-link" type="button" onClick={() => void toggleLike(name, false)}>
                   Kaldır
                 </button>
               </div>

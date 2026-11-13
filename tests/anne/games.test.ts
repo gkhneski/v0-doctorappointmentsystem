@@ -127,3 +127,64 @@ describe("havuç mu, lahana mı", () => {
     expect(foodsOfDay("icecek", -3).length).toBeGreaterThan(0)
   })
 })
+
+describe("isim çarkı", () => {
+  it("isimler tekildir, her birinin anlamı ve geçerli bir türü var", async () => {
+    const { NAMES } = await import("@/lib/anne/content/names")
+    expect(NAMES.length).toBeGreaterThanOrEqual(380)
+    expect(new Set(NAMES.map((n) => n.name)).size).toBe(NAMES.length)
+    for (const n of NAMES) {
+      expect(n.name, n.name).toMatch(/^[A-ZÇĞİÖŞÜ][a-zçğıöşüâîû]+$/)
+      expect(n.meaning.length, n.name).toBeGreaterThan(1)
+      expect(n.meaning.length, n.name).toBeLessThanOrEqual(110)
+      expect(["kiz", "erkek", "ortak"]).toContain(n.kind)
+    }
+  })
+
+  it("çark seçilen cinsiyetin ve ortak isimlerle döner; açılış bebeğin cinsiyetine göredir", async () => {
+    const { NAMES, namesFor, filterForGender } = await import("@/lib/anne/content/names")
+    const girls = namesFor("kiz")
+    const boys = namesFor("erkek")
+    expect(girls.every((n) => n.kind !== "erkek")).toBe(true)
+    expect(boys.every((n) => n.kind !== "kiz")).toBe(true)
+    expect(girls.some((n) => n.kind === "ortak")).toBe(true)
+    expect(girls.length).toBeGreaterThan(150)
+    expect(boys.length).toBeGreaterThan(150)
+    expect(namesFor("hepsi")).toHaveLength(NAMES.length)
+    expect(filterForGender("female")).toBe("kiz")
+    expect(filterForGender("male")).toBe("erkek")
+    expect(filterForGender(null)).toBe("hepsi")
+  })
+})
+
+describe("soru bankası", () => {
+  it("her sorunun tekil kimliği, geçerli konusu, tanımlı kaynağı ve kaynaktaki yeri var", async () => {
+    const { QUESTIONS, QUESTION_CATEGORIES } = await import("@/lib/anne/content/questions")
+    expect(QUESTIONS.length).toBeGreaterThanOrEqual(70)
+    expect(new Set(QUESTIONS.map((q) => q.id)).size).toBe(QUESTIONS.length)
+    for (const q of QUESTIONS) {
+      expect(QUESTION_CATEGORIES.some((c) => c.id === q.category), q.id).toBe(true)
+      expect(SOURCES[q.source], q.id).toBeDefined()
+      expect(SOURCES[q.source].url, q.id).toContain("saglik.gov.tr")
+      expect(q.where.length, q.id).toBeGreaterThan(2)
+      expect(q.question.endsWith("?"), q.id).toBe(true)
+      expect(q.answer.length, q.id).toBeLessThanOrEqual(420)
+    }
+    for (const c of QUESTION_CATEGORIES) expect(QUESTIONS.filter((q) => q.category === c.id).length, c.id).toBeGreaterThanOrEqual(5)
+  })
+
+  it("tehlike işareti yanıtları beklemeden sağlık kuruluşuna gitmeyi söyler", async () => {
+    const { QUESTIONS } = await import("@/lib/anne/content/questions")
+    const danger = QUESTIONS.filter((q) => q.category === "tehlike")
+    expect(danger.length).toBeGreaterThanOrEqual(8)
+    for (const q of danger) expect(q.answer, q.id).toMatch(/beklemeden bir sağlık kuruluşuna git\.$/)
+  })
+
+  it("arama Türkçe büyük-küçük harfe bakmaz, konuya göre süzer", async () => {
+    const { QUESTIONS, searchQuestions } = await import("@/lib/anne/content/questions")
+    expect(searchQuestions("", "hepsi")).toHaveLength(QUESTIONS.length)
+    expect(searchQuestions("MİDE YANMASI", "hepsi").length).toBeGreaterThan(0)
+    expect(searchQuestions("olmayankelimexyz", "hepsi")).toHaveLength(0)
+    expect(searchQuestions("", "emzirme").every((q) => q.category === "emzirme")).toBe(true)
+  })
+})

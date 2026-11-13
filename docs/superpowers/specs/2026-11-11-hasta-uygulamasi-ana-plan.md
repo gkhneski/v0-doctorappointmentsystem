@@ -723,3 +723,20 @@ Bilinen, düzeltilmeyen küçük nokta: personel bir hakkı geri alırken hasta 
 - Tat eşleştirmesi (hangi yiyecek hangi tepki), kafein notu ve liste Dr. Eray'ın onayını bekliyor. Bal için resmî kaynaklarda açık bir "gebelikte olur" ifadesi bulunamadı.
 - Forumlarda çok anılan çağla, tarhana, sütlaç ve çiğ köfte listede yok: ilk üçü için serbest lisanslı düzgün fotoğraf bulunamadı, çiğ köfte güvenlik nedeniyle alınmadı.
 - Forumlardan çıkan inanışlar ("ekşi aşeren kız doğurur", "ayva yiyenin çocuğu gamzeli olur") efsane kartı olarak eklenmedi; karşılarına konacak güvenilir kaynak gerekiyor.
+
+## 9l. 13 Kasım 2026 (gece): isim çarkı ve soru bankası
+
+**Karar (kullanıcı).** İsim bulucu oyun gibi olsun: isimler sayaç gibi dönsün, anne tuşa basınca dursun, çıkan ismin anlamına baksın; bebeğin cinsiyetine göre ayarlansın; çok isim araştırılıp eklensin. Ayrıca cevaplı bir soru bankası konsun.
+
+**İsim çarkı (`/anne/isimler`).**
+- İsimler hızla döner; "Durdur" deyince yavaşlayıp birinde durur, anlamı ve kökeni görünür. "Beğen" ismi hesaba kaydeder (`app_name_likes`, değişmedi).
+- Çark, üretilen son bebek yüzündeki cinsiyetin isimleriyle açılır; üstten Kız / Erkek / Hepsi seçilir. İki cinsiyete de verilen isimler her iki seçimde de döner.
+- 411 isim: 190 kız, 191 erkek, 30 ortak (`lib/anne/content/names.ts`).
+- Anlamlar gazete isim listelerinden (Milliyet, Habertürk) doğrulandı; TDK Kişi Adları Sözlüğü'ne erişilemedi. Köken etiketleri kaynakla doğrulanmadı. Anlamı zayıf dayanaklı olanlar: Ceylin, Tuana, İlayda, Lara, Belinay, Miray, Zümra, Alara, Mira; kaynakla araştırmacının yazdığı ayrışanlar: Koray, Ferhat, Enes, Harun, İlyas, İdris, İsmail, İbrahim, Yusuf, Zekeriya, Musa, Mustafa, Sefa, Asel, Ecrin, Helin, Umay, Sümeyye.
+
+**Soru bankası (`/anne/sor`, sekmenin başında).**
+- 89 soru ve kısa yanıt, sekiz konuda (beslenme, günlük hayat, şikâyetler, izlem ve testler, tehlike işaretleri, doğum, emzirme, bebeğim): `lib/anne/content/questions.ts`. Arama kutusu ve konu seçimi var; yanıtın altında kaynağı yazar.
+- Yanıtlar üç Bakanlık yayınından okunarak yazıldı: Gebe Okulu Eğitim Kitabı (73), Doğum Öncesi Bakım Yönetim Rehberi (10), Gebelik ve Emziklilik Döneminde Beslenme (6). Her kayıtta kaynaktaki sayfa ya da bölüm (`where`) durur.
+- Tehlike işareti yanıtlarının hepsi beklemeden sağlık kuruluşuna gitmeyi söyler.
+- Doktorun özellikle bakması gerekenler (kaynaklar birbiriyle çelişiyor ya da cümle kaynaktan biraz ileri gidiyor): `gebelikte-kac-kilo-alinir` (11,5–16 kg; başka yerde 11,5–15 ve 10–14), `ayrintili-ultrason` (18–22; diğer rehberde 18–24), `mide-yanmasi`, `erken-kasilmalar`, `nefes-darligi`, `bulanti-ne-zaman-gecer`, `dogum-sonrasi-huzun`, `atesim-var`, `kan-uyusmazligi`, `ne-kadar-fazla-yemeliyim`, `hangi-egzersizler-guvenli`, `uzak-durulacak-yiyecekler`, `folik-asit-neden-onemli`.
+- Beslenme kitapçığı 2008/2012 baskısıdır; yalnızca sayı içermeyen öneriler ve su miktarı için kullanıldı.
