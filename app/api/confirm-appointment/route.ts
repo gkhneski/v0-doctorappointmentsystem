@@ -1,48 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/service-role"
-import { sendTelegramMessage, escapeHtml } from "@/lib/telegram"
+import { notifyStaffOfCancellation } from "@/lib/cancellation-notice"
 import { NextResponse } from "next/server"
 import { isConfirmationExpired } from "@/lib/confirmation-view"
-
-// Hasta linkten randevusunu iptal edince tum aktif Telegram alicilarina anlik haber ver.
-async function notifyStaffOfCancellation(
-  supabase: ReturnType<typeof createServiceRoleClient>,
-  details: { patient_name?: string; patient_phone?: string; appointment_date?: string; appointment_time?: string },
-) {
-  try {
-    const { data: recipients } = await supabase
-      .from("staff_recipients")
-      .select("full_name, telegram_chat_id")
-      .eq("is_active", true)
-      .not("telegram_chat_id", "is", null)
-
-    if (!recipients?.length) return
-
-    const dateLabel = details.appointment_date
-      ? new Date(details.appointment_date + "T12:00:00").toLocaleDateString("tr-TR", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-        })
-      : "-"
-    const timeLabel = details.appointment_time ? String(details.appointment_time).slice(0, 5) : "-"
-
-    const text =
-      `<b>❌ Randevu İptali (Hasta Bildirimi)</b>\n\n` +
-      `Hasta: <b>${escapeHtml(details.patient_name || "Bilinmeyen Hasta")}</b>\n` +
-      `Telefon: ${escapeHtml(details.patient_phone || "-")}\n` +
-      `Tarih: ${escapeHtml(dateLabel)}\n` +
-      `Saat: <b>${escapeHtml(timeLabel)}</b>\n\n` +
-      `Bu saat takvimde dolu görünmeye devam ediyor. Yerine yeni hasta vermek için admin panelini kullanın.`
-
-    await Promise.all(
-      recipients
-        .filter((r) => r.telegram_chat_id)
-        .map((r) => sendTelegramMessage(String(r.telegram_chat_id), text)),
-    )
-  } catch (err: any) {
-    console.error("Telegram cancellation notify error:", err?.message)
-  }
-}
 
 export async function POST(request: Request) {
   try {

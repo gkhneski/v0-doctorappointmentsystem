@@ -1,7 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Minus, Plus, Search } from "lucide-react"
+import { Fragment, useMemo, useState } from "react"
+import Link from "next/link"
+import { FileText, Minus, Plus, Search } from "lucide-react"
+import { AppDocuments } from "@/components/admin/app-documents"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { AppAccount } from "@/lib/app-accounts"
@@ -28,6 +30,7 @@ export function AppAccounts({ initial, today }: { initial: AppAccount[]; today: 
   const [query, setQuery] = useState("")
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState("")
+  const [open, setOpen] = useState<string | null>(null)
 
   const shown = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr")
@@ -83,7 +86,7 @@ export function AppAccounts({ initial, today }: { initial: AppAccount[]; today: 
         <p className="py-10 text-center text-sm text-gray-500">{accounts.length === 0 ? "Henüz uygulamaya giren hasta yok." : "Aramaya uyan hesap yok."}</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
               <tr>
                 <th className="px-4 py-2.5">Hasta</th>
@@ -91,18 +94,45 @@ export function AppAccounts({ initial, today }: { initial: AppAccount[]; today: 
                 <th className="px-4 py-2.5">Hafta</th>
                 <th className="px-4 py-2.5">Kayıt</th>
                 <th className="px-4 py-2.5">Son giriş</th>
+                <th className="px-4 py-2.5">Belge</th>
                 <th className="px-4 py-2.5">Üretilen</th>
                 <th className="px-4 py-2.5 text-right">Kalan hak</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {shown.map((a) => (
-                <tr key={a.id}>
-                  <td className="px-4 py-2.5 font-medium text-gray-900">{a.name ?? "—"}</td>
+                <Fragment key={a.id}>
+                <tr>
+                  <td className="px-4 py-2.5 font-medium text-gray-900">
+                    {a.clinicPatientId ? (
+                      <Link className="underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900" href={`/admin/patients/${a.clinicPatientId}`}>
+                        {a.name ?? "Hasta kartı"}
+                      </Link>
+                    ) : (
+                      (a.name ?? "—")
+                    )}
+                  </td>
                   <td className="px-4 py-2.5 tabular-nums text-gray-700">{formatPhone(a.phone)}</td>
                   <td className="px-4 py-2.5 text-gray-700">{weekOf(a.lmp, today)}</td>
                   <td className="px-4 py-2.5 tabular-nums text-gray-600">{formatDay(a.createdAt)}</td>
                   <td className="px-4 py-2.5 tabular-nums text-gray-600">{formatDay(a.lastLoginAt)}</td>
+                  <td className="px-4 py-2.5">
+                    {a.documents === 0 ? (
+                      <span className="text-gray-400">—</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-xs font-medium text-violet-900 hover:bg-violet-100"
+                        onClick={() => setOpen(open === a.id ? null : a.id)}
+                        aria-expanded={open === a.id}
+                        aria-label={`${a.name ?? a.phone}: belgeleri ${open === a.id ? "gizle" : "göster"}`}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        {a.documents}
+                        {a.unseenDocuments > 0 && <span className="rounded-full bg-violet-600 px-1.5 text-white">{a.unseenDocuments} yeni</span>}
+                      </button>
+                    )}
+                  </td>
                   <td className="px-4 py-2.5 text-gray-700">
                     {a.generated}
                     {a.failed > 0 && <span className="ml-1 text-xs text-gray-400">({a.failed} başarısız)</span>}
@@ -132,6 +162,14 @@ export function AppAccounts({ initial, today }: { initial: AppAccount[]; today: 
                     </div>
                   </td>
                 </tr>
+                {open === a.id && (
+                  <tr>
+                    <td colSpan={8} className="bg-gray-50 px-4 py-3">
+                      <AppDocuments accountId={a.id} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

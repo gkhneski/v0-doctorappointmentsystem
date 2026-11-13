@@ -581,3 +581,42 @@ Kullanıcı "kalan ne varsa yap, kendin dene, doğruysa yayımla" dedi. Yapılan
 - Yarıda kalan üretimde okunan ölçümler kaybolmuyor; eski başarısız denemeler resimleri listeden itmiyor.
 
 Bilinen, düzeltilmeyen küçük nokta: personel bir hakkı geri alırken hasta aynı anda üretim başlatırsa bir üretim fazladan yapılabilir (nadir, etkisi bir resim).
+
+## 9g. 13 Kasım 2026: uygulamadan randevu ve belge yükleme
+
+**Karar (kullanıcı).** Hasta uygulamadan canlı saatleri görüp doğrudan randevu alabilsin; tahlil, test ve raporlarını da uygulamadan yükleyebilsin. Bu, bölüm 4'teki "uygulama randevu sistemine bağlı değildir" kararını ve bölüm 6'daki "hasta alanı klinik tablolarına yazmaz" kuralını **sayılı bir istisnayla** değiştirir.
+
+**Randevu (`/anne/randevu`).**
+- Saatler kliniğin takviminden okunur ve ekran açıkken 20 saniyede bir yenilenir. Kurallar sitedeki randevu sayfasıyla aynıdır: günün programı açık olmalı, 15 dakikalık ızgara, ayrıntılı ultrason yalnızca tam ve buçuklarda, hafta sonu ve kapalı gün yok, aynı hafta ikinci randevu yok, kara listedeki numara alamaz. Bugün için en erken 30 dakika sonrası, en uzak 60 gün.
+- **İkinci SMS kodu sorulmaz**: hesabın numarası girişte SMS koduyla doğrulanmıştır. Randevu, sitede kod doğrulanınca olduğu gibi `confirmed` doğar; onay ve evrak listesi SMS'leri aynen gönderilir, hatırlatmalar değişmeden çalışır.
+- Alınabilen türler: gebelik takibi, ayrıntılı ultrason (bebek sayısı sorulur), kontrol, jinekolojik muayene. Öykü formu isteyen türler (tüp bebek, infertilite) için sitedeki sayfaya bağlantı verilir.
+- **Hangi hasta kaydı:** doğrulanmış numara tek bir klinik kaydına aitse o; numarayı birden çok kayıt paylaşıyorsa yalnızca tek gebe olan; yine belirsizse ad soyad sorulur ve adı tutan kayıt kullanılır. Kayıt yoksa sekreterin hızlı kayıt açarken yaptığı gibi geçici kayıt açılır (kimlik numarası ve doğum tarihi muayenede tamamlanır). Bağlantı `app_users.clinic_patient_id` alanına yazılır (yabancı anahtar değil).
+- Hasta yaklaşan randevularını (nereden alınmış olursa olsun) görür, takvimine ekler, iptal eder. İptal, SMS bağlantısından iptalle aynı sonucu verir: satır silinmez, saat dolu kalır, kanıt kaydı yazılır, personele Telegram bildirimi gider.
+- Aynı saate iki randevu veritabanındaki tekillik kuralıyla engellenir; yarışı veritabanı çözer.
+
+**Belgeler (`/anne/belgeler`).**
+- Fotoğraf (tarayıcıda küçültülüp JPEG'e çevrilir) ya da PDF; en çok 4 MB, hesap başına 60 belge. Tür ilk baytlardan denetlenir. Dosyalar herkese kapalı `anne-belge` deposunda durur; hastaya ve personele yalnızca sunucu yolu verir.
+- Hasta her yüklemede kliniğin belgeyi göreceğini onaylar; onay `app_consents` tablosuna `belge_paylasimi` olarak yazılır.
+- **Klinik tarafı:** belgeler hasta kartının "Evraklar" sekmesinde ve "Hasta Uygulaması" ekranında görünür. Personel belgeyi açınca hastanın ekranında "Klinik gördü" yazar.
+- Hesap silinince belgeler de silinir.
+
+**Ayrım kuralı nasıl korunuyor.** Klinik tablolarına dokunan iki dosya var: `lib/anne/clinic-match.ts` (yalnızca okur) ve `lib/anne/clinic-booking.ts`. İkincisinin hangi tabloda hangi işlemi yapabildiği `tests/guards/anne-routes.test.ts` içinde tek tek sayılıdır; listeye ekleme yapmadan yeni bir tabloya erişilemez.
+
+**Veritabanı.** `scripts/anne/05_randevu_belge.sql` (canlıya uygulandı): `app_users.clinic_patient_id`, `app_documents`, `anne-belge` deposu.
+
+**Denenenler.** Yerelde canlı veritabanına karşı geçici deneme hesabıyla 36 kontrol (saatlerin takvimle tutarlılığı, reddedilen istekler, randevunun veritabanı satırı, aynı hafta kuralı, belge yükleme ve türü, başka hesabın belgeye ve randevuya erişememesi, personel yolunun girişsiz kapalı olması) ve telefon boyutunda tarayıcıda iki randevu alma akışı. Deneme randevuları, hasta kaydı ve dosyalar silindi.
+
+**Denenmeyenler.** İptal yolu gerçek veritabanında uçtan uca denenmedi: değiştirilemeyen kanıt tablosuna satır yazıyor ve personele bildirim gönderiyor. Mantığı sınamalarla, kanıt satırının biçimi geri alınan bir işlemle doğrulandı. Personel ekranları (hasta kartındaki belge kutusu, Hasta Uygulaması ekranındaki belge sütunu) tarayıcıda denenmedi; personel girişi gerekir.
+
+**Avukata eklenenler.** (1) Uygulamadan yüklenen sağlık belgelerinin klinikle paylaşımı ve onay metni. (2) Uygulama hesabının klinik hasta kaydına bağlanması. (3) Kayıtlı olmayan numaraya uygulamadan açılan geçici hasta kaydı.
+
+**Bilinen sınırlar.** 4 MB'tan büyük PDF yüklenemez (barındırma sınırı; sayfaların fotoğrafı önerilir). Hesap silinince klinik tarafındaki randevular ve hasta kaydı silinmez; onlar kliniğin kaydıdır.
+
+**Bağımsız kod incelemesi ve düzeltmeler (aynı gün).** Hastalar arası erişim, personel yolunun yetkisi, saat dilimi hesapları, yükleme güvenliği ve iptal yolunda bulgu çıkmadı. Düzeltilenler:
+- Hesabın klinik kaydına bağlantısı her istekte numarayla yeniden doğrulanır; personel kayıttaki numarayı düzeltirse eski numaranın hesabı o kaydı artık göremez.
+- Aynı anda gelen iki ilk randevu isteğinde yeni açılan hasta kaydının geri alınması, diğer isteğin randevusunu silebiliyordu; kayıt artık randevusu varsa silinmez ve aynı hesabın istekleri art arda işlenir.
+- Al-iptal et döngüsüyle takvimde saat tüketilmesin diye günde en çok 10 randevu denemesi ve 3 iptal.
+- Ekranda eski bir yenileme yanıtı yeni alınan bileti silebiliyor ya da başka türün saatlerini gösterebiliyordu; eski yanıtlar yok sayılıyor.
+- Belge silinirken önce dosya, sonra kayıt silinir (depoda sahipsiz sağlık belgesi kalmaz); "Klinik gördü" yalnızca dosya personele gerçekten verildiyse yazılır; paylaşım onayı sürüm başına bir kez kaydedilir.
+
+**Bilerek bırakılanlar.** (1) Numara tek bir klinik kaydına aitse hesap ad sorulmadan o kayda bağlanır (9c kararı); annesinin numarasıyla giren başka biri annenin kaydına bağlanır. (2) Kara liste yalnızca numarayla denetlenir; uygulamada kimlik numarası sorulmadığı için başka numarayla giren kara listedeki kişi yakalanmaz.

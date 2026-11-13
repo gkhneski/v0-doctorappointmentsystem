@@ -23,17 +23,31 @@ export type AppAccount = {
   remaining: number
   generated: number
   failed: number
+  /** Uygulamadan yüklenen belgeler: toplam ve kliniğin henüz açmadıkları. */
+  documents: number
+  unseenDocuments: number
+  /** Hesabın bağlandığı klinik hasta kaydı; yoksa null. */
+  clinicPatientId: string | null
 }
 
 export async function listAppAccounts(db: Db): Promise<AppAccount[]> {
-  const [{ data: users }, { data: generations }] = await Promise.all([
+  const [{ data: users }, { data: generations }, { data: documents }] = await Promise.all([
     db
       .from("app_users")
-      .select("id, phone, display_name, lmp_date, created_at, last_login_at, generation_allowance")
+      .select("id, phone, display_name, lmp_date, created_at, last_login_at, generation_allowance, clinic_patient_id")
       .order("created_at", { ascending: false })
       .limit(500),
     db.from("app_generations").select("user_id, status").in("status", ["generated", "processing", "failed"]).limit(5000),
+    db.from("app_documents").select("user_id, seen_at").limit(5000),
   ])
+
+  const docs = new Map<string, { total: number; unseen: number }>()
+  for (const row of (documents ?? []) as { user_id: string; seen_at: string | null }[]) {
+    const entry = docs.get(row.user_id) ?? { total: 0, unseen: 0 }
+    entry.total++
+    if (!row.seen_at) entry.unseen++
+    docs.set(row.user_id, entry)
+  }
 
   const counts = new Map<string, { generated: number; processing: number; failed: number }>()
   for (const row of (generations ?? []) as { user_id: string; status: "generated" | "processing" | "failed" }[]) {
@@ -58,6 +72,9 @@ export async function listAppAccounts(db: Db): Promise<AppAccount[]> {
       remaining: Math.max(0, allowance - used),
       generated: c.generated,
       failed: c.failed,
+      documents: docs.get(u.id as string)?.total ?? 0,
+      unseenDocuments: docs.get(u.id as string)?.unseen ?? 0,
+      clinicPatientId: (u.clinic_patient_id as string | null) ?? null,
     }
   })
 }

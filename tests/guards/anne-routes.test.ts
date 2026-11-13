@@ -4,8 +4,9 @@ import { join, sep } from "node:path"
 
 // Hasta uygulamasının (/anne) ayrım kuralları (ana plan, bölüm 6):
 //   1. /api/anne altındaki her yol oturumdaki hastayı denetler (giriş yolları kendi denetimini yapar).
-//   2. Hasta alanı klinik tablolarına dokunmaz; yalnızca app_ tablolarını kullanır. Tek istisna
-//      lib/anne/clinic-match.ts: ilk girişte hastayı tanımak için iki klinik tablosunu okur (9c).
+//   2. Hasta alanı klinik tablolarına dokunmaz; yalnızca app_ tablolarını kullanır. İki istisna:
+//      lib/anne/clinic-match.ts ilk girişte hastayı tanımak için iki klinik tablosunu okur (9c);
+//      lib/anne/clinic-booking.ts uygulamadan randevu için aşağıda sayılan işlemleri yapar (9g).
 //   3. Hasta alanı personel girişini (Supabase Auth) ve tarayıcı istemcisini kullanmaz.
 
 function files(dir: string): string[] {
@@ -20,6 +21,17 @@ const routes = files(join("app", "api", "anne")).filter((f) => f.endsWith("route
 const loginRoutes = join("app", "api", "anne", "giris") + sep
 const logoutRoute = join("app", "api", "anne", "cikis", "route.ts")
 const clinicBridge = join("lib", "anne", "clinic-match.ts")
+const bookingBridge = join("lib", "anne", "clinic-booking.ts")
+// Randevu kapısının klinik tablolarında yapabildiği her şey. Buraya ekleme yapmak bilinçli bir karardır.
+const BOOKING_ACCESS: Record<string, string[]> = {
+  doctors: ["select"],
+  doctor_schedules: ["select"],
+  pregnancy_episodes: ["select"],
+  patients: ["select", "insert", "delete"],
+  appointments: ["select", "insert", "update"],
+  appointment_forms: ["insert"],
+  appointment_audit_events: ["insert"],
+}
 const patientCode = [join("app", "anne"), join("app", "api", "anne"), join("lib", "anne"), join("components", "anne")].flatMap(files)
 
 describe("/api/anne yolları", () => {
@@ -66,6 +78,20 @@ describe("hasta alanının ayrımı", () => {
           expect(op).toBe("select")
         }
         expect(source.match(/\.from\(/g)!.length).toBe(calls.length)
+      })
+    } else if (file === bookingBridge) {
+      it(`${file} klinik tablolarında yalnızca sayılan işlemleri yapar`, () => {
+        const calls = [...source.matchAll(/\.from\(\s*["'`]([^"'`]+)["'`]\s*\)\s*\.(\w+)/g)].map((m) => [m[1], m[2]])
+        expect(calls.length).toBeGreaterThan(0)
+        for (const [table, op] of calls) {
+          if (table.startsWith("app_")) continue
+          expect(Object.keys(BOOKING_ACCESS)).toContain(table)
+          expect(BOOKING_ACCESS[table]).toContain(op)
+        }
+        // Tablo adı değişkenle verilemez: her erişim yukarıdaki sayıma girmelidir.
+        expect(source.match(/\.from\(/g)!.length).toBe(calls.length)
+        // Yeni açılan hasta kaydı yalnızca randevu oluşturulamadığında geri alınır.
+        expect(source.match(/from\("patients"\)\s*\.delete\(\)/g)!.length).toBe(1)
       })
     } else {
       it(`${file} yalnızca app_ tablolarına erişir`, () => {
