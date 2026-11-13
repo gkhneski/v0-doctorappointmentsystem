@@ -3,6 +3,7 @@ import { deleteAccount } from "@/lib/anne/auth"
 import { resolvePregnancyStart, todayInIstanbul } from "@/lib/anne/pregnancy"
 import { GENERATION_BUCKET } from "@/lib/anne/generation/limits"
 import { DOCUMENT_BUCKET } from "@/lib/anne/document-types"
+import { MOMENT_BUCKET } from "@/lib/anne/animation/moments"
 import { ALBUM_BUCKET, clearSessionCookie, publicProfile, requireAppUser } from "@/lib/anne/server"
 
 // Hastanın kendi hesabı. Her işlem oturumdaki hesabın kimliğiyle süzülür;
@@ -81,6 +82,16 @@ export async function DELETE(request: Request) {
   const generated = (generations ?? []).map((g) => g.storage_path).filter((path): path is string => typeof path === "string")
   if (generated.length > 0) {
     const removal = await gate.db.storage.from(GENERATION_BUCKET).remove(generated)
+    if (removal.error) {
+      return NextResponse.json({ error: "Hesap silinemedi. Lütfen yeniden deneyin." }, { status: 500 })
+    }
+  }
+
+  // Bebek yüzü canlandırmaları (videolar) da silinir.
+  const { data: moments } = await gate.db.from("app_moments").select("storage_path").eq("user_id", gate.user.id)
+  const momentPaths = (moments ?? []).map((m) => m.storage_path).filter((p): p is string => typeof p === "string")
+  if (momentPaths.length > 0) {
+    const removal = await gate.db.storage.from(MOMENT_BUCKET).remove(momentPaths)
     if (removal.error) {
       return NextResponse.json({ error: "Hesap silinemedi. Lütfen yeniden deneyin." }, { status: 500 })
     }

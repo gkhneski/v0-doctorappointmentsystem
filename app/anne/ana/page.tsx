@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { appDb, requireReadyUser } from "@/lib/anne/server"
 import { bookingState } from "@/lib/anne/clinic-booking"
+import { latestFace } from "@/lib/anne/animation/service"
 import { bookingTypeTitle, formatDayTr } from "@/lib/anne/booking-types"
 import { personalSchedule } from "@/lib/anne/content/schedule"
 import { sizeComparison } from "@/lib/anne/content/sizes"
@@ -25,6 +26,8 @@ export default async function AnneBugunPage() {
   const nextAppointment = await bookingState(appDb(), user)
     .then((state) => state.appointments[0] ?? null)
     .catch(() => null)
+  // Bebek yüzü üretildiyse ana ekranın başında o durur ve "Canlı bebeğim"e götürür.
+  const face = await latestFace(appDb(), user.id).catch(() => null)
   const remaining = age.daysToDue >= 0 ? `${age.daysToDue} gün kaldı` : `${-age.daysToDue} gün geçti`
 
   return (
@@ -39,6 +42,11 @@ export default async function AnneBugunPage() {
           <Link className="nb-story" href="/anne/bebegim">
             <i style={{ background: "var(--pink)" }}>{age.weeks}</i>Bu hafta
           </Link>
+          {face && (
+            <Link className="nb-story" href="/anne/canli">
+              <i style={{ background: "var(--lilac)" }}>♥</i>Canlı
+            </Link>
+          )}
           <Link className="nb-story" href="/anne/randevu">
             <i style={{ background: "var(--ink)", color: "#fff" }}>{nextAppointment ? nextAppointment.date.slice(8) : "+"}</i>Randevu
           </Link>
@@ -59,8 +67,13 @@ export default async function AnneBugunPage() {
           </Link>
         </div>
 
-        <Link className="nb-card nb-row-card" data-tone="pink" href="/anne/bebegim" style={{ marginTop: 18, padding: 16 }}>
-          <Slot image={babyImage(age.weeks)} width={128} height={128} round style={{ flex: "none" }} />
+        <Link className="nb-card nb-row-card" data-tone="pink" href={face ? "/anne/canli" : "/anne/bebegim"} style={{ marginTop: 18, padding: 16 }}>
+          {face ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="nb-baby-thumb" src={`/api/anne/canli?yuz=${face.id}`} alt="Bebeğinin yüzü" width={128} height={128} />
+          ) : (
+            <Slot image={babyImage(age.weeks)} width={128} height={128} round style={{ flex: "none" }} />
+          )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <p className="nb-big">{age.weeks}. hafta</p>
             <p style={{ marginTop: 4 }}>
@@ -70,6 +83,11 @@ export default async function AnneBugunPage() {
             <div className="nb-bar" style={{ marginTop: 12 }}>
               <i style={{ width: `${age.progressPercent}%` }} />
             </div>
+            {face && (
+              <span className="nb-chip" data-on="" style={{ marginTop: 10 }}>
+                Dokun, canlansın
+              </span>
+            )}
           </div>
         </Link>
 

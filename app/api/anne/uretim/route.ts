@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { consentBlock, requireAppUser } from "@/lib/anne/server"
+import { MOMENT_BUCKET } from "@/lib/anne/animation/moments"
 import { GENERATION_BUCKET, readState } from "@/lib/anne/generation/service"
 
 // Bebek yüzü üretimi: durum, sonuç resmi ve silme. Her işlem oturumdaki hesaba süzülür.
@@ -66,6 +67,15 @@ export async function DELETE(request: Request) {
     await gate.db.from("app_generations").delete().eq("user_id", gate.user.id).eq("id", target).eq("status", "failed")
     return NextResponse.json({ ok: true })
   }
+
+  // Resim silinince ondan üretilmiş canlandırmalar (videolar) da silinir.
+  const { data: moments } = await gate.db.from("app_moments").select("storage_path").eq("user_id", gate.user.id).eq("generation_id", target)
+  const videos = (moments ?? []).map((m) => m.storage_path).filter((p): p is string => typeof p === "string")
+  if (videos.length > 0) {
+    const removal = await gate.db.storage.from(MOMENT_BUCKET).remove(videos)
+    if (removal.error) return NextResponse.json({ error: "Silinemedi. Lütfen yeniden deneyin." }, { status: 500 })
+  }
+  await gate.db.from("app_moments").delete().eq("user_id", gate.user.id).eq("generation_id", target)
 
   // Başarılı üretimin kaydı kalır (hak hesabı için); yalnızca resim dosyası silinir.
   if (row.storage_path) {
