@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { appDb, requireReadyUser } from "@/lib/anne/server"
 import { readLiveState } from "@/lib/anne/animation/service"
+import { daysBetween } from "@/lib/anne/pregnancy"
 import { SOURCES } from "@/lib/anne/content/sources"
 import { Icon, Screen } from "@/components/anne/chrome"
 import { TasteGame } from "@/components/anne/taste-game"
@@ -24,8 +25,9 @@ export default async function AnneTatPage() {
         </header>
         <TasteGame
           faceUrl={state?.face ? `/api/anne/canli?yuz=${state.face.id}` : null}
+          day={daysBetween("2026-01-01", today)}
           clips={{ tatli: ready("kikirde") ?? ready("gulumse"), aci: ready("somurt") }}
-          science="100 gebeyle yapılan bir araştırmada, anne havuç aldıktan sonra bebekler ultrasonda daha çok gülen yüz, lahana aldıktan sonra daha çok ağlayan yüz ifadesi yaptı. Araştırmacılar bunun sevinç ya da üzüntü diye yorumlanmaması gerektiğini söylüyor."
+          science="100 gebeyle yapılan bir araştırmada, anne havuç aldıktan sonra bebekler ultrasonda daha çok gülen yüz, lahana aldıktan sonra daha çok ağlayan yüz ifadesi yaptı. Araştırmacılar bunun sevinç ya da üzüntü diye yorumlanmaması gerektiğini söylüyor. Araştırmada yalnızca havuç ve lahana denendi; diğer yiyecekleri tatlarına göre biz eşleştirdik."
           source={SOURCES.tatDurham.citation}
         />
       </div>

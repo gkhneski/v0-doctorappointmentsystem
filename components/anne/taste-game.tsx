@@ -4,13 +4,31 @@ import { useRef, useState } from "react"
 
 type Taste = "tatli" | "aci"
 
-// Araştırmada tatlı tat için havuç, acı tat için lahana kullanıldı; diğer ikisi aynı tat ailesindendir.
-const FOODS: { id: string; label: string; taste: Taste; color: string }[] = [
-  { id: "havuc", label: "Havuç", taste: "tatli", color: "#f08a24" },
-  { id: "meyve", label: "Tatlı meyve", taste: "tatli", color: "#e0364b" },
-  { id: "lahana", label: "Lahana", taste: "aci", color: "#5aa846" },
-  { id: "roka", label: "Roka", taste: "aci", color: "#2f6b2a" },
+// Araştırmada tatlı tat için havuç, acı tat için lahana denendi. Diğer yiyecekler tat ailesine
+// göre (tatlı ya da acı, ekşi, keskin) bizim eşleştirmemizdir; ekranda da böyle yazar.
+// Fotoğraflar public/anne/gorsel/yemek-*.jpg dosyalarıdır (kaynakları aynı klasörde).
+const FOODS: { id: string; label: string; taste: Taste }[] = [
+  { id: "havuc", label: "Havuç", taste: "tatli" },
+  { id: "lahana", label: "Lahana", taste: "aci" },
+  { id: "cilek", label: "Çilek", taste: "tatli" },
+  { id: "limon", label: "Limon", taste: "aci" },
+  { id: "muz", label: "Muz", taste: "tatli" },
+  { id: "brokoli", label: "Brokoli", taste: "aci" },
+  { id: "karpuz", label: "Karpuz", taste: "tatli" },
+  { id: "sarimsak", label: "Sarımsak", taste: "aci" },
+  { id: "elma", label: "Elma", taste: "tatli" },
+  { id: "greyfurt", label: "Greyfurt", taste: "aci" },
+  { id: "hurma", label: "Hurma", taste: "tatli" },
+  { id: "biber", label: "Acı biber", taste: "aci" },
+  { id: "bal", label: "Bal", taste: "tatli" },
+  { id: "cikolata", label: "Çikolata", taste: "tatli" },
 ]
+
+/** Liste her gün başka bir yiyecekten başlar; böylece her gün aynı dördü öne çıkmaz. */
+export function foodsOfDay(day: number): typeof FOODS {
+  const start = ((day % FOODS.length) + FOODS.length) % FOODS.length
+  return [...FOODS.slice(start), ...FOODS.slice(0, start)]
+}
 
 const WORDS: Record<Taste, string[]> = {
   tatli: ["Mmm, bir daha!", "Bunu sevdim anne.", "Hihi, tatlıymış!"],
@@ -24,11 +42,14 @@ const WORDS: Record<Taste, string[]> = {
 export function TasteGame({
   faceUrl,
   clips,
+  day,
   science,
   source,
 }: {
   faceUrl: string | null
   clips: Record<Taste, string | null>
+  /** Günün sıra numarası; listenin hangi yiyecekten başlayacağını belirler. */
+  day: number
   science: string
   source: string
 }) {
@@ -37,6 +58,7 @@ export function TasteGame({
   const [playing, setPlaying] = useState(false)
   const video = useRef<HTMLVideoElement>(null)
 
+  const foods = foodsOfDay(day)
   const food = FOODS.find((item) => item.id === picked) ?? null
 
   function pick(id: string) {
@@ -84,12 +106,12 @@ export function TasteGame({
       <div className="nb-sheet">
         <h3>Bugün ne yedin?</h3>
         <p className="nb-note" style={{ marginTop: 2 }}>
-          Seç, bebeğinin tepkisini gör.
+          Seç, bebeğinin tepkisini gör. Kaydır, daha fazlası var.
         </p>
         <div className="nb-foods" role="group" aria-label="Bugün yediğin">
-          {FOODS.map((item) => (
+          {foods.map((item) => (
             <button key={item.id} className="nb-food" type="button" aria-pressed={picked === item.id} onClick={() => pick(item.id)}>
-              <i style={{ background: item.color }} />
+              <i style={{ backgroundImage: `url(/anne/gorsel/yemek-${item.id}.jpg)` }} />
               {item.label}
             </button>
           ))}
