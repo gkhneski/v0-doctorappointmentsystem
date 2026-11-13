@@ -651,6 +651,8 @@ Bilinen, düzeltilmeyen küçük nokta: personel bir hakkı geri alırken hasta 
 
 ## 9i. 13 Kasım 2026: cinsiyete göre renkler, "Süsle" ve günlük aksesuar hediyesi
 
+> **Aynı gün geri alındı (kullanıcı kararı):** "Süsle" ve günlük aksesuar hediyesi beğenilmedi ve uygulamadan tamamen kaldırıldı (ekran, kod, `/api/anne/sus`). Aşağıdaki "Süsle" ve "Günlük hediye" maddeleri artık geçerli değil; yalnızca renk teması kaldı (`lib/anne/theme.ts`, `/api/anne/tema`). `app_looks` ve `app_accessories` tabloları veritabanında duruyor ama kullanılmıyor. Kullanıcının ayrıca söylediği: uygulama çok renksiz, hikâye halkaları bile renksiz; yerine bilimsel ama eğlenceli, başka uygulamalarda olmayan oyunlar istiyor.
+
 **Karar (kullanıcı).** Bebek kızsa uygulamanın ana renkleri pembe, erkekse açık mavi olsun. Anne bebeğe toka, şapka gibi şeyler takabilsin; daha eğlenceli olsun ama zor olmasın.
 
 **Renk teması.**

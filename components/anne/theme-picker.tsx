@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { send } from "@/components/anne/api"
-import type { Theme } from "@/lib/anne/look"
+import type { Theme } from "@/lib/anne/theme"
 
 const OPTIONS: { value: Theme | null; label: string; swatch: string }[] = [
   { value: null, label: "Bebeğime göre", swatch: "linear-gradient(90deg, #f9bfd0 50%, #c4e0f7 50%)" },
@@ -22,7 +22,7 @@ export function ThemePicker({ choice }: { choice: Theme | null }) {
     const before = value
     setValue(next)
     setError("")
-    const result = await send("/api/anne/sus", "PUT", { theme: next }, "Renk kaydedilemedi. Lütfen yeniden dene.")
+    const result = await send("/api/anne/tema", "PUT", { theme: next }, "Renk kaydedilemedi. Lütfen yeniden dene.")
     if (!result.ok) {
       setValue(before)
       setError(result.error)
