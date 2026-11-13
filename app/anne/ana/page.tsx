@@ -8,19 +8,20 @@ import { mythsOfDay } from "@/lib/anne/content/myths"
 import { personalSchedule } from "@/lib/anne/content/schedule"
 import { sizeComparison } from "@/lib/anne/content/sizes"
 import { MIN_GENERATION_WEEK } from "@/lib/anne/generation/limits"
-import { Icon, Screen, Tabs, TopBar, type ICONS } from "@/components/anne/chrome"
+import { Icon, Screen, Tabs, TopBar } from "@/components/anne/chrome"
 
 export const dynamic = "force-dynamic"
 
-const STORIES: { href: string; icon: keyof typeof ICONS; label: string; quiet?: boolean }[] = [
-  { href: "/anne/ses", icon: "mic", label: "Sesim" },
-  { href: "/anne/efsane", icon: "question", label: "Efsane" },
-  { href: "/anne/tat", icon: "taste", label: "Tat" },
-  { href: "/anne/tekme", icon: "kick", label: "Tekme" },
-  { href: "/anne/isimler", icon: "letters", label: "İsimler" },
-  { href: "/anne/randevu", icon: "calendar", label: "Randevu", quiet: true },
-  { href: "/anne/belgeler", icon: "upload", label: "Belgeler", quiet: true },
-  { href: "/anne/album", icon: "album", label: "Albüm", quiet: true },
+// Kutuların resimleri public/anne/gorsel altındaki kutu-*.svg dosyalarıdır.
+const STORIES: { href: string; image: string; label: string; quiet?: boolean }[] = [
+  { href: "/anne/ses", image: "ses", label: "Sesim" },
+  { href: "/anne/efsane", image: "efsane", label: "Efsane" },
+  { href: "/anne/tat", image: "tat", label: "Tat" },
+  { href: "/anne/tekme", image: "tekme", label: "Tekme" },
+  { href: "/anne/isimler", image: "isimler", label: "İsimler" },
+  { href: "/anne/randevu", image: "randevu", label: "Randevu", quiet: true },
+  { href: "/anne/belgeler", image: "belgeler", label: "Belgeler", quiet: true },
+  { href: "/anne/album", image: "album", label: "Albüm", quiet: true },
 ]
 
 // Bugün: bebeğin yüzü ve sözü, oyunlar, günün efsanesi, randevu ve sıradaki durak.
@@ -70,7 +71,8 @@ export default async function AnneBugunPage() {
           {STORIES.map((story) => (
             <Link key={story.href} className="nb-story" data-quiet={story.quiet ? "" : undefined} href={story.href}>
               <i>
-                <Icon name={story.icon} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/anne/gorsel/kutu-${story.image}.svg`} alt="" data-art="" />
               </i>
               {story.label}
             </Link>

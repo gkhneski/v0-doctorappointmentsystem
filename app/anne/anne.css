@@ -2605,3 +2605,8 @@
 .nb-screen:has(.nb-tabs) {
   padding-bottom: calc(env(safe-area-inset-bottom) + 72px);
 }
+
+/* Kutulardaki çizim resimler kutuyu ortadan doldurur. */
+.nb-story img[data-art] {
+  object-position: 50% 50%;
+}
