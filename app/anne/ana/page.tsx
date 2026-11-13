@@ -30,12 +30,14 @@ export default async function AnneBugunPage() {
   const size = sizeComparison(age.weeks)
   // Destekler (vitamin, demir) durak değildir; yolculukta izlemler, taramalar ve aşılar gösterilir.
   const nextStop = personalSchedule(user.lmp_date, age.weeks).find((item) => item.kind !== "destek" && item.status !== "past")
-  // Yaklaşan randevu (klinik takviminden); okunamazsa ana ekran yine açılır.
-  const nextAppointment = await bookingState(appDb(), user)
-    .then((state) => state.appointments[0] ?? null)
-    .catch(() => null)
-  // Bebek yüzü üretildiyse ana ekranın büyük kartında o durur ve "Canlı bebeğim"e götürür.
-  const face = await latestFace(appDb(), user.id).catch(() => null)
+  // Yaklaşan randevu (klinik takviminden) ve üretilmiş bebek yüzü aynı anda okunur; biri
+  // okunamazsa ana ekran yine açılır. Yüz varsa büyük kartta o durur ve "Canlı bebeğim"e götürür.
+  const [nextAppointment, face] = await Promise.all([
+    bookingState(appDb(), user)
+      .then((state) => state.appointments[0] ?? null)
+      .catch(() => null),
+    latestFace(appDb(), user.id).catch(() => null),
+  ])
   const faceUrl = face ? `/api/anne/canli?yuz=${face.id}` : null
   const remaining = age.daysToDue >= 0 ? `${age.daysToDue} gün kaldı` : `${-age.daysToDue} gün geçti`
   const hour = Math.floor(istanbulNow().minutes / 60)
