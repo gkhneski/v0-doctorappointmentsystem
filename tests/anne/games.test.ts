@@ -80,3 +80,25 @@ describe("beni böyle duyuyor", () => {
     expect(view.getInt16(52, true)).toBe(-32767)
   })
 })
+
+describe("havuç mu, lahana mı", () => {
+  it("her yiyeceğin fotoğrafı var; araştırmadaki iki yiyecek doğru tat ailesinde", async () => {
+    const { existsSync } = await import("node:fs")
+    const { foodsOfDay } = await import("@/components/anne/taste-game")
+    const foods = foodsOfDay(0)
+    expect(foods.length).toBeGreaterThanOrEqual(12)
+    expect(new Set(foods.map((f) => f.id)).size).toBe(foods.length)
+    for (const food of foods) expect(existsSync(`public/anne/gorsel/yemek-${food.id}.jpg`), food.id).toBe(true)
+    expect(foods.find((f) => f.id === "havuc")?.taste).toBe("tatli")
+    expect(foods.find((f) => f.id === "lahana")?.taste).toBe("aci")
+  })
+
+  it("liste her gün başka bir yiyecekten başlar ve hiçbirini atlamaz", async () => {
+    const { foodsOfDay } = await import("@/components/anne/taste-game")
+    const today = foodsOfDay(100)
+    const tomorrow = foodsOfDay(101)
+    expect(tomorrow[0].id).toBe(today[1].id)
+    expect([...tomorrow.map((f) => f.id)].sort()).toEqual([...today.map((f) => f.id)].sort())
+    expect(foodsOfDay(-3)).toHaveLength(today.length)
+  })
+})
