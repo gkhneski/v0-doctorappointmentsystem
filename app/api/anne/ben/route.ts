@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { deleteAccount } from "@/lib/anne/auth"
 import { resolvePregnancyStart, todayInIstanbul } from "@/lib/anne/pregnancy"
 import { GENERATION_BUCKET } from "@/lib/anne/generation/limits"
+import { DOCUMENT_BUCKET } from "@/lib/anne/document-types"
 import { ALBUM_BUCKET, clearSessionCookie, publicProfile, requireAppUser } from "@/lib/anne/server"
 
 // Hastanın kendi hesabı. Her işlem oturumdaki hesabın kimliğiyle süzülür;
@@ -80,6 +81,16 @@ export async function DELETE(request: Request) {
   const generated = (generations ?? []).map((g) => g.storage_path).filter((path): path is string => typeof path === "string")
   if (generated.length > 0) {
     const removal = await gate.db.storage.from(GENERATION_BUCKET).remove(generated)
+    if (removal.error) {
+      return NextResponse.json({ error: "Hesap silinemedi. Lütfen yeniden deneyin." }, { status: 500 })
+    }
+  }
+
+  // Yüklenen belgeler (tahlil, rapor) de hesapla birlikte silinir.
+  const { data: documents } = await gate.db.from("app_documents").select("storage_path").eq("user_id", gate.user.id)
+  const documentPaths = (documents ?? []).map((d) => d.storage_path)
+  if (documentPaths.length > 0) {
+    const removal = await gate.db.storage.from(DOCUMENT_BUCKET).remove(documentPaths)
     if (removal.error) {
       return NextResponse.json({ error: "Hesap silinemedi. Lütfen yeniden deneyin." }, { status: 500 })
     }

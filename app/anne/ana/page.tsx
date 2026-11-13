@@ -1,5 +1,7 @@
 import Link from "next/link"
-import { requireReadyUser } from "@/lib/anne/server"
+import { appDb, requireReadyUser } from "@/lib/anne/server"
+import { bookingState } from "@/lib/anne/clinic-booking"
+import { bookingTypeTitle, formatDayTr } from "@/lib/anne/booking-types"
 import { personalSchedule } from "@/lib/anne/content/schedule"
 import { sizeComparison } from "@/lib/anne/content/sizes"
 import { babyImage } from "@/lib/anne/images"
@@ -19,6 +21,10 @@ export default async function AnneBugunPage() {
   const size = sizeComparison(age.weeks)
   // Destekler (vitamin, demir) durak değildir; yolculukta izlemler, taramalar ve aşılar gösterilir.
   const nextStop = personalSchedule(user.lmp_date, age.weeks).find((item) => item.kind !== "destek" && item.status !== "past")
+  // Yaklaşan randevu (klinik takviminden); okunamazsa ana ekran yine açılır.
+  const nextAppointment = await bookingState(appDb(), user)
+    .then((state) => state.appointments[0] ?? null)
+    .catch(() => null)
   const remaining = age.daysToDue >= 0 ? `${age.daysToDue} gün kaldı` : `${-age.daysToDue} gün geçti`
 
   return (
@@ -29,9 +35,15 @@ export default async function AnneBugunPage() {
         </Link>
       </TopBar>
       <main className="nb-main">
-        <div className="nb-stories">
+        <div className="nb-stories" data-scroll="">
           <Link className="nb-story" href="/anne/bebegim">
             <i style={{ background: "var(--pink)" }}>{age.weeks}</i>Bu hafta
+          </Link>
+          <Link className="nb-story" href="/anne/randevu">
+            <i style={{ background: "var(--ink)", color: "#fff" }}>{nextAppointment ? nextAppointment.date.slice(8) : "+"}</i>Randevu
+          </Link>
+          <Link className="nb-story" href="/anne/belgeler">
+            <i style={{ background: "var(--peach)" }}>↑</i>Belgeler
           </Link>
           <Link className="nb-story" href="/anne/oyun">
             <i style={{ background: "var(--lilac)" }}>?</i>Soru
@@ -61,6 +73,19 @@ export default async function AnneBugunPage() {
           </div>
         </Link>
 
+        <Link className="nb-card nb-row-card" data-tone="dark" href="/anne/randevu">
+          {nextAppointment ? (
+            <span style={{ minWidth: 0 }}>
+              <b>Randevun:</b> {formatDayTr(nextAppointment.date)} · {nextAppointment.time}
+              <br />
+              <span style={{ fontSize: 13, opacity: 0.8 }}>{bookingTypeTitle(nextAppointment.type)}</span>
+            </span>
+          ) : (
+            <h3>Randevu al</h3>
+          )}
+          <span className="nb-chip">{nextAppointment ? "Gör" : "Canlı saatler"}</span>
+        </Link>
+
         <Link className="nb-card nb-row-card" data-tone="peach" href="/anne/yuz">
           <h3>Bebeğinin yüzünü gör</h3>
           <span className="nb-chip" data-on="">
@@ -79,10 +104,16 @@ export default async function AnneBugunPage() {
           </Link>
         </div>
 
-        <Link className="nb-card nb-row-card" data-tone="dark" href="/anne/tekme">
-          <h3>Tekme geldi mi?</h3>
-          <span className="nb-chip">Say</span>
-        </Link>
+        <div className="nb-two">
+          <Link className="nb-card" data-tone="dark" href="/anne/tekme">
+            <p className="nb-note" style={{ color: "#fff", opacity: 0.8 }}>Tekme geldi mi?</p>
+            <h3 style={{ marginTop: 6 }}>Say</h3>
+          </Link>
+          <Link className="nb-card" data-tone="pink" href="/anne/belgeler">
+            <p className="nb-note">Tahlil, rapor</p>
+            <h3 style={{ marginTop: 6 }}>Belgelerini yükle</h3>
+          </Link>
+        </div>
 
         {nextStop && (
           <Link className="nb-card nb-row-card" href="/anne/yolculuk" style={{ padding: "14px 18px" }}>

@@ -4,7 +4,8 @@ type Row = Record<string, any>
 
 export function createFakeSupabase(
   tables: Record<string, Row[]>,
-  failOn: (table: string, op: string) => boolean = () => false,
+  // true: genel hata; nesne: o hata (ör. { code: "23505" } tekillik çakışması).
+  failOn: (table: string, op: string) => boolean | Record<string, unknown> = () => false,
 ) {
   let seq = 0
 
@@ -17,7 +18,8 @@ export function createFakeSupabase(
     let max: number | undefined
 
     const run = (): { data: any; error: any } => {
-      if (failOn(table, op)) return { data: null, error: { message: "simulated failure" } }
+      const failure = failOn(table, op)
+      if (failure) return { data: null, error: typeof failure === "object" ? failure : { message: "simulated failure" } }
       const rows = (tables[table] ??= [])
       if (op === "insert") {
         const items = (Array.isArray(payload) ? payload : [payload]).map((p) => ({
@@ -54,6 +56,9 @@ export function createFakeSupabase(
       is: (k: string, v: any) => (filters.push((r) => (r[k] ?? null) === v), api),
       in: (k: string, vs: any[]) => (filters.push((r) => vs.includes(r[k])), api),
       lt: (k: string, v: any) => (filters.push((r) => r[k] < v), api),
+      gte: (k: string, v: any) => (filters.push((r) => r[k] >= v), api),
+      lte: (k: string, v: any) => (filters.push((r) => r[k] <= v), api),
+      neq: (k: string, v: any) => (filters.push((r) => r[k] !== v), api),
       order: (k: string, o?: { ascending?: boolean }) => ((orderKey = k), (ascending = o?.ascending ?? true), api),
       limit: (n: number) => ((max = n), api),
       single: async () => {

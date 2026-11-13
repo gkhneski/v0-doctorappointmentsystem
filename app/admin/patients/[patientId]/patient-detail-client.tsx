@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { AppDocuments } from "@/components/admin/app-documents"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogDescription } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -1138,6 +1139,7 @@ export function PatientDetailClient({ patientId }: PatientDetailClientProps) {
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-4">
+            <AppDocuments patientId={patientId} hideWhenEmpty />
             <div className="flex justify-between items-center">
               <h3 className="font-medium text-clinical-text">Yüklenen Evraklar</h3>
               <Button size="sm" variant="outline">
