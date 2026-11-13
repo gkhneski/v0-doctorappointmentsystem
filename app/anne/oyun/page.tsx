@@ -9,7 +9,7 @@ const GAMES: { href: string; icon: keyof typeof ICONS; title: string; note: stri
   { href: "/anne/ses", icon: "mic", title: "Beni böyle duyuyor", note: "Sesini karnından dinle", tone: "accent" },
   { href: "/anne/tat", icon: "taste", title: "Havuç mu, lahana mı?", note: "Yediğine tepkisini gör", tone: "dark" },
   { href: "/anne/tekme", icon: "kick", title: "Tekme", note: "Dokun, say, kaydet" },
-  { href: "/anne/isimler", icon: "letters", title: "İsim bulucu", note: "Beğen ya da geç" },
+  { href: "/anne/isimler", icon: "letters", title: "İsim çarkı", note: "Çevir, durdur, anlamına bak" },
 ]
 
 // Oyun: günün efsane kartları ve diğer oyunlar.

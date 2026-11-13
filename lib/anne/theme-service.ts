@@ -7,7 +7,7 @@ import { isTheme, resolveTheme, type Theme } from "@/lib/anne/theme"
 type Db = any
 
 /** Üretilen son bebek yüzünde seçilmiş cinsiyet. */
-async function babyGender(db: Db, userId: string): Promise<string | null> {
+export async function babyGender(db: Db, userId: string): Promise<string | null> {
   const { data } = await db
     .from("app_generations")
     .select("gender, created_at")

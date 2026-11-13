@@ -32,6 +32,11 @@ export const SOURCES = {
     citation: "“Gebelere Nutrisyonel Destek Programı”, T.C. Sağlık Bakanlığı Halk Sağlığı Genel Müdürlüğü",
     url: "https://hsgm.saglik.gov.tr/tr/programlar-2/gebelere-nutrisyonel-destek-programi.html",
   },
+  beslenmeKitapcigi: {
+    id: "gebelik-emziklilik-beslenme",
+    citation: "“Gebelik ve Emziklilik Döneminde Beslenme”, T.C. Sağlık Bakanlığı Halk Sağlığı Genel Müdürlüğü",
+    url: "https://hsgm.saglik.gov.tr/depo/birimler/saglikli-beslenme-ve-hareketli-hayat-db/Dokumanlar/Kitaplar/gebelik-ve-emziklilik-donemi.pdf",
+  },
   // Oyunlarda kullanılan hakemli araştırmalar (13.11.2026'da basın özetleri üzerinden okundu;
   // künyeler doğrulanmalı ve Dr. Eray onaylamalıdır).
   rahimdeSes: {
