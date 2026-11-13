@@ -7,6 +7,8 @@ import { DANGER_SIGNS } from "@/lib/anne/content/danger-signs"
 import { Blob, Screen, TopBar } from "@/components/anne/chrome"
 import { StartForm } from "@/components/anne/start-form"
 import { AccountActions } from "@/components/anne/account-actions"
+import { ThemePicker } from "@/components/anne/theme-picker"
+import { isTheme } from "@/lib/anne/look"
 
 export const dynamic = "force-dynamic"
 
@@ -46,6 +48,14 @@ export default async function AnneHesapPage() {
               value: (kind === "due" ? user.due_date : user.lmp_date) ?? "",
             }}
           />
+        </div>
+
+        <div className="nb-card" style={{ padding: "14px 18px 16px" }}>
+          <h3>Renkler</h3>
+          <p className="nb-note" style={{ marginTop: 4 }}>
+            Bebeğinin yüzünü üretirken seçtiğin cinsiyete göre pembe ya da mavi olur. İstersen kendin seç.
+          </p>
+          <ThemePicker choice={isTheme(user.theme) ? user.theme : null} />
         </div>
 
         <div className="nb-card" style={{ padding: "14px 18px 6px" }}>

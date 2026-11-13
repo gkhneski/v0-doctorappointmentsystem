@@ -1,6 +1,8 @@
 import Link from "next/link"
 import type { CSSProperties, ReactNode } from "react"
 import type { ImageSlot } from "@/lib/anne/images"
+import { themeFor } from "@/lib/anne/look-service"
+import { appDb, getAppUser } from "@/lib/anne/server"
 
 // Ekranların ortak parçaları: çerçeve, arkadaki şekiller, görsel yuvası, alt gezinme.
 
@@ -12,8 +14,18 @@ export function formatDateTr(iso: string): string {
   return `${d} ${MONTHS[m - 1]} ${y}`
 }
 
-export function Screen({ children }: { children: ReactNode }) {
-  return <div className="nb-screen">{children}</div>
+/**
+ * Her ekranın çerçevesi. Renk temasını da burada belirler: kız bebek pembe, erkek bebek mavi,
+ * bilinmiyorsa sade (anne Hesap ekranından değiştirebilir). Giriş yapılmamışsa sade kalır.
+ */
+export async function Screen({ children }: { children: ReactNode }) {
+  const user = await getAppUser().catch(() => null)
+  const theme = user ? await themeFor(appDb(), user) : "sade"
+  return (
+    <div className="nb-screen" data-tema={theme}>
+      {children}
+    </div>
+  )
 }
 
 /** Arkadaki düz renkli şekil. Yeri ve boyutu ekrandan ekrana değişir. */

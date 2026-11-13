@@ -26,11 +26,13 @@ export type AppUser = {
   clinic_approved_at: string | null
   /** Hesabın bağlandığı klinik hasta kaydı (uygulamadan randevu; lib/anne/clinic-booking.ts). */
   clinic_patient_id?: string | null
+  /** Annenin seçtiği renk teması; boşsa bebeğin cinsiyetine göre (lib/anne/look.ts). */
+  theme?: string | null
   created_at: string
 }
 
 const USER_COLUMNS =
-  "id, phone, display_name, lmp_date, due_date, due_date_source, onboarded_at, clinic_approved_at, clinic_patient_id, created_at"
+  "id, phone, display_name, lmp_date, due_date, due_date_source, onboarded_at, clinic_approved_at, clinic_patient_id, theme, created_at"
 
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex")

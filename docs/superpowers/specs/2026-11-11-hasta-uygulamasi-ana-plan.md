@@ -648,3 +648,28 @@ Bilinen, düzeltilmeyen küçük nokta: personel bir hakkı geri alırken hasta 
 - Klinik, kayıp ya da anomali durumunda canlandırmayı durduramıyor (araştırmadaki "klinik duraklatma düğmesi"). Yapılması gerekir.
 - Ücret: şu an ücretsiz ve yüz başına 7 an ile sınırlı. Kredi satışı başladığında ek an paketleri satılabilir.
 - **Avukata eklenenler:** üretilmiş bebek yüzünün video üretimi için yeniden Google'a gönderilmesi (bebek resmi onayının kapsamı), paylaşılan videonun "yapay zekâ ile üretilmiştir" etiketi.
+
+## 9i. 13 Kasım 2026: cinsiyete göre renkler, "Süsle" ve günlük aksesuar hediyesi
+
+**Karar (kullanıcı).** Bebek kızsa uygulamanın ana renkleri pembe, erkekse açık mavi olsun. Anne bebeğe toka, şapka gibi şeyler takabilsin; daha eğlenceli olsun ama zor olmasın.
+
+**Renk teması.**
+- Üç tema: `kiz` (pembe), `erkek` (açık mavi), `sade` (önceki görünüm). Tema, üretilen son bebek yüzünde seçilmiş cinsiyetten çıkarılır; yüz üretilmemişse sade kalır.
+- Anne Hesap ekranındaki "Renkler" bölümünden kendisi seçebilir (`app_users.theme`); "Bebeğime göre" seçimi yeniden cinsiyete bağlar.
+- Tema her ekranın çerçevesinde (`Screen`, `data-tema`) belirlenir; renk değişkenlerinin adları aynı kalır, yalnızca değerleri değişir (`app/anne/anne.css`).
+
+**Süsle (`/anne/canli`).**
+- Yüzün altındaki şeritten aksesuar seçilir; yüzün üstüne konur. Parmakla sürüklenir, iki parmakla büyütülüp çevrilir; düğmelerle de küçültülür, büyütülür, çevrilir, çıkarılır. "Bitti" deyince kaydedilir (`app_looks`).
+- 15 aksesuar var (toka, şapka, emzik, taç, çiçek, saç bandı, kalp gözlük, kelebek, bere, papyon, güneş gözlüğü, bıyık, yıldız, parti şapkası, kedi kulakları). Hepsi her bebeğe açıktır; cinsiyet yalnızca sırayı belirler.
+- Aksesuarlar düz çizimlerdir ve resmin üstüne katman olarak konur. **Bebek yüzü resmi değişmez, yapay zekâ kullanılmaz, ek maliyet yoktur.** Yerleri resme göre tutulur; bu yüzden canlı ekranda, ana ekrandaki küçük yüzde ve paylaşım resminde aynı yere düşer.
+- Video oynarken aksesuarlar kaybolur, bitince geri gelir.
+- "Süslü halini paylaş": yüz ve aksesuarlar tek bir resim olarak paylaşılır ya da indirilir; köşesinde "Yapay zekâ ile üretilmiştir" yazar, klinik ya da doktor adı yoktur.
+
+**Günlük hediye.** İlk gün üç aksesuar açıktır (toka, şapka, emzik). Anne her gün bir hediye paketi açar; sıradaki aksesuar açılır (sıra temaya göre). 12 gün sürer. Hesap başına günde bir hediye veritabanında tekildir (`app_accessories`). Ana ekranda yüzün yanında "Bugünün hediyesi hazır" yazar.
+
+**Veritabanı.** `scripts/anne/07_tema_sus.sql` (geri alma: `07_tema_sus_geri_al.sql`), canlıya uygulandı.
+
+**Açık kalanlar.**
+- İkiz gebelik için ayrı tema yok; anne temayı kendisi seçer.
+- Kayıp ya da anomali durumunda klinik durdurma düğmesi yapıldığında tema da sadeye dönmeli (9h'deki açık madde ile birlikte).
+- Aksesuar yerleri tek bir yüz resmine göre tutulur; anne yeni bir yüz üretirse aksesuarlar aynı oranlarda kalır, yüz farklı kadrajdaysa yeniden yerleştirmesi gerekir.

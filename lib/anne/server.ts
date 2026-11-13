@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { redirect } from "next/navigation"
@@ -15,11 +16,12 @@ export function appDb() {
 }
 
 /** Oturumdaki hasta; yoksa null. Sayfalarda (sunucu bileşenleri) kullanılır. */
-export async function getAppUser(): Promise<AppUser | null> {
+// Aynı istekte sayfa ve ekran çerçevesi (tema) birlikte sorar; oturum bir kez okunur.
+export const getAppUser = cache(async (): Promise<AppUser | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value
   if (!token) return null
   return resolveSession(appDb(), token)
-}
+})
 
 /**
  * Durum değiştiren isteklerin başka bir siteden gönderilmesini engeller: tarayıcının
