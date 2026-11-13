@@ -1,23 +1,31 @@
 import Link from "next/link"
 import { appDb, requireReadyUser } from "@/lib/anne/server"
-import { bookingState } from "@/lib/anne/clinic-booking"
+import { bookingState, istanbulNow } from "@/lib/anne/clinic-booking"
+import { dailyWords } from "@/lib/anne/animation/moments"
 import { latestFace } from "@/lib/anne/animation/service"
 import { bookingTypeTitle, formatDayTr } from "@/lib/anne/booking-types"
+import { mythsOfDay } from "@/lib/anne/content/myths"
 import { personalSchedule } from "@/lib/anne/content/schedule"
 import { sizeComparison } from "@/lib/anne/content/sizes"
-import { babyImage } from "@/lib/anne/images"
 import { MIN_GENERATION_WEEK } from "@/lib/anne/generation/limits"
-import { Screen, Slot, Tabs, TopBar } from "@/components/anne/chrome"
+import { Icon, Screen, Tabs, TopBar, type ICONS } from "@/components/anne/chrome"
 
 export const dynamic = "force-dynamic"
 
-function greeting(name: string | null): string {
-  return name ? `Merhaba ${name}` : "Merhaba"
-}
+const STORIES: { href: string; icon: keyof typeof ICONS; label: string; quiet?: boolean }[] = [
+  { href: "/anne/ses", icon: "mic", label: "Sesim" },
+  { href: "/anne/efsane", icon: "question", label: "Efsane" },
+  { href: "/anne/tat", icon: "taste", label: "Tat" },
+  { href: "/anne/tekme", icon: "kick", label: "Tekme" },
+  { href: "/anne/isimler", icon: "letters", label: "İsimler" },
+  { href: "/anne/randevu", icon: "calendar", label: "Randevu", quiet: true },
+  { href: "/anne/belgeler", icon: "upload", label: "Belgeler", quiet: true },
+  { href: "/anne/album", icon: "album", label: "Albüm", quiet: true },
+]
 
-// Bugün: hafta, bebeğin boyu, günün sorusu, tekme ve sıradaki durak.
+// Bugün: bebeğin yüzü ve sözü, oyunlar, günün efsanesi, randevu ve sıradaki durak.
 export default async function AnneBugunPage() {
-  const { user, age } = await requireReadyUser()
+  const { user, age, today } = await requireReadyUser()
 
   const size = sizeComparison(age.weeks)
   // Destekler (vitamin, demir) durak değildir; yolculukta izlemler, taramalar ve aşılar gösterilir.
@@ -26,69 +34,92 @@ export default async function AnneBugunPage() {
   const nextAppointment = await bookingState(appDb(), user)
     .then((state) => state.appointments[0] ?? null)
     .catch(() => null)
-  // Bebek yüzü üretildiyse ana ekranın başında o durur ve "Canlı bebeğim"e götürür.
+  // Bebek yüzü üretildiyse ana ekranın büyük kartında o durur ve "Canlı bebeğim"e götürür.
   const face = await latestFace(appDb(), user.id).catch(() => null)
+  const faceUrl = face ? `/api/anne/canli?yuz=${face.id}` : null
   const remaining = age.daysToDue >= 0 ? `${age.daysToDue} gün kaldı` : `${-age.daysToDue} gün geçti`
+  const hour = Math.floor(istanbulNow().minutes / 60)
+  const word = dailyWords({ today, hour, weeks: age.weeks, extraDays: age.extraDays, daysToDue: age.daysToDue })[0]
+  const myth = mythsOfDay(today)[0]
 
   return (
     <Screen>
-      <TopBar title={greeting(user.display_name)}>
-        <Link className="nb-chip" href="/anne/hesap">
-          Hesap
-        </Link>
+      <TopBar>
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link className="nb-chip" data-on="" href="/anne/bebegim">
+            {age.weeks}. hafta
+          </Link>
+          <Link className="nb-chip" href="/anne/hesap" aria-label="Hesap" style={{ padding: "4px 8px" }}>
+            <Icon name="user" />
+          </Link>
+        </span>
       </TopBar>
       <main className="nb-main">
         <div className="nb-stories" data-scroll="">
-          <Link className="nb-story" href="/anne/bebegim">
-            <i style={{ background: "var(--pink)" }}>{age.weeks}</i>Bu hafta
-          </Link>
-          {face && (
+          {faceUrl && (
             <Link className="nb-story" href="/anne/canli">
-              <i style={{ background: "var(--lilac)" }}>♥</i>Canlı
+              <i>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={faceUrl} alt="" />
+              </i>
+              Canlı
             </Link>
           )}
-          <Link className="nb-story" href="/anne/randevu">
-            <i style={{ background: "var(--ink)", color: "#fff" }}>{nextAppointment ? nextAppointment.date.slice(8) : "+"}</i>Randevu
-          </Link>
-          <Link className="nb-story" href="/anne/belgeler">
-            <i style={{ background: "var(--peach)" }}>↑</i>Belgeler
-          </Link>
-          <Link className="nb-story" href="/anne/oyun">
-            <i style={{ background: "var(--lilac)" }}>?</i>Soru
-          </Link>
-          <Link className="nb-story" href="/anne/tekme">
-            <i style={{ background: "var(--peach)" }}>+1</i>Tekme
-          </Link>
-          <Link className="nb-story" href="/anne/isimler">
-            <i>Aa</i>İsimler
-          </Link>
-          <Link className="nb-story" href="/anne/album">
-            <i style={{ borderStyle: "dashed" }}>+</i>Albüm
-          </Link>
+          {STORIES.map((story) => (
+            <Link key={story.href} className="nb-story" data-quiet={story.quiet ? "" : undefined} href={story.href}>
+              <i>
+                <Icon name={story.icon} />
+              </i>
+              {story.label}
+            </Link>
+          ))}
         </div>
 
-        <Link className="nb-card nb-row-card" data-tone="pink" href={face ? "/anne/canli" : "/anne/bebegim"} style={{ marginTop: 18, padding: 16 }}>
-          {face ? (
+        <div className="nb-hero">
+          {faceUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="nb-baby-thumb" src={`/api/anne/canli?yuz=${face.id}`} alt="Bebeğinin yüzü" width={128} height={128} />
-          ) : (
-            <Slot image={babyImage(age.weeks)} width={128} height={128} round style={{ flex: "none" }} />
+            <img src={faceUrl} alt="Bebeğinin yüzü" />
           )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p className="nb-big">{age.weeks}. hafta</p>
-            <p style={{ marginTop: 4 }}>
-              {age.extraDays > 0 ? `+${age.extraDays} gün · ` : ""}
-              {remaining}
+          <span className="nb-hero-tag">{faceUrl ? "Canlı bebeğim" : `${age.weeks}. hafta`}</span>
+          <div className="nb-hero-body">
+            <h2>{faceUrl ? word : user.display_name ? `Merhaba ${user.display_name}` : "Merhaba"}</h2>
+            <p>
+              {age.weeks}. hafta{age.extraDays > 0 ? ` +${age.extraDays} gün` : ""} · {remaining}
+              {size ? ` · ${size} kadar` : ""}
             </p>
-            <div className="nb-bar" style={{ marginTop: 12 }}>
+            <div className="nb-bar">
               <i style={{ width: `${age.progressPercent}%` }} />
             </div>
-            {face && (
-              <span className="nb-chip" data-on="" style={{ marginTop: 10 }}>
-                Dokun, canlansın
-              </span>
-            )}
+            <div className="nb-hero-actions">
+              {faceUrl ? (
+                <Link href="/anne/canli">
+                  <Icon name="play" />
+                  Dokun, canlansın
+                </Link>
+              ) : (
+                <Link href="/anne/yuz">{age.weeks >= MIN_GENERATION_WEEK ? "Bebeğinin yüzünü gör" : `Yüzü ${MIN_GENERATION_WEEK}. haftada görürsün`}</Link>
+              )}
+              <Link href="/anne/ses" data-kind="glass" aria-label="Sesini karnından dinle">
+                <Icon name="mic" />
+              </Link>
+              <Link href="/anne/kart" data-kind="glass" aria-label="Hafta kartını paylaş">
+                <Icon name="upload" />
+              </Link>
+            </div>
           </div>
+        </div>
+
+        <Link className="nb-card nb-row-card" href="/anne/efsane" style={{ padding: 14 }}>
+          <span className="nb-thumb" data-tone="accent">
+            <Icon name="question" />
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span className="nb-note" style={{ display: "block", fontSize: 12, fontWeight: 700 }}>
+              Doğru mu, efsane mi?
+            </span>
+            <b style={{ display: "block", fontSize: 16, fontWeight: 800, lineHeight: 1.25 }}>{myth.text}</b>
+          </span>
+          <Icon name="next" />
         </Link>
 
         <Link className="nb-card nb-row-card" data-tone="dark" href="/anne/randevu">
@@ -104,34 +135,15 @@ export default async function AnneBugunPage() {
           <span className="nb-chip">{nextAppointment ? "Gör" : "Canlı saatler"}</span>
         </Link>
 
-        <Link className="nb-card nb-row-card" data-tone="peach" href="/anne/yuz">
-          <h3>Bebeğinin yüzünü gör</h3>
-          <span className="nb-chip" data-on="">
-            {age.weeks >= MIN_GENERATION_WEEK ? "Üret" : `${MIN_GENERATION_WEEK}. haftada`}
-          </span>
-        </Link>
-
-        <div className="nb-two">
-          <Link className="nb-card" href="/anne/bebegim">
-            <p className="nb-note">Bu hafta boyu</p>
-            <h3 style={{ marginTop: 6 }}>{size ? `${size} kadar` : "Henüz çok küçük"}</h3>
+        {faceUrl && (
+          <Link className="nb-card nb-row-card" href="/anne/yuz" style={{ padding: 14 }}>
+            <span className="nb-thumb">
+              <Icon name="heart" />
+            </span>
+            <b style={{ flex: 1, fontSize: 16, fontWeight: 800 }}>Yeni bir yüz üret</b>
+            <Icon name="next" />
           </Link>
-          <Link className="nb-card" data-tone="lilac" href="/anne/oyun">
-            <p style={{ fontSize: 54, lineHeight: 1.2, fontWeight: 800 }}>?</p>
-            <h3 style={{ marginTop: 8 }}>Günün sorusu</h3>
-          </Link>
-        </div>
-
-        <div className="nb-two">
-          <Link className="nb-card" data-tone="dark" href="/anne/tekme">
-            <p className="nb-note" style={{ color: "#fff", opacity: 0.8 }}>Tekme geldi mi?</p>
-            <h3 style={{ marginTop: 6 }}>Say</h3>
-          </Link>
-          <Link className="nb-card" data-tone="pink" href="/anne/belgeler">
-            <p className="nb-note">Tahlil, rapor</p>
-            <h3 style={{ marginTop: 6 }}>Belgelerini yükle</h3>
-          </Link>
-        </div>
+        )}
 
         {nextStop && (
           <Link className="nb-card nb-row-card" href="/anne/yolculuk" style={{ padding: "14px 18px" }}>

@@ -4,15 +4,17 @@
    sitenin geri kalanını etkilemez. */
 
 .anne {
-  --ink: #1f1f1f;
-  --ink-2: #5f5f5f;
-  --ground: #f4f5f5;
+  --ink: #111111;
+  --ink-2: #6b6b6b;
+  --ground: #fafaf8;
   --card: #ffffff;
-  --rule: #e2e2e4;
-  --pink: #fbd3dc;
-  --lilac: #eadcf6;
-  --peach: #fce3d4;
-  --outer: #e6d8e0;
+  --rule: #e7e7e2;
+  /* Tek vurgu rengi: temaya göre değişir. Üstünde beyaz yazı okunur olmalıdır. */
+  --accent: #c2410c;
+  --pink: #fbe3d6;
+  --lilac: #efeae4;
+  --peach: #f6efe6;
+  --outer: #e9e9e4;
 
   min-height: 100dvh;
   background: var(--outer);
@@ -29,27 +31,29 @@
 /* Renk temaları: kız bebek pembe, erkek bebek açık mavi. "sade" yukarıdaki varsayılandır.
    Değişkenlerin adları aynı kalır (--pink ana vurgu rengidir); yalnızca değerleri değişir. */
 .nb-screen[data-tema="kiz"] {
-  --ground: #fdf1f5;
-  --rule: #f1d5de;
-  --pink: #f9bfd0;
-  --lilac: #f1d9ee;
-  --peach: #fde0d6;
+  --accent: #d42a6b;
+  --ground: #fdf9fa;
+  --rule: #f0e2e7;
+  --pink: #fbdce7;
+  --lilac: #f1e4f2;
+  --peach: #fbe7dd;
 }
 
 .nb-screen[data-tema="erkek"] {
-  --ground: #eff6fc;
-  --rule: #d3e3f1;
-  --pink: #c4e0f7;
-  --lilac: #dcdff8;
-  --peach: #d6efe8;
+  --accent: #1f6fd6;
+  --ground: #f8fafd;
+  --rule: #e0e7ef;
+  --pink: #d9e8fa;
+  --lilac: #e3e6f8;
+  --peach: #ddf0ea;
 }
 
 .anne:has(.nb-screen[data-tema="kiz"]) {
-  --outer: #f3cddb;
+  --outer: #f1dde5;
 }
 
 .anne:has(.nb-screen[data-tema="erkek"]) {
-  --outer: #c9def1;
+  --outer: #d9e5f2;
 }
 
 .anne *,
@@ -1701,4 +1705,846 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
+}
+
+/* ==== İkinci görünüm (13 Kasım 2026) ====
+   Zemin beyaza yakın, tek vurgu rengi, köşeleri yumuşak kutular; rengi resim ve video taşır.
+   Aşağıdaki kurallar yukarıdaki ortak parçaların biçimini bu görünüme çevirir. */
+.nb-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 25px;
+  letter-spacing: -0.03em;
+  text-transform: lowercase;
+}
+
+.nb-brand::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.nb-btn {
+  min-height: 54px;
+  border-radius: 20px;
+  font-weight: 700;
+}
+
+.nb-btn[data-kind="light"],
+.anne a.nb-btn[data-kind="light"] {
+  border: 1px solid var(--rule);
+}
+
+.nb-btn[data-kind="accent"],
+.anne a.nb-btn[data-kind="accent"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.nb-card {
+  border-radius: 24px;
+}
+
+.nb-card:not([data-tone]) {
+  border: 1px solid var(--rule);
+}
+
+.nb-field {
+  height: 56px;
+  border: 1px solid #cfcfc8;
+  border-radius: 20px;
+}
+
+.nb-seg {
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+}
+
+.nb-seg button {
+  border-radius: 16px;
+}
+
+.nb-opt {
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+}
+
+.nb-check {
+  border: 1px solid var(--rule);
+}
+
+.nb-error {
+  background: var(--ink);
+  color: #fff;
+}
+
+.nb-baby-stage {
+  border-radius: 30px;
+}
+
+.nb-baby-heart {
+  color: #fff;
+}
+
+/* Alt gezinme: seçili bölüm vurgu renginde ve etiketli, diğerleri yalnızca simge */
+.nb-tabs {
+  display: flex;
+  gap: 2px;
+  border-radius: 24px;
+}
+
+.anne .nb-tabs a {
+  flex: 1;
+  flex-direction: row;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 18px;
+  font-size: 14px;
+}
+
+.anne .nb-tabs a span {
+  display: none;
+}
+
+.anne .nb-tabs a[aria-current="page"] {
+  flex: none;
+  padding: 0 16px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.anne .nb-tabs a[aria-current="page"] span {
+  display: inline;
+}
+
+/* Ana ekrandaki kutular (hikâye şeridi) */
+.nb-stories[data-scroll] {
+  gap: 10px;
+}
+
+.nb-story {
+  width: 62px;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.nb-story i {
+  position: relative;
+  width: 62px;
+  height: 78px;
+  border: 2.5px solid var(--accent);
+  border-radius: 22px;
+  background: var(--pink);
+  box-shadow: inset 0 0 0 3px var(--ground);
+  overflow: hidden;
+}
+
+.nb-story[data-quiet] {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.nb-story[data-quiet] i {
+  border-color: #d8d8d2;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.nb-story img {
+  position: absolute;
+  inset: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  border-radius: 15px;
+  object-fit: cover;
+  object-position: 50% 38%;
+}
+
+.nb-story svg,
+.nb-ico {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nb-story:nth-child(-n + 4) i {
+  animation: nb-nudge 2.6s ease-in-out infinite;
+}
+
+.nb-story:nth-child(2) i {
+  animation-delay: -0.6s;
+}
+
+.nb-story:nth-child(3) i {
+  animation-delay: -1.2s;
+}
+
+.nb-story:nth-child(4) i {
+  animation-delay: -1.8s;
+}
+
+@keyframes nb-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Ana ekrandaki büyük kart: bebeğin yüzü, üstünde söz ve düğmeler */
+.nb-hero {
+  position: relative;
+  display: block;
+  height: min(432px, 56dvh);
+  min-height: 340px;
+  margin-top: 16px;
+  border-radius: 30px;
+  background: #1b1512;
+  color: #fff;
+  overflow: hidden;
+}
+
+.nb-hero > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  animation: nb-baby-breathe 4.2s ease-in-out infinite;
+}
+
+.nb-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 62%;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.8));
+  pointer-events: none;
+}
+
+.nb-hero-tag {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.nb-hero-tag::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: nb-live 1.4s ease-in-out infinite;
+}
+
+@keyframes nb-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.nb-hero-body {
+  position: absolute;
+  inset: auto 14px 14px;
+  z-index: 1;
+}
+
+.nb-hero-body h2 {
+  padding: 0 4px;
+  font-size: 23px;
+  line-height: 1.15;
+}
+
+.nb-hero-body p {
+  margin-top: 4px;
+  padding: 0 4px;
+  font-size: 15px;
+}
+
+.nb-hero .nb-bar {
+  height: 5px;
+  margin: 12px 4px 0;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.nb-hero .nb-bar i {
+  background: #fff;
+}
+
+.nb-hero-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.anne .nb-hero-actions a {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
+  border-radius: 18px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.anne .nb-hero-actions a[data-kind="glass"] {
+  flex: none;
+  width: 50px;
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+.nb-thumb {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--pink);
+  color: var(--ink);
+}
+
+.nb-thumb[data-tone="dark"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.nb-thumb[data-tone="accent"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Tam ekran oyun sahnesi (ses, efsane, tat): koyu zemin, üstte geri düğmesi */
+.nb-reel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: #0d0b0a;
+  color: #fff;
+  overflow: hidden;
+}
+
+.nb-reel-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  transition:
+    filter 0.6s ease,
+    transform 0.6s ease;
+}
+
+.nb-reel-media[data-inside] {
+  filter: blur(14px) saturate(0.7) brightness(0.8);
+  transform: scale(1.08);
+}
+
+.nb-reel-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.86) 78%);
+  pointer-events: none;
+}
+
+.nb-reel-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 14px) 14px 0;
+}
+
+.nb-reel-top h2 {
+  flex: 1;
+  font-size: 19px;
+}
+
+.nb-glass {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.anne a.nb-glass {
+  color: #fff;
+}
+
+.nb-glass:disabled {
+  opacity: 0.4;
+}
+
+.nb-reel-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 18px 18px calc(env(safe-area-inset-bottom) + 22px);
+}
+
+.nb-reel-body h1 {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.nb-reel-body p {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.nb-reel .nb-btn {
+  background: var(--accent);
+}
+
+.nb-reel .nb-btn[data-kind="light"] {
+  border: 0;
+  background: #fff;
+  color: var(--ink);
+}
+
+.nb-reel .nb-note {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.nb-reel .nb-sheet .nb-note {
+  color: var(--ink-2);
+}
+
+/* Tat: resim yalnizca alttaki panelin ustundeki alani doldurur */
+.nb-reel-stage {
+  position: relative;
+  flex: 1;
+  min-height: 300px;
+  margin-bottom: -26px;
+  overflow: hidden;
+}
+
+.nb-reel-stage .nb-say {
+  position: absolute;
+  left: 0;
+  bottom: 40px;
+}
+
+.nb-reel-top[data-over] {
+  position: absolute;
+  inset: 0 0 auto;
+}
+
+.nb-reel-media[data-dim] {
+  opacity: 0.38;
+  filter: blur(6px);
+  transform: scale(1.06);
+}
+
+.nb-reel .nb-error {
+  background: #fff;
+  color: var(--ink);
+}
+
+.nb-reel-seg {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 14px;
+  padding: 4px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nb-reel-seg button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.nb-reel-seg button[aria-pressed="true"] {
+  background: #fff;
+  color: var(--ink);
+}
+
+/* Ses dalgası: çubukların boyu sesin düzeyine göre betikten ayarlanır */
+.nb-wave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 56px;
+  margin-top: 14px;
+}
+
+.nb-wave i {
+  flex: 1;
+  max-width: 6px;
+  height: 100%;
+  border-radius: 3px;
+  background: #fff;
+  transform: scaleY(0.08);
+  transition: transform 0.09s linear;
+}
+
+.nb-wave[data-inside] {
+  gap: 9px;
+}
+
+.nb-wave[data-inside] i {
+  max-width: 12px;
+  border-radius: 6px;
+  transition-duration: 0.3s;
+}
+
+.nb-rec {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  margin: 18px auto 0;
+  padding: 0;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.nb-rec i {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition:
+    border-radius 0.2s ease,
+    transform 0.2s ease;
+}
+
+.nb-rec[data-on] i {
+  border-radius: 12px;
+  transform: scale(0.5);
+}
+
+/* Efsane kartları */
+.nb-steps {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 0 14px;
+}
+
+.nb-steps i {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.nb-steps i[data-on] {
+  background: #fff;
+}
+
+.nb-myth {
+  position: relative;
+  z-index: 2;
+  margin: auto 18px 0;
+  padding: 24px 22px 16px;
+  border-radius: 28px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: nb-ticket-in 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.nb-myth[data-idle] {
+  cursor: grab;
+}
+
+.nb-myth small {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.nb-myth h1 {
+  margin-top: 10px;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.nb-myth-answers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.nb-myth-answers button {
+  min-height: 54px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--ink);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.nb-myth-answers button[data-kind="accent"] {
+  background: var(--accent);
+}
+
+.nb-myth-verdict {
+  display: inline-flex;
+  margin-top: 16px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.nb-myth-verdict[data-ok] {
+  background: var(--accent);
+}
+
+.nb-confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.nb-confetti i {
+  position: absolute;
+  top: -16px;
+  width: 8px;
+  height: 14px;
+  border-radius: 3px;
+  background: #fff;
+  animation: nb-confetti-fall 1.6s cubic-bezier(0.3, 0.6, 0.6, 1) both;
+}
+
+.nb-confetti i:nth-child(odd) {
+  background: var(--accent);
+}
+
+@keyframes nb-confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(80dvh) rotate(400deg);
+    opacity: 0;
+  }
+}
+
+/* Tat: alttaki beyaz panel ve yiyecek kutuları */
+.nb-sheet {
+  position: relative;
+  z-index: 2;
+  padding: 10px 18px calc(env(safe-area-inset-bottom) + 20px);
+  border-radius: 30px 30px 0 0;
+  background: var(--ground);
+  color: var(--ink);
+}
+
+.nb-sheet::before {
+  content: "";
+  display: block;
+  width: 38px;
+  height: 4px;
+  margin: 0 auto 12px;
+  border-radius: 2px;
+  background: #d8d8d2;
+}
+
+.nb-foods {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.nb-food {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.nb-food i {
+  width: 100%;
+  max-width: 74px;
+  aspect-ratio: 1;
+  border: 2.5px solid #d8d8d2;
+  border-radius: 24px;
+  box-shadow: inset 0 0 0 3px var(--ground);
+}
+
+.nb-food[aria-pressed="true"] i {
+  border-color: var(--accent);
+}
+
+.nb-say {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  max-width: 80%;
+  margin: 0 18px 14px;
+  padding: 12px 16px;
+  border-radius: 20px 20px 20px 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+  animation: nb-ticket-in 0.35s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.nb-reel-media[data-react="tatli"] {
+  animation: nb-giggle 0.8s ease-in-out 4;
+}
+
+.nb-reel-media[data-react="aci"] {
+  animation: nb-shudder 0.5s ease-in-out 5;
+}
+
+@keyframes nb-giggle {
+  0%,
+  100% {
+    transform: scale(1.04) rotate(0);
+  }
+  25% {
+    transform: scale(1.07) rotate(-1.5deg);
+  }
+  75% {
+    transform: scale(1.07) rotate(1.5deg);
+  }
+}
+
+@keyframes nb-shudder {
+  0%,
+  100% {
+    transform: translateX(0) scale(1.04);
+  }
+  25% {
+    transform: translateX(-6px) scale(1.04);
+  }
+  75% {
+    transform: translateX(6px) scale(1.04);
+  }
+}
+
+.nb-science {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.nb-science small {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.nb-reel .nb-science {
+  border-top-color: rgba(255, 255, 255, 0.25);
+}
+
+.nb-reel .nb-science small {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.nb-sheet .nb-science small {
+  color: var(--ink-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-story i,
+  .nb-hero > img,
+  .nb-hero-tag::before,
+  .nb-myth,
+  .nb-say,
+  .nb-reel-media[data-react] {
+    animation: none;
+  }
+
+  .nb-confetti {
+    display: none;
+  }
 }
