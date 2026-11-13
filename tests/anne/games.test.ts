@@ -177,7 +177,7 @@ describe("soru bankası", () => {
     const { QUESTIONS } = await import("@/lib/anne/content/questions")
     const danger = QUESTIONS.filter((q) => q.category === "tehlike")
     expect(danger.length).toBeGreaterThanOrEqual(8)
-    for (const q of danger) expect(q.answer, q.id).toMatch(/beklemeden bir sağlık kuruluşuna git\.$/)
+    for (const q of danger) expect(q.answer, q.id).toMatch(/[Bb]eklemeden bir sağlık kuruluşuna git\.$/)
   })
 
   it("arama Türkçe büyük-küçük harfe bakmaz, konuya göre süzer", async () => {
