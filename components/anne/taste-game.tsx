@@ -1,65 +1,47 @@
 "use client"
 
 import { useRef, useState } from "react"
-
-type Taste = "tatli" | "aci"
-
-// Araştırmada tatlı tat için havuç, acı tat için lahana denendi. Diğer yiyecekler tat ailesine
-// göre (tatlı ya da acı, ekşi, keskin) bizim eşleştirmemizdir; ekranda da böyle yazar.
-// Fotoğraflar public/anne/gorsel/yemek-*.jpg dosyalarıdır (kaynakları aynı klasörde).
-const FOODS: { id: string; label: string; taste: Taste }[] = [
-  { id: "havuc", label: "Havuç", taste: "tatli" },
-  { id: "lahana", label: "Lahana", taste: "aci" },
-  { id: "cilek", label: "Çilek", taste: "tatli" },
-  { id: "limon", label: "Limon", taste: "aci" },
-  { id: "muz", label: "Muz", taste: "tatli" },
-  { id: "brokoli", label: "Brokoli", taste: "aci" },
-  { id: "karpuz", label: "Karpuz", taste: "tatli" },
-  { id: "sarimsak", label: "Sarımsak", taste: "aci" },
-  { id: "elma", label: "Elma", taste: "tatli" },
-  { id: "greyfurt", label: "Greyfurt", taste: "aci" },
-  { id: "hurma", label: "Hurma", taste: "tatli" },
-  { id: "biber", label: "Acı biber", taste: "aci" },
-  { id: "bal", label: "Bal", taste: "tatli" },
-  { id: "cikolata", label: "Çikolata", taste: "tatli" },
-]
-
-/** Liste her gün başka bir yiyecekten başlar; böylece her gün aynı dördü öne çıkmaz. */
-export function foodsOfDay(day: number): typeof FOODS {
-  const start = ((day % FOODS.length) + FOODS.length) % FOODS.length
-  return [...FOODS.slice(start), ...FOODS.slice(0, start)]
-}
+import { CAFFEINE_NOTE, FOODS, FOOD_GROUPS, foodScience, foodsOfDay, groupOfDay, type FoodGroup, type Taste } from "@/lib/anne/content/foods"
 
 const WORDS: Record<Taste, string[]> = {
   tatli: ["Mmm, bir daha!", "Bunu sevdim anne.", "Hihi, tatlıymış!"],
-  aci: ["Iyy, bu ne?", "Hıh! Acıymış.", "Bunu pek sevmedim."],
+  aci: ["Iyy, bu ne?", "Hıh! Değişik bir tat.", "Bunu pek sevmedim."],
+  sade: ["Hımm, bu da neymiş?", "Bunu tanıdım anne.", "Yine olur, anne."],
 }
 
 /**
- * "Havuç mu, lahana mı?": anne ne yediğini seçer, bebeğin yüzü tepki verir. O tepkinin
- * canlandırması "Canlı bebeğim"de açılmışsa video oynar; açılmamışsa duran resim kıpırdar.
+ * "Havuç mu, lahana mı?": anne ne yediğini ya da içtiğini seçer, bebeğin yüzü tepki verir.
+ * O tepkinin canlandırması "Canlı bebeğim"de açılmışsa video oynar; açılmamışsa duran resim
+ * kıpırdar. Liste gruplara ayrılır; grup ve sıra her gün değişir.
  */
 export function TasteGame({
   faceUrl,
   clips,
   day,
-  science,
-  source,
+  sources,
 }: {
   faceUrl: string | null
   clips: Record<Taste, string | null>
-  /** Günün sıra numarası; listenin hangi yiyecekten başlayacağını belirler. */
+  /** Günün sıra numarası; hangi grubun ve yiyeceğin önde duracağını belirler. */
   day: number
-  science: string
-  source: string
+  /** Kaynak anahtarı -> ekranda gösterilen atıf. */
+  sources: Record<string, string>
 }) {
+  const [group, setGroup] = useState<FoodGroup>(() => groupOfDay(day))
   const [picked, setPicked] = useState<string | null>(null)
   const [turn, setTurn] = useState(0)
   const [playing, setPlaying] = useState(false)
   const video = useRef<HTMLVideoElement>(null)
+  const row = useRef<HTMLDivElement>(null)
 
-  const foods = foodsOfDay(day)
+  const foods = foodsOfDay(group, day)
   const food = FOODS.find((item) => item.id === picked) ?? null
+  const science = foodScience(food)
+
+  function open(next: FoodGroup) {
+    setGroup(next)
+    row.current?.scrollTo({ left: 0 })
+  }
 
   function pick(id: string) {
     const next = FOODS.find((item) => item.id === id)
@@ -86,7 +68,7 @@ export function TasteGame({
       <div className="nb-reel-stage">
         {faceUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="nb-reel-media" key={turn} data-react={food && !playing ? food.taste : undefined} src={faceUrl} alt="Bebeğinin yüzü" />
+          <img className="nb-reel-media" key={`yuz-${turn}`} data-react={food && !playing ? food.taste : undefined} src={faceUrl} alt="Bebeğinin yüzü" />
         )}
         <video
           ref={video}
@@ -98,27 +80,43 @@ export function TasteGame({
           onError={() => setPlaying(false)}
         />
         {food && (
-          <p className="nb-say" key={turn} aria-live="polite">
+          <p className="nb-say" key={`soz-${turn}`} aria-live="polite">
             {WORDS[food.taste][turn % WORDS[food.taste].length]}
           </p>
         )}
       </div>
       <div className="nb-sheet">
-        <h3>Bugün ne yedin?</h3>
-        <p className="nb-note" style={{ marginTop: 2 }}>
-          Seç, bebeğinin tepkisini gör. Kaydır, daha fazlası var.
-        </p>
-        <div className="nb-foods" role="group" aria-label="Bugün yediğin">
-          {foods.map((item) => (
-            <button key={item.id} className="nb-food" type="button" aria-pressed={picked === item.id} onClick={() => pick(item.id)}>
-              <i style={{ backgroundImage: `url(/anne/gorsel/yemek-${item.id}.jpg)` }} />
+        <h3>Bugün ne yedin, ne içtin?</h3>
+        <div className="nb-foodtabs" role="group" aria-label="Yiyecek grubu">
+          {FOOD_GROUPS.map((item) => (
+            <button
+              key={item.id}
+              className="nb-chip"
+              type="button"
+              data-on={group === item.id ? "" : undefined}
+              aria-pressed={group === item.id}
+              onClick={() => open(item.id)}
+            >
               {item.label}
             </button>
           ))}
         </div>
-        <div className="nb-science">
-          <b>Bilim ne diyor?</b> {science}
-          <small>Kaynak: {source}. Ekrandaki tepki yapay zekâ ile üretilmiş bir canlandırmadır; bebeğinin gerçek tepkisi ya da tıbbi görüntü değildir.</small>
+        <div className="nb-foods" ref={row} role="group" aria-label="Bugün yediğin ya da içtiğin">
+          {foods.map((item) => (
+            <button key={item.id} className="nb-food" type="button" aria-pressed={picked === item.id} onClick={() => pick(item.id)}>
+              <i style={{ backgroundImage: `url(/anne/gorsel/yemek-${item.id}.jpg)` }} data-proof={item.evidence ? "" : undefined} />
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="nb-science" aria-live="polite">
+          <b>Bilim ne diyor?</b> {science.text}
+          {food?.caffeine && <span style={{ display: "block", marginTop: 6 }}>{CAFFEINE_NOTE}</span>}
+          <small>
+            Kaynak: {sources[science.source]}
+            {food?.caffeine ? `; ${sources.kafein}` : ""}. Mavi noktalı yiyecekler araştırmalarda denendi. Ekrandaki tepki yapay zekâ ile üretilmiş bir
+            canlandırmadır; bebeğinin gerçek tepkisi ya da tıbbi görüntü değildir.
+          </small>
         </div>
       </div>
     </>

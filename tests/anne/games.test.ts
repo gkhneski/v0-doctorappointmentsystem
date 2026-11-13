@@ -82,23 +82,48 @@ describe("beni böyle duyuyor", () => {
 })
 
 describe("havuç mu, lahana mı", () => {
-  it("her yiyeceğin fotoğrafı var; araştırmadaki iki yiyecek doğru tat ailesinde", async () => {
+  it("her yiyeceğin tekil kimliği, grubu ve fotoğrafı var", async () => {
     const { existsSync } = await import("node:fs")
-    const { foodsOfDay } = await import("@/components/anne/taste-game")
-    const foods = foodsOfDay(0)
-    expect(foods.length).toBeGreaterThanOrEqual(12)
-    expect(new Set(foods.map((f) => f.id)).size).toBe(foods.length)
-    for (const food of foods) expect(existsSync(`public/anne/gorsel/yemek-${food.id}.jpg`), food.id).toBe(true)
-    expect(foods.find((f) => f.id === "havuc")?.taste).toBe("tatli")
-    expect(foods.find((f) => f.id === "lahana")?.taste).toBe("aci")
+    const { FOODS, FOOD_GROUPS } = await import("@/lib/anne/content/foods")
+    expect(FOODS.length).toBeGreaterThanOrEqual(45)
+    expect(new Set(FOODS.map((f) => f.id)).size).toBe(FOODS.length)
+    for (const food of FOODS) {
+      expect(FOOD_GROUPS.some((g) => g.id === food.group), food.id).toBe(true)
+      expect(existsSync(`public/anne/gorsel/yemek-${food.id}.jpg`), food.id).toBe(true)
+    }
+    for (const group of FOOD_GROUPS) expect(FOODS.filter((f) => f.group === group.id).length, group.id).toBeGreaterThanOrEqual(4)
   })
 
-  it("liste her gün başka bir yiyecekten başlar ve hiçbirini atlamaz", async () => {
-    const { foodsOfDay } = await import("@/components/anne/taste-game")
-    const today = foodsOfDay(100)
-    const tomorrow = foodsOfDay(101)
+  it("gebelikte önerilmeyenler listede yok", async () => {
+    const { FOODS } = await import("@/lib/anne/content/foods")
+    const labels = FOODS.map((f) => f.label.toLocaleLowerCase("tr")).join(" | ")
+    for (const banned of ["alkol", "rakı", "bira", "şarap", "çiğ köfte", "suşi", "ciğer", "pastırma", "enerji", "papatya", "adaçayı", "rafadan", "çiğ süt"]) {
+      expect(labels, banned).not.toContain(banned)
+    }
+  })
+
+  it("yalnızca araştırılan yiyecekler kanıtlı sayılır; diğerleri tahmin olduğunu söyler", async () => {
+    const { FOODS, foodScience } = await import("@/lib/anne/content/foods")
+    const food = (id: string) => FOODS.find((f) => f.id === id)!
+    expect(FOODS.filter((f) => f.evidence === "olculdu").map((f) => f.id).sort()).toEqual(["havuc", "lahana"])
+    expect(food("havuc").taste).toBe("tatli")
+    expect(food("lahana").taste).toBe("aci")
+    expect(foodScience(food("havuc")).source).toBe("tatDurham")
+    expect(foodScience(food("sarimsak")).text).toContain("ölçülmedi")
+    expect(foodScience(food("baklava")).text).toContain("tahminimizdir")
+    expect(foodScience(null).text.length).toBeGreaterThan(20)
+    for (const f of FOODS) expect(SOURCES[foodScience(f).source]).toBeDefined()
+    expect(FOODS.filter((f) => f.caffeine).map((f) => f.id).sort()).toEqual(["cay", "kahve", "kola"])
+    expect(SOURCES.kafein).toBeDefined()
+  })
+
+  it("grup ve sıra her gün değişir, hiçbir yiyecek atlanmaz", async () => {
+    const { FOODS, foodsOfDay, groupOfDay } = await import("@/lib/anne/content/foods")
+    expect(groupOfDay(100)).not.toBe(groupOfDay(101))
+    const today = foodsOfDay("meyve", 100)
+    const tomorrow = foodsOfDay("meyve", 101)
     expect(tomorrow[0].id).toBe(today[1].id)
-    expect([...tomorrow.map((f) => f.id)].sort()).toEqual([...today.map((f) => f.id)].sort())
-    expect(foodsOfDay(-3)).toHaveLength(today.length)
+    expect(today).toHaveLength(FOODS.filter((f) => f.group === "meyve").length)
+    expect(foodsOfDay("icecek", -3).length).toBeGreaterThan(0)
   })
 })
