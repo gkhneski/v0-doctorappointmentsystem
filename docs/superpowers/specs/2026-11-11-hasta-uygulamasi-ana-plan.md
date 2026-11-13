@@ -620,3 +620,31 @@ Bilinen, düzeltilmeyen küçük nokta: personel bir hakkı geri alırken hasta 
 - Belge silinirken önce dosya, sonra kayıt silinir (depoda sahipsiz sağlık belgesi kalmaz); "Klinik gördü" yalnızca dosya personele gerçekten verildiyse yazılır; paylaşım onayı sürüm başına bir kez kaydedilir.
 
 **Bilerek bırakılanlar.** (1) Numara tek bir klinik kaydına aitse hesap ad sorulmadan o kayda bağlanır (9c kararı); annesinin numarasıyla giren başka biri annenin kaydına bağlanır. (2) Kara liste yalnızca numarayla denetlenir; uygulamada kimlik numarası sorulmadığı için başka numarayla giren kara listedeki kişi yakalanmaz.
+
+## 9h. 13 Kasım 2026: "Canlı bebeğim" — bebek yüzünün canlandırılması
+
+**Karar (kullanıcı).** Anne uygulamaya her gün girsin ve bebeğiyle bağ kursun: ultrasondan üretilen yüz hareket etsin, gülsün, dokununca tepki versin, anneye bebek gibi bir şeyler söylesin.
+
+**Ne yapıldı (`/anne/canli`).**
+- Üretilmiş bebek yüzü ekranın ortasında durur ve hafifçe nefes alır. Dokununca kalpler çıkar, küçük bir sıçrama yapar ve açılmış anlardan biri oynar.
+- **Anlar:** gülümseme, esneme, kıkırdama, agu, mışıl (emme hareketi), somurtma, hapşırma. Her biri yüz resminden üretilen 5 saniyelik, sesli bir videodur. Bebek hep uykudadır (gözler kapalı), kamera sabittir, sonunda ilk kareye döner.
+- **Günde bir yeni an.** Anne "Bugünün sürprizini aç" der; yaklaşık yarım dakikada hazır olur ve kendiliğinden oynar. Yedi gün boyunca her gün yenisi açılır. Böylece maliyet yalnızca uygulamaya giren annede ve güne yayılarak oluşur.
+- **Konuşma balonu.** Bebek gerçekten konuşmaz (yeni doğan yüzüne söz söyletmek ürkütücü durur); balonda günün sözleri döner: saate göre selam, kaç haftalık olduğu, bir sevgi cümlesi, bazı günler kavuşmaya kalan gün. Sözler gelişimle ilgili hiçbir iddia içermez (duymak, görmek gibi); sınamayla denetlenir.
+- Ana ekranın başındaki boş "Bebek görseli" yuvasında artık bebeğin yüzü durur ve bu ekrana götürür.
+- An paylaşılabilir ya da indirilebilir; videoda klinik ya da doktor adı yoktur.
+
+**Bebek yüzü üretimine dokunulmadı.** Üretim hattı (lib/anne/generation) eski sistemle aynı kalır. Canlandırma, üretilmiş resmin çerçevesi çıkarılarak ayrı bir modele verilmesiyle yapılır (lib/anne/animation).
+
+**Model.** Google'ın Veo modeli Gemini API'de 22 Ekim 2026'da kapatıldı; yerine `gemini-omni-1.2-flash` kullanılıyor (`/v1beta/interactions`, görüntü + yönerge, 720p, 5 saniye). Ölçülen maliyet an başına yaklaşık 0,35 dolar (28.960 çıktı belirteci), süre 27–36 saniye. Bir bebeğin yedi anı yaklaşık 2,5 dolar. Aynı Google anahtarı kullanılır; ek anahtar gerekmedi.
+
+**Sınırlar.** Hesap başına günde bir an (veritabanında tekil), yüz başına her andan bir tane, günde en çok dört deneme. Başarısız deneme günün hakkını yakmaz. Videolar herkese kapalı `anne-video` deposunda durur ve yalnızca sahibine sunucu yolundan verilir; resim ya da hesap silinince videolar da silinir.
+
+**Veritabanı.** `scripts/anne/06_canli.sql` (canlıya uygulandı): `app_moments`, `anne-video` deposu.
+
+**Denenenler.** Kullanıcının kendi resmiyle tek deneme klibi (gülümseme; yüz bozulmadan gülümsüyor ve eski haline dönüyor). Yerelde geçici deneme hesabıyla tarayıcıda uçtan uca: dokunma tepkisi, sürprizin açılması, 36 saniyede hazır olup oynaması, yeniden oynatma.
+
+**Açık noktalar.**
+- Yalnızca gülümseme anının görüntüsü gözle denetlendi; diğer altı anın yönergeleri aynı kalıpla yazıldı ama çıktıları tek tek görülmedi. Beğenilmeyen an için yönerge `lib/anne/animation/moments.ts` içinde değiştirilir.
+- Klinik, kayıp ya da anomali durumunda canlandırmayı durduramıyor (araştırmadaki "klinik duraklatma düğmesi"). Yapılması gerekir.
+- Ücret: şu an ücretsiz ve yüz başına 7 an ile sınırlı. Kredi satışı başladığında ek an paketleri satılabilir.
+- **Avukata eklenenler:** üretilmiş bebek yüzünün video üretimi için yeniden Google'a gönderilmesi (bebek resmi onayının kapsamı), paylaşılan videonun "yapay zekâ ile üretilmiştir" etiketi.
