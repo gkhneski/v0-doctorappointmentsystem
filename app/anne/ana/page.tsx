@@ -2,14 +2,12 @@ import Link from "next/link"
 import { appDb, requireReadyUser } from "@/lib/anne/server"
 import { bookingState } from "@/lib/anne/clinic-booking"
 import { latestFace } from "@/lib/anne/animation/service"
-import { readLook } from "@/lib/anne/look-service"
 import { bookingTypeTitle, formatDayTr } from "@/lib/anne/booking-types"
 import { personalSchedule } from "@/lib/anne/content/schedule"
 import { sizeComparison } from "@/lib/anne/content/sizes"
 import { babyImage } from "@/lib/anne/images"
 import { MIN_GENERATION_WEEK } from "@/lib/anne/generation/limits"
 import { Screen, Slot, Tabs, TopBar } from "@/components/anne/chrome"
-import { BabyThumb } from "@/components/anne/baby-look"
 
 export const dynamic = "force-dynamic"
 
@@ -19,7 +17,7 @@ function greeting(name: string | null): string {
 
 // Bugün: hafta, bebeğin boyu, günün sorusu, tekme ve sıradaki durak.
 export default async function AnneBugunPage() {
-  const { user, age, today } = await requireReadyUser()
+  const { user, age } = await requireReadyUser()
 
   const size = sizeComparison(age.weeks)
   // Destekler (vitamin, demir) durak değildir; yolculukta izlemler, taramalar ve aşılar gösterilir.
@@ -30,8 +28,6 @@ export default async function AnneBugunPage() {
     .catch(() => null)
   // Bebek yüzü üretildiyse ana ekranın başında o durur ve "Canlı bebeğim"e götürür.
   const face = await latestFace(appDb(), user.id).catch(() => null)
-  // Takılı aksesuarlar ve bugünün hediyesi; okunamazsa yüz süssüz görünür.
-  const look = face ? await readLook(appDb(), user, today).catch(() => null) : null
   const remaining = age.daysToDue >= 0 ? `${age.daysToDue} gün kaldı` : `${-age.daysToDue} gün geçti`
 
   return (
@@ -73,7 +69,8 @@ export default async function AnneBugunPage() {
 
         <Link className="nb-card nb-row-card" data-tone="pink" href={face ? "/anne/canli" : "/anne/bebegim"} style={{ marginTop: 18, padding: 16 }}>
           {face ? (
-            <BabyThumb faceId={face.id} items={look?.items ?? []} />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="nb-baby-thumb" src={`/api/anne/canli?yuz=${face.id}`} alt="Bebeğinin yüzü" width={128} height={128} />
           ) : (
             <Slot image={babyImage(age.weeks)} width={128} height={128} round style={{ flex: "none" }} />
           )}
@@ -88,7 +85,7 @@ export default async function AnneBugunPage() {
             </div>
             {face && (
               <span className="nb-chip" data-on="" style={{ marginTop: 10 }}>
-                {look?.giftReady ? "Bugünün hediyesi hazır" : "Dokun, canlansın"}
+                Dokun, canlansın
               </span>
             )}
           </div>

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import type { CSSProperties, ReactNode } from "react"
 import type { ImageSlot } from "@/lib/anne/images"
-import { themeFor } from "@/lib/anne/look-service"
+import { themeFor } from "@/lib/anne/theme-service"
 import { appDb, getAppUser } from "@/lib/anne/server"
 
 // Ekranların ortak parçaları: çerçeve, arkadaki şekiller, görsel yuvası, alt gezinme.

@@ -26,7 +26,7 @@ export type AppUser = {
   clinic_approved_at: string | null
   /** Hesabın bağlandığı klinik hasta kaydı (uygulamadan randevu; lib/anne/clinic-booking.ts). */
   clinic_patient_id?: string | null
-  /** Annenin seçtiği renk teması; boşsa bebeğin cinsiyetine göre (lib/anne/look.ts). */
+  /** Annenin seçtiği renk teması; boşsa bebeğin cinsiyetine göre (lib/anne/theme.ts). */
   theme?: string | null
   created_at: string
 }

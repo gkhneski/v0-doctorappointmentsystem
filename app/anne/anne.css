@@ -1508,22 +1508,18 @@
   pointer-events: none;
 }
 
-/* Duran resim (ve üstündeki aksesuarlar) hafifçe nefes alır; dokununca küçük bir sıçrama yapar. */
-.nb-baby-still {
-  position: absolute;
-  inset: 0;
-  display: block;
-  pointer-events: none;
+/* Duran resim hafifçe nefes alır; dokununca küçük bir sıçrama yapar. */
+.nb-baby-face {
   animation: nb-baby-breathe 4.2s ease-in-out infinite;
 }
 
-.nb-baby-still[data-bump="a"] {
+.nb-baby-face[data-bump="a"] {
   animation:
     nb-baby-bump 0.45s cubic-bezier(0.2, 1.5, 0.4, 1),
     nb-baby-breathe 4.2s ease-in-out 0.45s infinite;
 }
 
-.nb-baby-still[data-bump="b"] {
+.nb-baby-face[data-bump="b"] {
   animation:
     nb-baby-bump-again 0.45s cubic-bezier(0.2, 1.5, 0.4, 1),
     nb-baby-breathe 4.2s ease-in-out 0.45s infinite;
@@ -1645,29 +1641,20 @@
 
 /* Ana ekrandaki bebek yüzü */
 .nb-baby-thumb {
-  position: relative;
   flex: none;
-  display: block;
   width: 128px;
   height: 128px;
   border: 3px solid #fff;
   border-radius: 50%;
-  overflow: hidden;
+  object-fit: cover;
+  object-position: 50% 38%;
   background: #1a1410;
   animation: nb-baby-breathe 4.2s ease-in-out infinite;
 }
 
-.nb-baby-thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 38%;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .nb-baby-still,
-  .nb-baby-still[data-bump],
+  .nb-baby-face,
+  .nb-baby-face[data-bump],
   .nb-baby-thumb,
   .nb-baby-bubble,
   .nb-baby-heart,
@@ -1677,190 +1664,6 @@
 
   .nb-baby-heart {
     display: none;
-  }
-}
-
-/* ---- Süsle: bebeğin yüzüne takılan aksesuarlar ---- */
-.nb-look {
-  position: absolute;
-  display: block;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-
-/* Video oynarken aksesuarlar kaybolur; bebek kıpırdarken havada asılı kalmasınlar. */
-.nb-look[data-hidden] {
-  opacity: 0;
-}
-
-.nb-look-item {
-  position: absolute;
-  display: block;
-  height: auto;
-  outline-offset: 4px;
-  border-radius: 6px;
-}
-
-.nb-baby-stage[data-edit] {
-  touch-action: none;
-  cursor: grab;
-}
-
-.nb-baby-stage[data-edit] .nb-baby-still {
-  animation: none;
-}
-
-.nb-tray {
-  display: flex;
-  gap: 10px;
-  margin: 12px -22px 0;
-  padding: 2px 22px 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.nb-tray::-webkit-scrollbar {
-  display: none;
-}
-
-.nb-acc {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  width: 84px;
-  height: 92px;
-  padding: 8px 4px;
-  border: 2px solid transparent;
-  border-radius: 22px;
-  background: var(--card);
-  color: var(--ink);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.1;
-  text-align: center;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.nb-acc svg {
-  flex: 1;
-  width: 52px;
-  min-height: 0;
-}
-
-.nb-acc[aria-pressed="true"] {
-  background: var(--pink);
-}
-
-.nb-acc[data-selected] {
-  border-color: var(--ink);
-}
-
-.nb-acc:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.nb-acc[data-gift="ready"] {
-  border: 2px dashed var(--ink);
-  background: var(--peach);
-  animation: nb-gift-wiggle 1.6s ease-in-out infinite;
-}
-
-.nb-acc[data-gift="wait"] {
-  border: 2px dashed var(--rule);
-  background: transparent;
-  opacity: 1;
-  color: var(--ink-2);
-}
-
-.nb-acc[data-gift="wait"] svg {
-  opacity: 0.45;
-}
-
-@keyframes nb-gift-wiggle {
-  0%,
-  70%,
-  100% {
-    transform: rotate(0);
-  }
-  78% {
-    transform: rotate(-5deg);
-  }
-  86% {
-    transform: rotate(5deg);
-  }
-  94% {
-    transform: rotate(-3deg);
-  }
-}
-
-.nb-acc-tools {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.nb-acc-tools button {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 20px;
-  background: var(--card);
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.nb-acc-tools button[data-kind="done"] {
-  background: var(--ink);
-  color: #fff;
-}
-
-.nb-acc-tools button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-/* Hediye açılınca sahneye dökülen konfeti */
-.nb-confetti {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.nb-confetti i {
-  position: absolute;
-  top: -16px;
-  width: 9px;
-  height: 15px;
-  border-radius: 3px;
-  animation: nb-confetti-fall 1.5s cubic-bezier(0.3, 0.6, 0.6, 1) both;
-}
-
-@keyframes nb-confetti-fall {
-  0% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(70dvh);
-    opacity: 0;
   }
 }
 
@@ -1898,14 +1701,4 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .nb-acc[data-gift="ready"] {
-    animation: none;
-  }
-
-  .nb-confetti {
-    display: none;
-  }
 }

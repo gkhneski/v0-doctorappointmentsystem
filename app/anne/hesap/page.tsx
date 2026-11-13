@@ -8,7 +8,7 @@ import { Blob, Screen, TopBar } from "@/components/anne/chrome"
 import { StartForm } from "@/components/anne/start-form"
 import { AccountActions } from "@/components/anne/account-actions"
 import { ThemePicker } from "@/components/anne/theme-picker"
-import { isTheme } from "@/lib/anne/look"
+import { isTheme } from "@/lib/anne/theme"
 
 export const dynamic = "force-dynamic"
 
